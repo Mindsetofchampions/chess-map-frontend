@@ -361,11 +361,11 @@ const AdminAuth: React.FC = () => {
                   <div className="w-full border-t border-glass"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-glass text-gray-300">Or</span>
+                  <span className="px-4 bg-glass text-gray-300 rounded-full">Or continue with</span>
                 </div>
               </div>
 
-              {/* Google Sign-in Button */}
+              {/* Enhanced Google Sign-in Button */}
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
@@ -417,6 +417,9 @@ const AdminAuth: React.FC = () => {
                 <p>Contact your system administrator for assistance.</p>
               </div>
             </form>
+
+            {/* Enhanced Decorative Gradient Border */}
+            <div className="absolute -inset-px bg-gradient-to-r from-cyber-green-400/30 via-electric-blue-400/30 to-neon-purple-400/30 rounded-2xl -z-10 blur-sm" />
           </GlassContainer>
         </div>
       </div>
