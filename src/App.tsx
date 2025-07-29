@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, BrowserRouter, Link, Navigate } from 'react-router-dom';
-import { MapPin, Shield, Compass, Users, Award, Zap } from 'lucide-react';
+import { MapPin, Shield, Compass, Users, Award, Zap, X, Star, Trophy, Heart, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { googleAuthHelpers } from './lib/supabase';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -55,6 +56,7 @@ const StudentDashboard: React.FC = () => {
 const LandingPage: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
   const currentYear = new Date().getFullYear();
+  const [activeModal, setActiveModal] = React.useState<string | null>(null);
 
   /**
    * Handle Google OAuth sign-in from home page
@@ -168,7 +170,11 @@ const LandingPage: React.FC = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Dynamic Quests Card */}
-            <GlassContainer variant="card" className="flex flex-col items-center space-y-4 text-center hover:bg-glass-dark transition-all duration-300 hover:scale-105 hover:-translate-y-2 cursor-pointer">
+            <GlassContainer 
+              variant="card" 
+              className="flex flex-col items-center space-y-4 text-center hover:bg-glass-dark transition-all duration-300 hover:scale-105 hover:-translate-y-2 cursor-pointer"
+              onClick={() => setActiveModal('quests')}
+            >
               <div className="w-16 h-16 bg-gradient-to-br from-electric-blue-400 to-electric-blue-600 rounded-full flex items-center justify-center shadow-lg">
                 <MapPin className="w-8 h-8 text-white" />
               </div>
@@ -183,7 +189,11 @@ const LandingPage: React.FC = () => {
             </GlassContainer>
 
             {/* Safe Spaces Card */}
-            <GlassContainer variant="card" className="flex flex-col items-center space-y-4 text-center hover:bg-glass-dark transition-all duration-300 hover:scale-105 hover:-translate-y-2 cursor-pointer">
+            <GlassContainer 
+              variant="card" 
+              className="flex flex-col items-center space-y-4 text-center hover:bg-glass-dark transition-all duration-300 hover:scale-105 hover:-translate-y-2 cursor-pointer"
+              onClick={() => setActiveModal('safety')}
+            >
               <div className="w-16 h-16 bg-gradient-to-br from-cyber-green-400 to-cyber-green-600 rounded-full flex items-center justify-center shadow-lg">
                 <Shield className="w-8 h-8 text-white" />
               </div>
@@ -198,7 +208,11 @@ const LandingPage: React.FC = () => {
             </GlassContainer>
 
             {/* Live Navigation Card */}
-            <GlassContainer variant="card" className="flex flex-col items-center space-y-4 text-center hover:bg-glass-dark transition-all duration-300 hover:scale-105 hover:-translate-y-2 cursor-pointer">
+            <GlassContainer 
+              variant="card" 
+              className="flex flex-col items-center space-y-4 text-center hover:bg-glass-dark transition-all duration-300 hover:scale-105 hover:-translate-y-2 cursor-pointer"
+              onClick={() => setActiveModal('navigation')}
+            >
               <div className="w-16 h-16 bg-gradient-to-br from-neon-purple-400 to-neon-purple-600 rounded-full flex items-center justify-center shadow-lg">
                 <Compass className="w-8 h-8 text-white" />
               </div>
