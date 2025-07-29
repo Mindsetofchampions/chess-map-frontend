@@ -1,0 +1,70 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
+
+export default defineConfig({
+  plugins: [react()],
+  
+  // Path resolution
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './src'),
+      '@/components': resolve(__dirname, './src/components'),
+      '@/utils': resolve(__dirname, './src/utils'),
+    },
+  },
+  
+  // Development server configuration
+  server: {
+    host: '0.0.0.0', // Allow external connections
+    port: 3001,
+    open: true, // Automatically open browser
+    cors: true,
+    hmr: true, // Simplified HMR configuration
+  },
+  
+  // Build configuration
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    // Optimize chunk splitting for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          mapbox: ['mapbox-gl'],
+          supabase: ['@supabase/supabase-js'],
+          ui: ['lucide-react']
+        }
+      }
+    },
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 1000,
+  },
+  
+  // Environment variables configuration
+  envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
+  
+  // Dependency optimization
+  optimizeDeps: {
+    include: [
+      'react', 
+      'react-dom', 
+      'mapbox-gl', 
+      '@supabase/supabase-js',
+      'lucide-react'
+    ],
+    exclude: ['@bolt/cli']
+  },
+  
+  // CSS configuration
+  css: {
+    postcss: './postcss.config.js',
+    devSourcemap: true,
+  },
+  
+  // Define global constants
+  define: {
+    global: 'globalThis',
+  },
+});

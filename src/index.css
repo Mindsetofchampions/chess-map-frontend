@@ -1,0 +1,127 @@
+/* Tailwind CSS base styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Mapbox GL CSS - Critical for map rendering */
+@import 'mapbox-gl/dist/mapbox-gl.css';
+
+/* Custom base styles for better typography and layout */
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  
+  body {
+    @apply antialiased text-gray-100 bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary;
+    margin: 0;
+    padding: 0;
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  /* Enhanced glassmorphism effect */
+  .glassmorphism {
+    @apply bg-white/30 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+  
+  /* Smooth transitions for interactive elements */
+  .transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+  
+  /* Map container specific styles */
+  .mapboxgl-map {
+    font-family: inherit;
+    /* Prevent flashing during initialization */
+    background-color: #0A0A0F;
+    transition: opacity 0.3s ease-in-out;
+  }
+}
+
+/* Ensure proper canvas sizing */
+.mapboxgl-canvas {
+  outline: none;
+  display: block;
+}
+
+/* Loading state for map container */
+.mapboxgl-map.loading {
+  opacity: 0;
+}
+
+.mapboxgl-map.loaded {
+  opacity: 1;
+}
+
+/* Mapbox GL overrides for better integration */
+.mapboxgl-popup {
+  @apply font-sans;
+}
+
+.mapboxgl-popup-content {
+  @apply rounded-lg shadow-lg;
+}
+
+.mapboxgl-ctrl-group {
+  @apply rounded-lg shadow-md;
+}
+
+.mapboxgl-ctrl button {
+  @apply transition-colors duration-200;
+}
+
+/* Attribution styling */
+.mapboxgl-ctrl-attrib {
+  @apply text-xs;
+}
+
+/* Ensure Mapbox canvas displays properly */
+.mapboxgl-map {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.mapboxgl-canvas-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.mapboxgl-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 rounded-full hover:bg-gray-500;
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

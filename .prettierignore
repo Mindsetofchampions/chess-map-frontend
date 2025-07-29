@@ -1,0 +1,93 @@
+# Prettier Ignore File
+# 
+# This file tells Prettier which files and directories to ignore
+# when formatting code. Add patterns for files that should not
+# be automatically formatted.
+
+# Build outputs
+dist/
+build/
+coverage/
+.next/
+out/
+
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Minified files
+*.min.js
+*.min.css
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Test files that shouldn't be formatted
+**/__snapshots__/
+
+# Documentation that should preserve formatting
+CHANGELOG.md
+LICENSE
+
+# Configuration files that need special formatting
+.gitignore
+.dockerignore
+
+# Generated files
+*.d.ts.map
+*.js.map
+*.css.map
+
+# Storybook
+.storybook/
+storybook-static/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# TypeScript incremental build info
+*.tsbuildinfo

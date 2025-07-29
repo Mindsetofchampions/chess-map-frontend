@@ -1,0 +1,99 @@
+/**
+ * Storybook-specific styles
+ * 
+ * Additional CSS for optimal Storybook presentation
+ * that doesn't interfere with the main application styles
+ */
+
+/* Ensure Storybook canvas shows glassmorphic elements properly */
+.docs-story {
+  background: transparent !important;
+}
+
+/* Custom scrollbar for Storybook dark theme */
+.sb-show-main {
+  scrollbar-width: thin;
+  scrollbar-color: #4F9BFF #161622;
+}
+
+.sb-show-main::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sb-show-main::-webkit-scrollbar-track {
+  background: #161622;
+}
+
+.sb-show-main::-webkit-scrollbar-thumb {
+  background: #4F9BFF;
+  border-radius: 4px;
+}
+
+.sb-show-main::-webkit-scrollbar-thumb:hover {
+  background: #2E7AFF;
+}
+
+/* Storybook control panel customization */
+.sidebar-container {
+  background: #0A0A0F !important;
+}
+
+/* Enhanced focus indicators for accessibility testing */
+.storybook-focus-indicator {
+  outline: 2px solid #4F9BFF;
+  outline-offset: 2px;
+}
+
+/* Prevent layout shift in Storybook viewport */
+.storybook-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive breakpoint indicators (visible in Storybook only) */
+@media (max-width: 640px) {
+  .storybook-breakpoint::before {
+    content: 'Mobile: < 640px';
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #4F9BFF;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 9999;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .storybook-breakpoint::before {
+    content: 'Tablet: 641px - 1024px';
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #D946EF;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 9999;
+  }
+}
+
+@media (min-width: 1025px) {
+  .storybook-breakpoint::before {
+    content: 'Desktop: > 1024px';
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #10B981;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 9999;
+  }
+}

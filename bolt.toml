@@ -1,0 +1,11 @@
+[plugin]
+name = "chess-map-frontend"
+version = "0.1.0"
+description = "CHESS Map front-end plugin with glass-morphic UI and Mapbox integration"
+entrypoint = "src/main.tsx"
+
+[env]
+NEXT_PUBLIC_SUPABASE_URL = ""
+NEXT_PUBLIC_SUPABASE_ANON_KEY = ""
+NEXT_PUBLIC_MAPBOX_TOKEN = ""
+NEXT_PUBLIC_MAP_STYLE_URL = ""
