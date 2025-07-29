@@ -8,7 +8,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { UserRole } from '../types/database';
+import { AllUserRoles } from '../types/database';
 import GlassContainer from './GlassContainer';
 import { Shield, Users, ArrowLeft } from 'lucide-react';
 
@@ -19,7 +19,7 @@ interface ProtectedRouteProps {
   /** Child components to render if authorized */
   children: React.ReactNode;
   /** Required user role to access this route */
-  requiredRole?: UserRole;
+  requiredRole?: AllUserRoles;
   /** Custom redirect path for unauthorized users */
   redirectTo?: string;
   /** Show loading spinner while checking authentication */
@@ -47,8 +47,8 @@ const AuthLoadingScreen: React.FC = () => (
  * Shown when user doesn't have required permissions
  */
 interface AccessDeniedProps {
-  requiredRole: UserRole;
-  userRole?: UserRole;
+  requiredRole: AllUserRoles;
+  userRole?: AllUserRoles;
   onGoBack: () => void;
 }
 
@@ -108,7 +108,7 @@ const AccessDeniedScreen: React.FC<AccessDeniedProps> = ({
  * Shown when user is not signed in
  */
 interface UnauthenticatedProps {
-  requiredRole?: UserRole;
+  requiredRole?: AllUserRoles;
   redirectPath: string;
 }
 
@@ -216,6 +216,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         return '/admin-auth';
       case 'student':
         return '/student-auth';
+      case 'master_admin':
+        return '/admin-auth'; // Master admins can use admin auth
       default:
         return '/student-auth'; // Default to student auth
     }
@@ -229,7 +231,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Handle unauthenticated users
   if (!isAuthenticated || !user) {
     // For certain routes, redirect immediately
-    if (location.pathname === '/admin' || location.pathname === '/map') {
+    if (location.pathname === '/admin' || location.pathname === '/master-admin' || location.pathname === '/map') {
       return <Navigate to={getRedirectPath()} state={{ from: location }} replace />;
     }
     
@@ -264,7 +266,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
  */
 export const withProtectedRoute = <P extends object>(
   Component: React.ComponentType<P>,
-  requiredRole?: UserRole,
+  requiredRole?: AllUserRoles,
   redirectTo?: string
 ) => {
   return React.forwardRef<any, P>((props, ref) => (

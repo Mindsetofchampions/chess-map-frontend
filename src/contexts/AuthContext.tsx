@@ -7,7 +7,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase, authHelpers, transformUser, analyticsHelpers } from '../lib/supabase';
-import { AuthUser, UserRole, AuthState } from '../types/database';
+import { AuthUser, AllUserRoles, AuthState } from '../types/database';
 
 /**
  * Authentication context interface
@@ -15,19 +15,20 @@ import { AuthUser, UserRole, AuthState } from '../types/database';
  */
 interface AuthContextType extends AuthState {
   // Authentication methods
-  signUp: (email: string, password: string, role?: UserRole) => Promise<{ success: boolean; error?: string }>;
-  signIn: (email: string, password: string, expectedRole?: UserRole) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, role?: AllUserRoles) => Promise<{ success: boolean; error?: string }>;
+  signIn: (email: string, password: string, expectedRole?: AllUserRoles) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   
   // User state methods
   refreshUser: () => Promise<void>;
-  updateUserRole: (role: UserRole) => Promise<{ success: boolean; error?: string }>;
+  updateUserRole: (role: AllUserRoles) => Promise<{ success: boolean; error?: string }>;
   
   // Utility methods
   isAuthenticated: boolean;
   isAdmin: boolean;
   isStudent: boolean;
+  isMasterAdmin: boolean;
 }
 
 /**
@@ -106,7 +107,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   /**
    * Sign up new user
    */
-  const signUp = useCallback(async (email: string, password: string, role: UserRole = 'student') => {
+  const signUp = useCallback(async (email: string, password: string, role: AllUserRoles = 'student') => {
     setLoading(true);
     clearError();
 
@@ -139,7 +140,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   /**
    * Sign in existing user
    */
-  const signIn = useCallback(async (email: string, password: string, expectedRole?: UserRole) => {
+  const signIn = useCallback(async (email: string, password: string, expectedRole?: AllUserRoles) => {
     setLoading(true);
     clearError();
 
@@ -225,8 +226,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   /**
    * Update user role (admin only operation)
    */
-  const updateUserRole = useCallback(async (role: UserRole) => {
-    if (!user || user.role !== 'admin') {
+  const updateUserRole = useCallback(async (role: AllUserRoles) => {
+    if (!user || (user.role !== 'admin' && user.role !== 'master_admin')) {
       const error = 'Only administrators can update user roles';
       setAuthError(error);
       return { success: false, error };
@@ -328,6 +329,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isAuthenticated = !!user;
   const isAdmin = user?.role === 'admin';
   const isStudent = user?.role === 'student';
+  const isMasterAdmin = user?.role === 'master_admin';
 
   /**
    * Context value object
@@ -350,6 +352,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated,
     isAdmin,
     isStudent,
+    isMasterAdmin,
   };
 
   return (
@@ -365,7 +368,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
  */
 export const withAuth = <P extends object>(
   Component: React.ComponentType<P>,
-  requiredRole?: UserRole
+  requiredRole?: AllUserRoles
 ) => {
   return React.forwardRef<any, P>((props, ref) => {
     const { user, loading, isAuthenticated } = useAuth();

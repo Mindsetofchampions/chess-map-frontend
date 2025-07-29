@@ -12,16 +12,26 @@
 export type UserRole = 'student' | 'admin';
 
 /**
+ * Master admin role type for enhanced permissions
+ */
+export type MasterAdminRole = 'master_admin';
+
+/**
+ * Combined user roles including master admin
+ */
+export type AllUserRoles = UserRole | MasterAdminRole;
+
+/**
  * Authentication user interface
  * Extends Supabase User with our custom metadata
  */
 export interface AuthUser {
   id: string;
   email: string;
-  role: UserRole;
+  role: AllUserRoles;
   created_at: string;
   user_metadata: {
-    role: UserRole;
+    role: AllUserRoles;
     full_name?: string;
   };
 }
@@ -155,4 +165,75 @@ export interface MapMarker {
   description?: string;
   quest?: Quest;
   is_completed?: boolean;
+}
+
+/**
+ * Sprite entity interface for character management
+ */
+export interface Sprite {
+  id: string;
+  name: string;
+  character: string;
+  sprite_url: string;
+  attribute_id: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+/**
+ * Safe space entity interface
+ */
+export interface SafeSpace {
+  id: string;
+  name: string;
+  description: string;
+  location: {
+    lat: number;
+    lng: number;
+  };
+  color?: string;
+  capacity?: number;
+  amenities?: string[];
+  created_at: string;
+  updated_at?: string;
+}
+
+/**
+ * Notification entity interface
+ */
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'error';
+  target_role?: AllUserRoles;
+  is_active: boolean;
+  created_at: string;
+  expires_at?: string;
+}
+
+/**
+ * System metrics interface
+ */
+export interface SystemMetrics {
+  uptime: number;
+  active_users: number;
+  map_load_success_rate: number;
+  total_quests: number;
+  completed_quests: number;
+  active_safe_spaces: number;
+}
+
+/**
+ * User approval interface
+ */
+export interface UserApprovalRequest {
+  id: string;
+  user_id: string;
+  email: string;
+  requested_role: AllUserRoles;
+  status: 'pending' | 'approved' | 'rejected';
+  requested_at: string;
+  processed_at?: string;
+  processed_by?: string;
 }

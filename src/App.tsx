@@ -12,6 +12,7 @@ import GlassContainer from './components/GlassContainer';
 import FloatingBubbles from './components/FloatingBubbles';
 import DraggableBubbles from './components/DraggableBubbles';
 import AdminDashboard from './pages/AdminDashboard';
+import MasterAdminDashboard from './pages/MasterAdminDashboard';
 
 /**
  * Student Dashboard Component
@@ -691,6 +692,16 @@ const AppRouter: React.FC = () => {
           element={
             <ProtectedRoute requiredRole="admin">
               <AdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Protected Master Admin Routes */}
+        <Route 
+          path="/master-admin" 
+          element={
+            <ProtectedRoute requiredRole="master_admin">
+              <MasterAdminDashboard />
             </ProtectedRoute>
           } 
         />
