@@ -66,9 +66,18 @@ const StudentAuth: React.FC = () => {
    * Redirect authenticated users
    */
   useEffect(() => {
+    console.log('🎓 StudentAuth redirect check:', {
+      isAuthenticated,
+      userId: user?.id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      shouldRedirect: isAuthenticated && user
+    });
+    
     if (isAuthenticated && user) {
       // Redirect to intended destination or default route
-      const from = (location.state as any)?.from?.pathname || '/student';
+      const from = (location.state as any)?.from?.pathname || (user.role === 'admin' ? '/admin' : '/student');
+      console.log('✅ Redirecting authenticated user to:', from);
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, user, navigate, location]);
