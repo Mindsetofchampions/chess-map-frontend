@@ -449,6 +449,49 @@ export const authHelpers = {
 };
 
 /**
+ * Google OAuth authentication helper
+ * 
+ * Initiates Google OAuth sign-in flow using Supabase Auth.
+ * The OAuth callback will be handled by the existing AuthContext onAuthStateChange listener.
+ * 
+ * @param redirectTo - Optional redirect URL after successful authentication
+ * @returns Promise with error if operation fails
+ */
+export const googleAuthHelpers = {
+  /**
+   * Sign in with Google OAuth
+   * 
+   * @param redirectTo - URL to redirect to after authentication (defaults to current origin)
+   * @returns Promise with error message if operation fails
+   */
+  signInWithGoogle: async (redirectTo?: string) => {
+    try {
+      console.log('🔐 Initiating Google OAuth sign-in');
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectTo || window.location.origin,
+        },
+      });
+
+      if (error) {
+        console.error('❌ Google OAuth error:', error);
+        throw error;
+      }
+
+      console.log('✅ Google OAuth initiated successfully');
+      return { error: null };
+      
+    } catch (error: any) {
+      const errorMessage = getAuthErrorMessage(error);
+      console.error('❌ Google sign-in failed:', errorMessage);
+      return { error: errorMessage };
+    }
+  },
+};
+
+/**
  * Quest-related database operations with error handling
  * 
  * These functions provide a clean interface for quest management

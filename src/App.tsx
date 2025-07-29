@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, BrowserRouter, Link, Navigate } from 'react-router-dom';
 import { MapPin, Shield, Compass, Users, Award, Zap } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { googleAuthHelpers } from './lib/supabase';
 import ProtectedRoute from './components/ProtectedRoute';
 import StudentAuth from './pages/StudentAuth';
 import AdminAuth from './pages/AdminAuth';
@@ -54,6 +55,17 @@ const StudentDashboard: React.FC = () => {
 const LandingPage: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
   const currentYear = new Date().getFullYear();
+
+  /**
+   * Handle Google OAuth sign-in from home page
+   */
+  const handleGoogleSignIn = async () => {
+    const { error } = await googleAuthHelpers.signInWithGoogle();
+    if (error) {
+      console.error('Google sign-in failed:', error);
+      // Error handling is managed by AuthContext
+    }
+  };
 
   // Redirect authenticated users to their appropriate dashboard
   if (isAuthenticated && user) {
@@ -267,6 +279,18 @@ const LandingPage: React.FC = () => {
                   <Compass className="w-5 h-5" />
                   Explore Dashboard
                 </Link>
+              </div>
+              
+              {/* Google SSO Button */}
+              <div className="flex justify-center pt-4">
+                <button
+                  onClick={handleGoogleSignIn}
+                  className="w-full md:w-auto flex items-center justify-center gap-2 bg-white/20 backdrop-blur-lg border border-gray-300 rounded-full px-6 py-3 hover:bg-white/30 transition-all duration-300 font-medium min-h-[44px] touch-manipulation hover:scale-105 hover:-translate-y-1"
+                  aria-label="Sign in with Google"
+                >
+                  <img src="/icons/google.svg" alt="" className="w-5 h-5" />
+                  <span className="text-white font-medium">Sign in with Google</span>
+                </button>
               </div>
             </div>
           </GlassContainer>

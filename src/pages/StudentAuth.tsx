@@ -8,6 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { googleAuthHelpers } from '../lib/supabase';
 import GlassContainer from '../components/GlassContainer';
 import { Users, Mail, Lock, Eye, EyeOff, ArrowLeft, BookOpen } from 'lucide-react';
 
@@ -43,6 +44,7 @@ const StudentAuth: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   /**
    * Redirect authenticated users
@@ -146,6 +148,28 @@ const StudentAuth: React.FC = () => {
     setFormErrors({});
     setShowPassword(false);
     setShowConfirmPassword(false);
+  };
+
+  /**
+   * Handle Google OAuth sign-in
+   */
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    setFormErrors({});
+
+    try {
+      const { error } = await googleAuthHelpers.signInWithGoogle();
+      if (error) {
+        setFormErrors({ general: error });
+      }
+      // Success handling will be done by AuthContext onAuthStateChange
+    } catch (error: any) {
+      setFormErrors({ 
+        general: error.message || 'Failed to sign in with Google. Please try again.' 
+      });
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   return (
