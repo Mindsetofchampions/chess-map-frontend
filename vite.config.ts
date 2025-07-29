@@ -17,7 +17,7 @@ export default defineConfig({
   // Development server configuration
   server: {
     host: '0.0.0.0', // Allow external connections
-    port: 3001,
+    port: 3000,
     open: true, // Automatically open browser
     cors: true,
     hmr: true, // Simplified HMR configuration
