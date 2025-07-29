@@ -164,8 +164,11 @@ export const transformUser = (user: User | null): AuthUser | null => {
     return null;
   }
 
-  // Extract role from user metadata with fallback to 'student'
-  const role = user.user_metadata?.role as UserRole || 'student';
+  // Extract role from user metadata with comprehensive checking
+  // Check both user_metadata and app_metadata for role information
+  const metadataRole = user.user_metadata?.role as UserRole;
+  const appMetadataRole = user.app_metadata?.role as UserRole;
+  const role = metadataRole || appMetadataRole || 'student';
   
   // Validate role is one of the allowed values
   const validRoles: UserRole[] = ['student', 'admin'];
@@ -174,6 +177,17 @@ export const transformUser = (user: User | null): AuthUser | null => {
   if (role !== validatedRole) {
     console.warn(`⚠️  Invalid user role '${role}' found in metadata, defaulting to 'student'`);
   }
+
+  // Enhanced logging for debugging
+  console.log('🔍 User role debugging:', {
+    userId: user.id,
+    email: user.email,
+    userMetadataRole: user.user_metadata?.role,
+    appMetadataRole: user.app_metadata?.role,
+    finalRole: validatedRole,
+    userMetadata: user.user_metadata,
+    appMetadata: user.app_metadata
+  });
 
   return {
     id: user.id,

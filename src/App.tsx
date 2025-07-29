@@ -20,6 +20,23 @@ import AdminDashboard from './pages/AdminDashboard';
 const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
 
+  // Additional role verification for debugging
+  React.useEffect(() => {
+    console.log('🎓 StudentDashboard mounted with user:', {
+      id: user?.id,
+      email: user?.email,
+      role: user?.role,
+      isAdmin: user?.role === 'admin',
+      isStudent: user?.role === 'student'
+    });
+    
+    // If admin user somehow got here, redirect them
+    if (user?.role === 'admin') {
+      console.warn('⚠️  Admin user detected in StudentDashboard, redirecting...');
+      window.location.href = '/admin';
+    }
+  }, [user]);
+
   return (
     <GlassContainer variant="page">
       <div className="container mx-auto max-w-7xl">
@@ -57,6 +74,19 @@ const LandingPage: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
   const currentYear = new Date().getFullYear();
   const [activeModal, setActiveModal] = React.useState<string | null>(null);
+
+  // Enhanced debugging for landing page redirects
+  React.useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log('🏠 LandingPage redirect logic triggered:', {
+        isAuthenticated,
+        userId: user.id,
+        userEmail: user.email,
+        userRole: user.role,
+        redirectingTo: user.role === 'admin' ? '/admin' : '/student'
+      });
+    }
+  }, [isAuthenticated, user]);
 
   /**
    * Handle Google OAuth sign-in from home page

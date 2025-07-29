@@ -180,6 +180,19 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, loading, isAuthenticated } = useAuth();
   const location = useLocation();
 
+  // Enhanced debugging for protected routes
+  React.useEffect(() => {
+    console.log('🛡️  ProtectedRoute evaluation:', {
+      path: location.pathname,
+      requiredRole,
+      userRole: user?.role,
+      isAuthenticated,
+      loading,
+      userId: user?.id,
+      userEmail: user?.email
+    });
+  }, [user, requiredRole, isAuthenticated, loading, location.pathname]);
+
   /**
    * Navigate back to previous page or default route
    */

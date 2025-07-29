@@ -85,13 +85,24 @@ const AdminAuth: React.FC = () => {
    * Redirect authenticated admins
    */
   useEffect(() => {
+    console.log('🏛️  AdminAuth redirect check:', {
+      isAuthenticated,
+      userId: user?.id,
+      userEmail: user?.email,
+      userRole: user?.role,
+      isAdmin,
+      shouldRedirect: isAuthenticated && user && isAdmin
+    });
+    
     if (isAuthenticated && user) {
       if (isAdmin) {
         // Redirect to admin dashboard
         const from = (location.state as any)?.from?.pathname || '/admin';
+        console.log('✅ Redirecting admin to:', from);
         navigate(from, { replace: true });
       } else {
         // Redirect non-admins to appropriate portal
+        console.log('❌ Non-admin user, redirecting to student auth');
         navigate('/student-auth', { replace: true });
       }
     }

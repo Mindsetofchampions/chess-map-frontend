@@ -111,6 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     clearError();
 
     try {
+      console.log(`🔐 Attempting sign up for: ${email} with role: ${role}`);
       const { data, error } = await authHelpers.signUp(email, password, role);
       
       if (error) {
@@ -120,6 +121,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Log successful signup
       if (data) {
+        console.log('✅ Sign up successful, user role:', data.role);
         await analyticsHelpers.logAction(data.id, 'user_signup', undefined, { role });
       }
 
@@ -142,6 +144,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     clearError();
 
     try {
+      console.log(`🔐 Attempting sign in for: ${email}${expectedRole ? ` (expected role: ${expectedRole})` : ''}`);
       const { data, error } = await authHelpers.signIn(email, password, expectedRole);
       
       if (error) {
@@ -151,6 +154,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Log successful signin
       if (data) {
+        console.log('✅ Sign in successful, user role:', data.role);
         await analyticsHelpers.logAction(data.id, 'user_signin', undefined, { 
           role: data.role,
           expected_role: expectedRole 
@@ -283,10 +287,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+        console.log('🔄 Auth state changed:', {
+          event,
+          userId: session?.user?.id,
+          userEmail: session?.user?.email,
+          userRole: session?.user?.user_metadata?.role || session?.user?.app_metadata?.role
+        });
         
         if (isMounted) {
-          setUser(transformUser(session?.user || null));
+          const transformedUser = transformUser(session?.user || null);
+          console.log('👤 Transformed user:', transformedUser);
+          setUser(transformedUser);
           setLoading(false);
           
           // Log auth state changes
