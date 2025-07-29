@@ -139,8 +139,7 @@ export const questHelpers = {
     try {
       const { data, error } = await supabase
         .from('quests')
-        .select('*')
-        .eq('status', 'active');
+        .select('*');
 
       if (error) {
         return { data: null, error: error.message };
