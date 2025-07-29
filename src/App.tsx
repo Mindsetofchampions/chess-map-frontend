@@ -331,6 +331,285 @@ const LandingPage: React.FC = () => {
           </GlassContainer>
         </footer>
       </div>
+
+      {/* Feature Explanation Modals */}
+      <AnimatePresence>
+        {activeModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setActiveModal(null)}
+          >
+            <motion.div
+              className="relative w-full max-w-2xl bg-glass backdrop-blur-2xl border-glass rounded-3xl shadow-2xl p-8 mx-auto overflow-y-auto max-h-[80vh]"
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                className="absolute top-6 right-6 p-2 rounded-full bg-glass-dark border-glass hover:bg-glass-light transition-all duration-200 group"
+                onClick={() => setActiveModal(null)}
+                aria-label="Close modal"
+              >
+                <X className="w-6 h-6 text-gray-300 group-hover:text-white" />
+              </button>
+
+              {/* Dynamic Quests Modal */}
+              {activeModal === 'quests' && (
+                <div className="space-y-8">
+                  <div className="text-center">
+                    <div className="w-24 h-24 bg-gradient-to-br from-electric-blue-400 to-electric-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                      <MapPin className="w-12 h-12 text-white" />
+                    </div>
+                    <h2 className="text-4xl font-bold text-white mb-4">Dynamic Quests</h2>
+                    <p className="text-xl text-electric-blue-300 font-semibold">Learning Adventures That Level Up With You! 🎮</p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="bg-glass-light border-glass-light rounded-2xl p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Star className="w-8 h-8 text-yellow-400" />
+                        <h3 className="text-xl font-bold text-white">Gaming Meets Learning</h3>
+                      </div>
+                      <p className="text-gray-100 leading-relaxed">
+                        Forget boring textbooks! Our quests turn every lesson into an epic adventure. Solve puzzles, complete challenges, and unlock achievements just like your favorite video games - but you're actually learning real skills!
+                      </p>
+                    </div>
+
+                    <div className="bg-glass-light border-glass-light rounded-2xl p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Trophy className="w-8 h-8 text-cyber-green-400" />
+                        <h3 className="text-xl font-bold text-white">Unlock & Earn Rewards</h3>
+                      </div>
+                      <p className="text-gray-100 leading-relaxed">
+                        Complete quests to earn coins, badges, and unlock new content areas. The more you learn, the more epic rewards you get! Plus, your achievements carry over to unlock exclusive features and content.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-electric-blue-500/20 to-neon-purple-500/20 border border-electric-blue-400/30 rounded-2xl p-6">
+                    <h3 className="text-2xl font-bold text-white mb-4 text-center">How Dynamic Quests Work:</h3>
+                    <div className="grid md:grid-cols-3 gap-4 text-center">
+                      <div className="space-y-2">
+                        <div className="text-3xl">📍</div>
+                        <h4 className="font-semibold text-white">Find Quests</h4>
+                        <p className="text-sm text-gray-100">Discover challenges on your map based on your location and interests</p>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-3xl">🎯</div>
+                        <h4 className="font-semibold text-white">Complete Challenges</h4>
+                        <p className="text-sm text-gray-100">Solve problems, answer questions, and complete interactive activities</p>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-3xl">💎</div>
+                        <h4 className="font-semibold text-white">Level Up!</h4>
+                        <p className="text-sm text-gray-100">Earn rewards and unlock new areas as you progress and master skills</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-center">
+                    <Link
+                      to="/student-auth"
+                      className="inline-flex items-center gap-2 btn-esports text-lg px-8 py-4"
+                      onClick={() => setActiveModal(null)}
+                    >
+                      <Sparkles className="w-6 h-6" />
+                      Start Your Quest Adventure!
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {/* Safe Spaces Modal */}
+              {activeModal === 'safety' && (
+                <div className="space-y-8">
+                  <div className="text-center">
+                    <div className="w-24 h-24 bg-gradient-to-br from-cyber-green-400 to-cyber-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                      <Shield className="w-12 h-12 text-white" />
+                    </div>
+                    <h2 className="text-4xl font-bold text-white mb-4">Safe Spaces</h2>
+                    <p className="text-xl text-cyber-green-300 font-semibold">Your Free, Welcoming Learning Community! 🏛️</p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="bg-glass-light border-glass-light rounded-2xl p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Heart className="w-8 h-8 text-red-400" />
+                        <h3 className="text-xl font-bold text-white">Always Free & Accessible</h3>
+                      </div>
+                      <p className="text-gray-100 leading-relaxed">
+                        Every Safe Space is completely free to access! No fees, no barriers - just welcoming places in your community where you can learn, study, and connect with educational resources whenever you need them.
+                      </p>
+                    </div>
+
+                    <div className="bg-glass-light border-glass-light rounded-2xl p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Users className="w-8 h-8 text-electric-blue-400" />
+                        <h3 className="text-xl font-bold text-white">Community Support</h3>
+                      </div>
+                      <p className="text-gray-100 leading-relaxed">
+                        Meet other learners, get help with your studies, and join group activities. Our Safe Spaces are designed to foster positive connections and collaborative learning in a supportive environment.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-cyber-green-500/20 to-electric-blue-500/20 border border-cyber-green-400/30 rounded-2xl p-6">
+                    <h3 className="text-2xl font-bold text-white mb-4 text-center">What Makes Our Spaces Safe:</h3>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 bg-cyber-green-400 rounded-full"></div>
+                          <span className="text-gray-100">Monitored and supervised environments</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 bg-cyber-green-400 rounded-full"></div>
+                          <span className="text-gray-100">Inclusive and welcoming atmosphere</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 bg-cyber-green-400 rounded-full"></div>
+                          <span className="text-gray-100">Free WiFi and study resources</span>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 bg-cyber-green-400 rounded-full"></div>
+                          <span className="text-gray-100">Anti-bullying and respect policies</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 bg-cyber-green-400 rounded-full"></div>
+                          <span className="text-gray-100">Accessible to all abilities and backgrounds</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 bg-cyber-green-400 rounded-full"></div>
+                          <span className="text-gray-100">Trained staff and peer mentors available</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-center">
+                    <Link
+                      to="/student-auth"
+                      className="inline-flex items-center gap-2 bg-gradient-to-r from-cyber-green-500 to-cyber-green-600 hover:from-cyber-green-400 hover:to-cyber-green-500 text-white rounded-full px-8 py-4 shadow-2xl transition-all duration-300 font-semibold text-lg min-h-[44px] touch-manipulation hover:shadow-cyber-green-500/50 hover:scale-105 hover:-translate-y-1 border border-cyber-green-400/30"
+                      onClick={() => setActiveModal(null)}
+                    >
+                      <Shield className="w-6 h-6" />
+                      Find Your Safe Space!
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {/* Live Navigation Modal */}
+              {activeModal === 'navigation' && (
+                <div className="space-y-8">
+                  <div className="text-center">
+                    <div className="w-24 h-24 bg-gradient-to-br from-neon-purple-400 to-neon-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                      <Compass className="w-12 h-12 text-white" />
+                    </div>
+                    <h2 className="text-4xl font-bold text-white mb-4">Live Navigation</h2>
+                    <p className="text-xl text-neon-purple-300 font-semibold">Meet Your Digital Learning Companions! 🤖✨</p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="bg-glass-light border-glass-light rounded-2xl p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="text-3xl">🦉</div>
+                        <h3 className="text-xl font-bold text-white">Your Sprite Guides</h3>
+                      </div>
+                      <p className="text-gray-100 leading-relaxed">
+                        Meet Hootie, Brenda, Gino, Hammer, and the MOC Badge - your friendly AI companions! These adorable characters guide you through your learning journey, offering hints, encouragement, and celebrating your wins!
+                      </p>
+                    </div>
+
+                    <div className="bg-glass-light border-glass-light rounded-2xl p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Sparkles className="w-8 h-8 text-yellow-400" />
+                        <h3 className="text-xl font-bold text-white">Interactive Help</h3>
+                      </div>
+                      <p className="text-gray-100 leading-relaxed">
+                        Stuck on a problem? Your Sprites are here to help! They provide smart hints, explain concepts in fun ways, and adapt their teaching style to match how you learn best.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-neon-purple-500/20 to-electric-blue-500/20 border border-neon-purple-400/30 rounded-2xl p-6">
+                    <h3 className="text-2xl font-bold text-white mb-6 text-center">Meet Your Learning Squad:</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="text-center space-y-2 p-4 bg-glass-light rounded-xl">
+                        <div className="text-4xl">🦉</div>
+                        <h4 className="font-bold text-purple-300">Hootie</h4>
+                        <p className="text-xs text-gray-100">Character & Wisdom Guide</p>
+                      </div>
+                      <div className="text-center space-y-2 p-4 bg-glass-light rounded-xl">
+                        <div className="text-4xl">🐱</div>
+                        <h4 className="font-bold text-green-300">Brenda</h4>
+                        <p className="text-xs text-gray-100">Health & Wellness Coach</p>
+                      </div>
+                      <div className="text-center space-y-2 p-4 bg-glass-light rounded-xl">
+                        <div className="text-4xl">🐕</div>
+                        <h4 className="font-bold text-orange-300">Gino</h4>
+                        <p className="text-xs text-gray-100">Exploration Adventure Guide</p>
+                      </div>
+                      <div className="text-center space-y-2 p-4 bg-glass-light rounded-xl">
+                        <div className="text-4xl">🤖</div>
+                        <h4 className="font-bold text-blue-300">Hammer</h4>
+                        <p className="text-xs text-gray-100">STEM Innovation Expert</p>
+                      </div>
+                      <div className="text-center space-y-2 p-4 bg-glass-light rounded-xl sm:col-span-2 lg:col-span-1">
+                        <div className="text-4xl">🏛️</div>
+                        <h4 className="font-bold text-red-300">MOC Badge</h4>
+                        <p className="text-xs text-gray-100">Leadership & Stewardship Mentor</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-glass-light border-glass-light rounded-2xl p-6">
+                    <h3 className="text-xl font-bold text-white mb-4 text-center">What Your Sprites Do For You:</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-neon-purple-400 rounded-full"></div>
+                        <span className="text-gray-100">Guide you to the best learning paths based on your interests</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-neon-purple-400 rounded-full"></div>
+                        <span className="text-gray-100">Provide encouraging messages and celebrate your achievements</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-neon-purple-400 rounded-full"></div>
+                        <span className="text-gray-100">Offer helpful hints when you're stuck on challenges</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-neon-purple-400 rounded-full"></div>
+                        <span className="text-gray-100">Adapt their teaching style to match how you learn best</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-center">
+                    <Link
+                      to="/student-auth"
+                      className="inline-flex items-center gap-2 bg-gradient-to-r from-neon-purple-500 to-neon-purple-600 hover:from-neon-purple-400 hover:to-neon-purple-500 text-white rounded-full px-8 py-4 shadow-2xl transition-all duration-300 font-semibold text-lg min-h-[44px] touch-manipulation hover:shadow-neon-purple-500/50 hover:scale-105 hover:-translate-y-1 border border-neon-purple-400/30"
+                      onClick={() => setActiveModal(null)}
+                    >
+                      <Compass className="w-6 h-6" />
+                      Meet Your Learning Squad!
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {/* Decorative gradient border */}
+              <div className="absolute -inset-px bg-gradient-to-r from-electric-blue-400/30 via-neon-purple-400/30 to-cyber-green-400/30 rounded-3xl -z-10 blur-sm" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </GlassContainer>
   );
 };
