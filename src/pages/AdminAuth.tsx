@@ -60,7 +60,7 @@ interface PasswordStrength {
 const AdminAuth: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signUp, loading, error, isAuthenticated, user, isAdmin, isMasterAdmin } = useAuth();
+  const { signIn, signUp, loading, error, isAuthenticated, user, isAdmin } = useAuth();
 
   // Form state
   const [isSignUp, setIsSignUp] = useState(false);
@@ -107,7 +107,7 @@ const AdminAuth: React.FC = () => {
         navigate('/student-auth', { replace: true });
       }
     }
-  }, [isAuthenticated, user, isAdmin, isMasterAdmin, navigate, location]);
+  }, [isAuthenticated, user, isAdmin, navigate, location.state]);
 
   /**
    * Enhanced password strength validation
