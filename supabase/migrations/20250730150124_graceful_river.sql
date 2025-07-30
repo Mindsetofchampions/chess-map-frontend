@@ -95,7 +95,7 @@ BEGIN
     NOW()
   );
   
-  -- If user is admin or master_admin, add to admins table
+  -- If user is admin or masteradmin, add to admins table
   IF COALESCE(NEW.raw_user_meta_data->>'role', 'student') IN ('admin', 'master_admin') THEN
     INSERT INTO admins (user_id, created_at)
     VALUES (NEW.id, NOW())
