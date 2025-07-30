@@ -38,10 +38,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 /**
  * Custom hook to use authentication context
-    if (user.role === 'master_admin') {
-      return <Navigate to="/master-admin/dashboard" replace />;
-    } else if (user.role === 'admin') {
  */
+export const useAuth = () => {
+  const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
@@ -154,7 +153,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [setAuthError, clearError]);
+  }, [setAuthError, clearError, refreshUser]);
 
   /**
    * Sign in existing user
@@ -289,8 +288,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const initializeAuth = async () => {
       try {
-      redirectingTo: user.role === 'admin' ? '/admin/dashboard' : 
-                    user.role === 'master_admin' ? '/master-admin/dashboard' : '/student/dashboard'
         const { data: { session } } = await supabase.auth.getSession();
         
         if (isMounted) {
