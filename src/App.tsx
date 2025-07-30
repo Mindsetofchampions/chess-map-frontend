@@ -671,7 +671,7 @@ const AppRouter: React.FC = () => {
 
         {/* Protected Student Routes */}
         <Route 
-          path="/student" 
+          path="/student/dashboard" 
           element={
             <ProtectedRoute requiredRole="student">
               <StudentDashboard />
@@ -680,7 +680,7 @@ const AppRouter: React.FC = () => {
         />
         
         <Route 
-          path="/map" 
+          path="/student" 
           element={
             <ProtectedRoute requiredRole="student">
               <StudentDashboard />
@@ -689,6 +689,15 @@ const AppRouter: React.FC = () => {
         />
 
         {/* Protected Admin Routes */}
+        <Route 
+          path="/admin/dashboard" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        
         <Route 
           path="/admin" 
           element={
@@ -699,6 +708,15 @@ const AppRouter: React.FC = () => {
         />
         
         {/* Protected Master Admin Routes */}
+        <Route 
+          path="/master-admin/dashboard" 
+          element={
+            <ProtectedRoute requiredRole="master_admin">
+              <MasterAdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        
         <Route 
           path="/master-admin" 
           element={

@@ -120,6 +120,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, error };
       }
 
+      // Wait a moment for database trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Refresh session to get updated user data
+      await refreshUser();
       // Log successful signup
       if (data) {
         console.log('✅ Sign up successful, user role:', data.role);
