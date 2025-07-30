@@ -1,10 +1,11 @@
 import React from 'react';
 import { Routes, Route, BrowserRouter, Link, Navigate } from 'react-router-dom';
-import { MapPin, Shield, Compass, Users, Award, Zap, X, Star, Trophy, Heart, Sparkles } from 'lucide-react';
+import { MapPin, Shield, Compass, Users, Award, Zap, X, Star, Trophy, Heart, Sparkles, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { googleAuthHelpers } from './lib/supabase';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import StudentAuth from './pages/StudentAuth';
 import AdminAuth from './pages/AdminAuth';
 import MapView from './components/MapView';
@@ -660,76 +661,75 @@ const LandingPage: React.FC = () => {
  */
 const AppRouter: React.FC = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Landing Page - Public */}
-        <Route path="/" element={<LandingPage />} />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          {/* Landing Page - Public */}
+          <Route path="/" element={<LandingPage />} />
 
-        {/* Authentication Routes - Public */}
-        <Route path="/student-auth" element={<StudentAuth />} />
-        <Route path="/admin-auth" element={<AdminAuth />} />
+          {/* Authentication Routes - Public */}
+          <Route path="/student-auth" element={<StudentAuth />} />
+          <Route path="/admin-auth" element={<AdminAuth />} />
 
-        {/* Protected Student Routes */}
-        <Route 
-          path="/student/dashboard" 
-          element={
-            <ProtectedRoute requiredRole="student">
-              <StudentDashboard />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/student" 
-          element={
-            <ProtectedRoute requiredRole="student">
-              <StudentDashboard />
-            </ProtectedRoute>
-          } 
-        />
+          {/* Protected Student Routes */}
+          <Route 
+            path="/student/dashboard" 
+            element={
+              <ErrorBoundary>
+                <ProtectedRoute requiredRole="student">
+                  <StudentDashboard />
+                </ProtectedRoute>
+              </ErrorBoundary>
+            } 
+          />
+          
+          {/* Student redirect route */}
+          <Route 
+            path="/student" 
+            element={<Navigate to="/student/dashboard" replace />}
+          />
 
-        {/* Protected Admin Routes */}
-        <Route 
-          path="/admin/dashboard" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminDashboard />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminDashboard />
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Protected Master Admin Routes */}
-        <Route 
-          path="/master-admin/dashboard" 
-          element={
-            <ProtectedRoute requiredRole="master_admin">
-              <MasterAdminDashboard />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/master-admin" 
-          element={
-            <ProtectedRoute requiredRole="master_admin">
-              <MasterAdminDashboard />
-            </ProtectedRoute>
-          } 
-        />
+          {/* Protected Admin Routes */}
+          <Route 
+            path="/admin/dashboard" 
+            element={
+              <ErrorBoundary>
+                <ProtectedRoute requiredRole="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              </ErrorBoundary>
+            } 
+          />
+          
+          {/* Admin redirect route */}
+          <Route 
+            path="/admin" 
+            element={<Navigate to="/admin/dashboard" replace />}
+          />
+          
+          {/* Protected Master Admin Routes */}
+          <Route 
+            path="/master-admin/dashboard" 
+            element={
+              <ErrorBoundary>
+                <ProtectedRoute requiredRole="master_admin">
+                  <MasterAdminDashboard />
+                </ProtectedRoute>
+              </ErrorBoundary>
+            } 
+          />
+          
+          {/* Master Admin redirect route */}
+          <Route 
+            path="/master-admin" 
+            element={<Navigate to="/master-admin/dashboard" replace />}
+          />
 
-        {/* Catch-all redirect */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+          {/* Catch-all redirect */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

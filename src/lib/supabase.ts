@@ -39,33 +39,6 @@ export const transformUser = (user: any): AuthUser | null => {
  * Authentication Helper Functions
  */
 export const authHelpers = {
-  async signUp(email: string, password: string, role: AllUserRoles = 'student') {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { 
-            role,
-            email_verified: true 
-          }
-        }
-      });
-
-      if (error) {
-        return { data: null, error: error.message };
-      }
-
-      // Note: User records are now created automatically via database trigger
-      // when auth.users record is created. This ensures consistency and
-      // prevents race conditions during sign-up process.
-
-      return { data: transformUser(data.user), error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  },
-
   async signIn(email: string, password: string, expectedRole?: AllUserRoles) {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({

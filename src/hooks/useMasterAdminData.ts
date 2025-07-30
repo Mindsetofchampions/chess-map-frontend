@@ -426,6 +426,8 @@ export const useMasterAdminData = (options: {
    * Initialize data loading and intervals
    */
   useEffect(() => {
+    mountedRef.current = true;
+    
     if (autoLoad) {
       refreshAll();
     }

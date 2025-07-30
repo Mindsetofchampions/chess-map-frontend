@@ -268,8 +268,11 @@ export const useQuests = (): UseQuestsReturn => {
   useEffect(() => {
     if (!isAuthenticated || !user) return;
 
+    let questSubscription: any;
+    let balanceSubscription: any;
+
     // Subscribe to quest updates
-    const questSubscription = subscriptionHelpers.subscribeToQuests((updatedQuests) => {
+    questSubscription = subscriptionHelpers.subscribeToQuests((updatedQuests) => {
       setState(prev => {
         const completedQuestIds = prev.completions.map(c => c.quest_id);
         const availableQuests = updatedQuests.filter(q => !completedQuestIds.includes(q.id));
@@ -283,14 +286,18 @@ export const useQuests = (): UseQuestsReturn => {
     });
 
     // Subscribe to balance updates
-    const balanceSubscription = subscriptionHelpers.subscribeToUserBalance(user.id, (newBalance) => {
+    balanceSubscription = subscriptionHelpers.subscribeToUserBalance(user.id, (newBalance) => {
       setState(prev => ({ ...prev, userBalance: newBalance }));
     });
 
     // Cleanup subscriptions
     return () => {
-      questSubscription.unsubscribe();
-      balanceSubscription.unsubscribe();
+      if (questSubscription) {
+        questSubscription.unsubscribe();
+      }
+      if (balanceSubscription) {
+        balanceSubscription.unsubscribe();
+      }
     };
   }, [isAuthenticated, user]);
 

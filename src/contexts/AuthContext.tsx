@@ -113,25 +113,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       console.log(`🔐 Attempting sign up for: ${email} with role: ${role}`);
-      const { data, error } = await authHelpers.signUp(email, password, role);
       
-      if (error) {
-        setAuthError(error);
-        return { success: false, error };
+      // Sign up user with role in metadata
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { 
+            role,
+            email_verified: true 
+          }
+        }
+      });
+      
+      if (signUpError) {
+        setAuthError(signUpError.message);
+        return { success: false, error: signUpError.message };
       }
 
-      // Wait a moment for database trigger to complete
+      // Wait for database trigger to complete
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Refresh session to get updated user data
       await refreshUser();
-      // Log successful signup
-      if (data) {
-        console.log('✅ Sign up successful, user role:', data.role);
-        await analyticsHelpers.logAction(data.id, 'user_signup', undefined, { role });
+      
+      if (signUpData.user) {
+        const transformedUser = transformUser(signUpData.user);
+        console.log('✅ Sign up successful, user role:', transformedUser?.role);
+        if (transformedUser) {
+          await analyticsHelpers.logAction(transformedUser.id, 'user_signup', undefined, { role });
+        }
+        setUser(transformedUser);
       }
 
-      setUser(data);
       return { success: true };
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to create account';
@@ -271,6 +285,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   useEffect(() => {
     let isMounted = true;
+    let subscription: any;
 
     const initializeAuth = async () => {
       try {
@@ -297,7 +312,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: authSubscription } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔄 Auth state changed:', {
           event,
@@ -331,13 +346,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
     );
+    
+    subscription = authSubscription.subscription;
 
     initializeAuth();
 
     // Cleanup function
     return () => {
       isMounted = false;
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, [setAuthError]);
 

@@ -165,6 +165,8 @@ const MapView: React.FC<MapViewProps> = ({
   useEffect(() => {
     // Skip initialization if map already exists or container is not ready
     if (map.current || !mapContainer.current) return;
+    
+    let mounted = true;
 
     // Validate token
     if (!mapboxToken || mapboxToken.trim() === '' || mapboxToken === 'pk.YOUR_MAPBOX_TOKEN_HERE') {
@@ -193,7 +195,7 @@ const MapView: React.FC<MapViewProps> = ({
       // Handle successful load
       map.current.on('load', () => {
         console.log('Map loaded successfully');
-        if (map.current) {
+        if (map.current && mounted) {
           setIsLoading(false);
           setError(null);
         }
@@ -212,18 +214,23 @@ const MapView: React.FC<MapViewProps> = ({
       // Handle errors
       map.current.on('error', (e) => {
         console.error('Map error:', e);
-        setError(`Map failed to load: ${e.error?.message || 'Unknown error'}`);
-        setIsLoading(false);
+        if (mounted) {
+          setError(`Map failed to load: ${e.error?.message || 'Unknown error'}`);
+          setIsLoading(false);
+        }
       });
 
     } catch (err: any) {
       console.error('Map initialization error:', err);
-      setError(`Failed to initialize map: ${err.message}`);
-      setIsLoading(false);
+      if (mounted) {
+        setError(`Failed to initialize map: ${err.message}`);
+        setIsLoading(false);
+      }
     }
 
     // Cleanup function - this will now be reached properly
     return () => {
+      mounted = false;
       if (map.current) {
         map.current.remove();
         map.current = null;
@@ -232,7 +239,7 @@ const MapView: React.FC<MapViewProps> = ({
       markers.current.forEach(marker => marker.remove());
       markers.current = [];
     };
-  }, []); // Remove dependencies to prevent re-initialization
+  }, []);
 
   // Separate effect for fetching quests
   useEffect(() => {
