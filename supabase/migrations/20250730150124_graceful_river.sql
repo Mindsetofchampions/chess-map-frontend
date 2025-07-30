@@ -26,7 +26,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email text UNIQUE NOT NULL,
-  role text NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin', 'master_admin')),
+  role text NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin', 'masteradmin')),
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -95,7 +95,7 @@ BEGIN
     NOW()
   );
   
-  -- If user is admin or master_admin, add to admins table
+  -- If user is admin or masteradmin, add to admins table
   IF COALESCE(NEW.raw_user_meta_data->>'role', 'student') IN ('admin', 'master_admin') THEN
     INSERT INTO admins (user_id, created_at)
     VALUES (NEW.id, NOW())
