@@ -107,6 +107,7 @@ const AdminAuth: React.FC = () => {
         navigate('/student-auth', { replace: true });
       }
     }
+  }, [isAuthenticated, user, isAdmin, isMasterAdmin, navigate, location]);
 
   /**
    * Enhanced password strength validation
