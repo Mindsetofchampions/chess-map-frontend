@@ -95,10 +95,13 @@ const AdminAuth: React.FC = () => {
     });
     
     if (isAuthenticated && user) {
-      if (isAdmin || isMasterAdmin) {
+      if (user.role === 'master_admin') {
+        const from = (location.state as any)?.from?.pathname || '/master-admin/dashboard';
+        console.log('✅ Redirecting master admin to:', from);
+        navigate(from, { replace: true });
+      } else if (isAdmin) {
         // Redirect to admin dashboard
-        const from = (location.state as any)?.from?.pathname || 
-          (user.role === 'master_admin' ? '/master-admin/dashboard' : '/admin/dashboard');
+        const from = (location.state as any)?.from?.pathname || '/admin/dashboard';
         console.log('✅ Redirecting admin to:', from);
         navigate(from, { replace: true });
       } else {
