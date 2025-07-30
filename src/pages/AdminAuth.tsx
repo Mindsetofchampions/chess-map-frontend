@@ -98,7 +98,7 @@ const AdminAuth: React.FC = () => {
       if (isAdmin || isMasterAdmin) {
         // Redirect to admin dashboard
         const from = (location.state as any)?.from?.pathname || 
-          (user.role === 'master_admin' ? '/master-admin' : '/admin');
+          (user.role === 'master_admin' ? '/master-admin/dashboard' : '/admin/dashboard');
         console.log('✅ Redirecting admin to:', from);
         navigate(from, { replace: true });
       } else {

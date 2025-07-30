@@ -103,11 +103,11 @@ const LandingPage: React.FC = () => {
   // Redirect authenticated users to their appropriate dashboard
   if (isAuthenticated && user) {
     if (user.role === 'admin') {
-      return <Navigate to="/admin" replace />;
+      return <Navigate to="/admin/dashboard" replace />;
     } else if (user.role === 'master_admin') {
-      return <Navigate to="/master-admin" replace />;
+      return <Navigate to="/master-admin/dashboard" replace />;
     }
-    return <Navigate to="/student" replace />;
+    return <Navigate to="/student/dashboard" replace />;
   }
 
   return (

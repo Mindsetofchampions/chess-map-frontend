@@ -77,8 +77,8 @@ const StudentAuth: React.FC = () => {
     if (isAuthenticated && user) {
       // Redirect to intended destination or default route
       const from = (location.state as any)?.from?.pathname || 
-        (user.role === 'admin' ? '/admin' : 
-         user.role === 'master_admin' ? '/master-admin' : '/student');
+        (user.role === 'admin' ? '/admin/dashboard' : 
+         user.role === 'master_admin' ? '/master-admin/dashboard' : '/student/dashboard');
       console.log('✅ Redirecting authenticated user to:', from);
       navigate(from, { replace: true });
     }
