@@ -45,12 +45,50 @@ export const authHelpers = {
         email,
         password,
         options: {
-          data: { role }
+          data: { 
+            role,
+            email_verified: true 
+          }
         }
       });
 
       if (error) {
         return { data: null, error: error.message };
+      }
+
+      // Create corresponding database record if sign-up successful
+      if (data.user && !error) {
+        try {
+          // Insert into users table first
+          const { error: userError } = await supabase
+            .from('users')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              role: role,
+              created_at: new Date().toISOString()
+            });
+
+          if (userError) {
+            console.warn('Failed to create user record:', userError);
+          }
+
+          // Insert into role-specific table
+          if (role === 'admin' || role === 'master_admin') {
+            const { error: adminError } = await supabase
+              .from('admins')
+              .insert({
+                user_id: data.user.id,
+                created_at: new Date().toISOString()
+              });
+
+            if (adminError) {
+              console.warn('Failed to create admin record:', adminError);
+            }
+          }
+        } catch (dbError) {
+          console.warn('Database record creation failed:', dbError);
+        }
       }
 
       return { data: transformUser(data.user), error: null };

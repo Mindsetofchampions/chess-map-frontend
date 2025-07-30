@@ -273,6 +273,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (isMounted) {
+          console.log('🔍 Initial session:', {
+            userId: session?.user?.id,
+            email: session?.user?.email,
+            userMetadata: session?.user?.user_metadata,
+            appMetadata: session?.user?.app_metadata
+          });
           setUser(transformUser(session?.user || null));
           setLoading(false);
         }
@@ -292,12 +298,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           event,
           userId: session?.user?.id,
           userEmail: session?.user?.email,
-          userRole: session?.user?.user_metadata?.role || session?.user?.app_metadata?.role
+          userMetadata: session?.user?.user_metadata,
+          appMetadata: session?.user?.app_metadata,
+          extractedRole: session?.user?.user_metadata?.role || session?.user?.app_metadata?.role
         });
         
         if (isMounted) {
           const transformedUser = transformUser(session?.user || null);
-          console.log('👤 Transformed user:', transformedUser);
+          console.log('👤 Transformed user:', {
+            id: transformedUser?.id,
+            email: transformedUser?.email,
+            role: transformedUser?.role,
+            fullUser: transformedUser
+          });
           setUser(transformedUser);
           setLoading(false);
           
