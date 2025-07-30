@@ -104,6 +104,8 @@ const LandingPage: React.FC = () => {
   if (isAuthenticated && user) {
     if (user.role === 'admin') {
       return <Navigate to="/admin" replace />;
+    } else if (user.role === 'master_admin') {
+      return <Navigate to="/master-admin" replace />;
     }
     return <Navigate to="/student" replace />;
   }

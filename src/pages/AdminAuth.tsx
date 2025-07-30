@@ -60,7 +60,7 @@ interface PasswordStrength {
 const AdminAuth: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signUp, loading, error, isAuthenticated, user, isAdmin } = useAuth();
+  const { signIn, signUp, loading, error, isAuthenticated, user, isAdmin, isMasterAdmin } = useAuth();
 
   // Form state
   const [isSignUp, setIsSignUp] = useState(false);
@@ -90,14 +90,15 @@ const AdminAuth: React.FC = () => {
       userId: user?.id,
       userEmail: user?.email,
       userRole: user?.role,
-      isAdmin,
+      isAdmin: isAdmin || isMasterAdmin,
       shouldRedirect: isAuthenticated && user && isAdmin
     });
     
     if (isAuthenticated && user) {
-      if (isAdmin) {
+      if (isAdmin || isMasterAdmin) {
         // Redirect to admin dashboard
-        const from = (location.state as any)?.from?.pathname || '/admin';
+        const from = (location.state as any)?.from?.pathname || 
+          (user.role === 'master_admin' ? '/master-admin' : '/admin');
         console.log('✅ Redirecting admin to:', from);
         navigate(from, { replace: true });
       } else {
@@ -106,7 +107,6 @@ const AdminAuth: React.FC = () => {
         navigate('/student-auth', { replace: true });
       }
     }
-  }, [isAuthenticated, user, isAdmin, navigate, location]);
 
   /**
    * Enhanced password strength validation
