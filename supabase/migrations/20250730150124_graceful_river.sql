@@ -26,7 +26,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email text UNIQUE NOT NULL,
-  role text NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin', 'master_admin')),
+  role text NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin', 'masteradmin')),
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
