@@ -27,7 +27,11 @@ export const transformUser = (user: any): AuthUser | null => {
     email: user.email || '',
     role: role as AllUserRoles,
     created_at: user.created_at,
-    updated_at: user.updated_at
+    updated_at: user.updated_at,
+    user_metadata: {
+      role: role as AllUserRoles,
+      full_name: user.user_metadata?.full_name
+    }
   };
 };
 

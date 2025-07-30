@@ -30,6 +30,7 @@ export interface AuthUser {
   email: string;
   role: AllUserRoles;
   created_at: string;
+  updated_at: string;
   user_metadata: {
     role: AllUserRoles;
     full_name?: string;
