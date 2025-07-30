@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuests } from '../hooks/useQuests';
@@ -12,7 +13,10 @@ import {
   Star,
   Target,
   TrendingUp,
-  Award
+  Award,
+  Home,
+  ArrowLeft,
+  Settings
 } from 'lucide-react';
 
 /**
@@ -20,6 +24,7 @@ import {
  * Protected route for authenticated students with quest management and progress tracking
  */
 const StudentDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { 
     availableQuests, 
@@ -43,10 +48,12 @@ const StudentDashboard: React.FC = () => {
     // If admin user somehow got here, redirect them
     if (user?.role === 'admin') {
       console.warn('⚠️  Admin user detected in StudentDashboard, redirecting...');
-      window.location.href = '/admin';
+      navigate('/admin/dashboard', { replace: true });
+      return;
     } else if (user?.role === 'master_admin') {
       console.warn('⚠️  Master admin user detected in StudentDashboard, redirecting...');
-      window.location.href = '/master-admin';
+      navigate('/master-admin/dashboard', { replace: true });
+      return;
     }
   }, [user]);
 
@@ -60,10 +67,72 @@ const StudentDashboard: React.FC = () => {
     }
   };
 
+  /**
+   * Navigate to home page
+   */
+  const handleGoHome = () => {
+    navigate('/', { replace: true });
+  };
+
+  /**
+   * Navigate to profile/settings
+   */
+  const handleSettings = () => {
+    // TODO: Implement settings page
+    console.log('Navigate to settings');
+  };
+
   return (
     <GlassContainer variant="page">
       <div className="container mx-auto max-w-7xl">
         
+        {/* Navigation Header */}
+        <motion.div 
+          className="flex items-center justify-between p-4 mb-4"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {/* Left Navigation */}
+          <div className="flex items-center gap-3">
+            <motion.button
+              onClick={handleGoHome}
+              className="flex items-center gap-2 bg-glass border-glass hover:bg-glass-dark text-gray-300 hover:text-white rounded-xl px-4 py-2 transition-all duration-200 text-sm font-medium min-h-touch touch-manipulation"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              aria-label="Return to home page"
+            >
+              <Home className="w-4 h-4" />
+              <span className="hidden sm:inline">Home</span>
+            </motion.button>
+
+            <motion.button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 bg-glass border-glass hover:bg-glass-dark text-gray-300 hover:text-white rounded-xl px-4 py-2 transition-all duration-200 text-sm font-medium min-h-touch touch-manipulation"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              aria-label="Go back"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back</span>
+            </motion.button>
+          </div>
+
+          {/* Right Navigation */}
+          <div className="flex items-center gap-3">
+            <motion.button
+              onClick={handleSettings}
+              className="flex items-center gap-2 bg-glass border-glass hover:bg-glass-dark text-gray-300 hover:text-white rounded-xl px-4 py-2 transition-all duration-200 text-sm font-medium min-h-touch touch-manipulation"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              aria-label="Open settings"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Settings</span>
+            </motion.button>
+          </div>
+        </motion.div>
+
         {/* Student Header */}
         <motion.div 
           className="flex items-center justify-between p-6 mb-6"
@@ -73,9 +142,16 @@ const StudentDashboard: React.FC = () => {
         >
           <div>
             <h1 className="text-3xl font-bold text-white">
-              Welcome back, {user?.email?.split('@')[0]}!
+              Welcome back, {user?.email?.split('@')[0] || 'Student'}!
             </h1>
-            <p className="text-gray-300">Continue your CHESS Quest journey</p>
+            <p className="text-gray-300">
+              Continue your CHESS Quest journey
+              {user?.role && user.role !== 'student' && (
+                <span className="ml-2 px-2 py-1 bg-yellow-500/20 border border-yellow-500/30 rounded text-yellow-300 text-xs">
+                  Role: {user.role}
+                </span>
+              )}
+            </p>
           </div>
           
           <div className="flex items-center gap-4">
@@ -94,9 +170,10 @@ const StudentDashboard: React.FC = () => {
             {/* Sign Out Button */}
             <motion.button
               onClick={signOut}
-              className="bg-glass border-glass hover:bg-glass-dark text-gray-300 hover:text-white rounded-xl px-4 py-2 transition-all duration-200 text-sm font-medium"
+              className="bg-glass border-glass hover:bg-glass-dark text-gray-300 hover:text-white rounded-xl px-4 py-2 transition-all duration-200 text-sm font-medium min-h-touch touch-manipulation"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              aria-label="Sign out of account"
             >
               Sign Out
             </motion.button>

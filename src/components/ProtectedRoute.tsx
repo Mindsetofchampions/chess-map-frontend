@@ -189,7 +189,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       isAuthenticated,
       loading,
       userId: user?.id,
-      userEmail: user?.email
+      userEmail: user?.email,
+      shouldRedirect: isAuthenticated && user && requiredRole && user.role !== requiredRole
     });
   }, [user, requiredRole, isAuthenticated, loading, location.pathname]);
 
@@ -246,6 +247,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Handle role-based authorization
   if (requiredRole && user.role !== requiredRole) {
+    console.log('🚫 Role mismatch detected:', {
+      required: requiredRole,
+      actual: user.role,
+      redirecting: true
+    });
+    
     // For role mismatches, show access denied screen
     return (
       <AccessDeniedScreen
