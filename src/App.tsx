@@ -80,12 +80,17 @@ const LandingPage: React.FC = () => {
   // Enhanced debugging for landing page redirects
   React.useEffect(() => {
     if (isAuthenticated && user) {
-      console.log('🏠 LandingPage redirect logic triggered:', {
+      console.log('🏠 LandingPage redirect logic - ROLE DEBUG:', {
         isAuthenticated,
         userId: user.id,
         userEmail: user.email,
         userRole: user.role,
-        redirectingTo: user.role === 'admin' ? '/admin' : '/student'
+        roleType: typeof user.role,
+        roleComparison: {
+          isMasterAdmin: user.role === 'master_admin',
+          isAdmin: user.role === 'admin', 
+          isStudent: user.role === 'student'
+        }
       });
     }
   }, [isAuthenticated, user]);
@@ -103,12 +108,23 @@ const LandingPage: React.FC = () => {
 
   // Redirect authenticated users to their appropriate dashboard
   if (isAuthenticated && user) {
-    if (user.role === 'admin') {
-      return <Navigate to="/admin/dashboard" replace />;
-    } else if (user.role === 'master_admin') {
+    console.log('🔄 Processing redirect for role:', user.role);
+    
+    // Fixed redirect logic with proper precedence order
+    if (user.role === 'master_admin') {
+      console.log('✅ Redirecting master_admin to /master-admin/dashboard');
       return <Navigate to="/master-admin/dashboard" replace />;
+    } else if (user.role === 'admin') {
+      console.log('✅ Redirecting admin to /admin/dashboard');
+      return <Navigate to="/admin/dashboard" replace />;
+    } else if (user.role === 'student') {
+      console.log('✅ Redirecting student to /student/dashboard');
+      return <Navigate to="/student/dashboard" replace />;
+    } else {
+      // Fallback for undefined/invalid roles
+      console.warn('⚠️ Invalid or undefined role, redirecting to student dashboard:', user.role);
+      return <Navigate to="/student/dashboard" replace />;
     }
-    return <Navigate to="/student/dashboard" replace />;
   }
 
   return (
