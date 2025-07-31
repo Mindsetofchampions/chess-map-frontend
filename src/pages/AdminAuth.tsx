@@ -85,28 +85,33 @@ const AdminAuth: React.FC = () => {
    * Redirect authenticated admins
    */
   useEffect(() => {
-    console.log('🏛️  AdminAuth redirect check:', {
+    console.log('🏛️  AdminAuth ROLE REDIRECT DEBUG:', {
       isAuthenticated,
       userId: user?.id,
       userEmail: user?.email,
       userRole: user?.role,
+      roleType: typeof user?.role,
       isAdmin: isAdmin || isMasterAdmin,
-      shouldRedirect: isAuthenticated && user && isAdmin
+      shouldRedirect: isAuthenticated && user && isAdmin,
+      isMasterAdminFlag: isMasterAdmin,
+      isAdminFlag: isAdmin,
+      contextUser: user
     });
     
     if (isAuthenticated && user) {
+      console.log('🎯 AdminAuth processing redirect for role:', user.role);
       if (user.role === 'master_admin') {
         const from = (location.state as any)?.from?.pathname || '/master-admin/dashboard';
-        console.log('✅ Redirecting master admin to:', from);
+        console.log('✅ MASTER ADMIN REDIRECT to:', from);
         navigate(from, { replace: true });
       } else if (isAdmin) {
         // Redirect to admin dashboard
         const from = (location.state as any)?.from?.pathname || '/admin/dashboard';
-        console.log('✅ Redirecting admin to:', from);
+        console.log('✅ ADMIN REDIRECT to:', from);
         navigate(from, { replace: true });
       } else {
         // Redirect non-admins to appropriate portal
-        console.log('❌ Non-admin user, redirecting to student auth');
+        console.log('❌ NON-ADMIN USER (role: ' + user.role + '), redirecting to student auth');
         navigate('/student-auth', { replace: true });
       }
     }

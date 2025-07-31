@@ -182,15 +182,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Enhanced debugging for protected routes
   React.useEffect(() => {
-    console.log('🛡️  ProtectedRoute evaluation:', {
+    console.log('🛡️  ProtectedRoute ROLE EVALUATION:', {
       path: location.pathname,
       requiredRole,
       userRole: user?.role,
+      roleType: typeof user?.role,
       isAuthenticated,
       loading,
       userId: user?.id,
       userEmail: user?.email,
-      shouldRedirect: isAuthenticated && user && requiredRole && user.role !== requiredRole
+      shouldRedirect: isAuthenticated && user && requiredRole && user.role !== requiredRole,
+      roleMatches: user?.role === requiredRole,
+      authContextUser: user
     });
   }, [user, requiredRole, isAuthenticated, loading, location.pathname]);
 

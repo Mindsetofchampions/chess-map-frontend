@@ -22,6 +22,19 @@ export const transformUser = (user: any): AuthUser | null => {
   
   const role = user.user_metadata?.role || user.app_metadata?.role || 'student';
   
+  // Critical role debugging for master admin issue
+  console.log('🔬 SUPABASE transformUser debug:', {
+    hasUser: !!user,
+    userId: user.id,
+    email: user.email,
+    userMetadataRole: user.user_metadata?.role,
+    appMetadataRole: user.app_metadata?.role,
+    finalRole: role,
+    roleType: typeof role,
+    fullUserMetadata: user.user_metadata,
+    fullAppMetadata: user.app_metadata
+  });
+  
   return {
     id: user.id,
     email: user.email || '',

@@ -318,16 +318,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           userEmail: session?.user?.email,
           userMetadata: session?.user?.user_metadata,
           appMetadata: session?.user?.app_metadata,
-          extractedRole: session?.user?.user_metadata?.role || session?.user?.app_metadata?.role
+          extractedRole: session?.user?.user_metadata?.role || session?.user?.app_metadata?.role,
+          sessionDetails: session
         });
         
         if (isMounted) {
           const transformedUser = transformUser(session?.user || null);
-          console.log('👤 Transformed user:', {
+          console.log('👤 User transformation result:', {
             id: transformedUser?.id,
             email: transformedUser?.email,
             role: transformedUser?.role,
-            fullUser: transformedUser
+            roleType: typeof transformedUser?.role,
+            fullUser: transformedUser,
+            rawSessionUser: session?.user
           });
           setUser(transformedUser);
           setLoading(false);
