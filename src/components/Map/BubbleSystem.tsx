@@ -299,7 +299,7 @@ const GlassBubble: React.FC<GlassBubbleProps> = ({ bubble, onClick, onPop, isPop
         type: "spring", 
         stiffness: 200, 
         damping: 15,
-        exit: { duration: 0.6 }
+        exit: { type: "tween", duration: 0.6 }
       }}
     >
       {/* Main Bubble */}
