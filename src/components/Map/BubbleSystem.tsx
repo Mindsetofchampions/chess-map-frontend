@@ -8,11 +8,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Users, Target, Shield, Sparkles, X } from 'lucide-react';
+import { CHESS_COLORS } from '../FloatingBubbles';
 
 /**
- * Bubble category types with specific colors
+ * CHESS attribute types for quest bubbles
  */
-export type BubbleCategory = 'safe_space' | 'community_hub' | 'active_quest';
+export type BubbleCategory = 'character' | 'health' | 'exploration' | 'stem' | 'stewardship';
 
 /**
  * Bubble data interface
@@ -28,112 +29,126 @@ export interface BubbleData {
   difficulty?: 'easy' | 'medium' | 'hard';
   participants?: number;
   isActive?: boolean;
+  sprite?: string;
+  character?: string;
 }
 
 /**
- * Bubble style configuration
+ * CHESS attribute bubble style configuration
  */
-const BUBBLE_STYLES: Record<BubbleCategory, {
+const CHESS_BUBBLE_STYLES: Record<BubbleCategory, {
   color: string;
   opacity: number;
-  icon: React.ComponentType<{ className?: string }>;
+  emoji: string;
   label: string;
   gradient: string;
+  character: string;
 }> = {
-  safe_space: {
-    color: '#10B981', // Emerald green
+  character: {
+    color: CHESS_COLORS.character,
     opacity: 0.7,
-    icon: Shield,
-    label: 'Safe Space',
-    gradient: 'from-emerald-400/30 to-emerald-600/30'
+    emoji: '🦉',
+    label: 'Character Quest',
+    gradient: 'from-purple-400/30 to-purple-600/30',
+    character: 'Hootie the Owl'
   },
-  community_hub: {
-    color: '#3B82F6', // Blue
+  health: {
+    color: CHESS_COLORS.health,
     opacity: 0.7,
-    icon: Users,
-    label: 'Community Hub',
-    gradient: 'from-blue-400/30 to-blue-600/30'
+    emoji: '🐱',
+    label: 'Health Quest',
+    gradient: 'from-green-400/30 to-green-600/30',
+    character: 'Brenda the Cat'
   },
-  active_quest: {
-    color: '#F59E0B', // Amber/Orange
+  exploration: {
+    color: CHESS_COLORS.exploration,
     opacity: 0.7,
-    icon: Target,
-    label: 'Active Quest',
-    gradient: 'from-amber-400/30 to-amber-600/30'
+    emoji: '🐕',
+    label: 'Exploration Quest',
+    gradient: 'from-orange-400/30 to-orange-600/30',
+    character: 'Gino the Dog'
+  },
+  stem: {
+    color: CHESS_COLORS.stem,
+    opacity: 0.7,
+    emoji: '🤖',
+    label: 'STEM Quest',
+    gradient: 'from-blue-400/30 to-blue-600/30',
+    character: 'Hammer the Robot'
+  },
+  stewardship: {
+    color: CHESS_COLORS.stewardship,
+    opacity: 0.7,
+    emoji: '🏛️',
+    label: 'Stewardship Quest',
+    gradient: 'from-red-400/30 to-red-600/30',
+    character: 'MOC Badge'
   }
 };
 
 /**
- * Sample Philadelphia bubble data
+ * Sample Philadelphia CHESS quest bubbles
  */
 export const PHILADELPHIA_SAMPLE_DATA: BubbleData[] = [
   {
-    id: 'liberty-bell-quest',
-    category: 'active_quest',
-    title: 'Liberty Bell History Challenge',
-    description: 'Explore American history through interactive challenges at Independence Hall.',
+    id: 'character-liberty-bell',
+    category: 'character',
+    title: 'Liberty Bell Character Challenge',
+    description: 'Learn about honesty and integrity through the story of the Liberty Bell with Hootie the Owl.',
     coordinates: [-75.1502, 39.9496],
     organization: 'Independence National Historical Park',
-    reward: 150,
-    difficulty: 'medium'
+    reward: 100,
+    difficulty: 'medium',
+    sprite: '/sprites/owl.gif/HOOTIE_WINGLIFT.gif',
+    character: 'Hootie the Owl'
   },
   {
-    id: 'art-museum-safe',
-    category: 'safe_space',
-    title: 'Philadelphia Museum of Art Learning Center',
-    description: 'Quiet study areas and collaborative learning spaces with free WiFi.',
+    id: 'health-fitness-trail',
+    category: 'health',
+    title: 'Schuylkill River Fitness Trail',
+    description: 'Complete wellness challenges with Brenda the Cat along Philadelphia\'s scenic river trail.',
     coordinates: [-75.1810, 39.9656],
-    organization: 'Philadelphia Museum of Art',
-    participants: 25
-  },
-  {
-    id: 'franklin-square-hub',
-    category: 'community_hub',
-    title: 'Franklin Square Community Center',
-    description: 'Community meetup point with educational activities and peer mentoring.',
-    coordinates: [-75.1503, 39.9551],
     organization: 'Philadelphia Parks & Recreation',
-    participants: 45,
-    isActive: true
+    reward: 75,
+    difficulty: 'easy',
+    sprite: '/sprites/cat.gif/KITTY_BOUNCE.gif',
+    character: 'Brenda the Cat'
   },
   {
-    id: 'science-museum-quest',
-    category: 'active_quest',
+    id: 'exploration-historic-philly',
+    category: 'exploration',
+    title: 'Historic Philadelphia Discovery',
+    description: 'Explore hidden gems and historic sites with Gino the Dog through Old City Philadelphia.',
+    coordinates: [-75.1503, 39.9551],
+    organization: 'Visit Philadelphia',
+    reward: 125,
+    difficulty: 'medium',
+    sprite: '/sprites/dog.gif/GINO_COMPASSSPIN.gif',
+    character: 'Gino the Dog'
+  },
+  {
+    id: 'stem-franklin-institute',
+    category: 'stem',
     title: 'STEM Innovation Lab',
-    description: 'Hands-on science experiments and technology challenges.',
+    description: 'Build robots and conduct experiments with Hammer the Robot at Philadelphia\'s premier science museum.',
     coordinates: [-75.1738, 39.9580],
     organization: 'Franklin Institute',
     reward: 200,
-    difficulty: 'hard'
+    difficulty: 'hard',
+    sprite: '/sprites/robot.gif/HAMMER_SWING.gif',
+    character: 'Hammer the Robot'
   },
   {
-    id: 'rittenhouse-safe',
-    category: 'safe_space',
-    title: 'Rittenhouse Square Study Garden',
-    description: 'Peaceful outdoor study area with benches and WiFi access.',
+    id: 'stewardship-fairmount-park',
+    category: 'stewardship',
+    title: 'Fairmount Park Conservation',
+    description: 'Learn environmental stewardship and community leadership with the MOC Badge in America\'s largest urban park.',
     coordinates: [-75.1723, 39.9495],
-    organization: 'Center City District',
-    participants: 18
-  },
-  {
-    id: 'penn-landing-hub',
-    category: 'community_hub',
-    title: 'Penn\'s Landing Event Plaza',
-    description: 'Large community gathering space for educational events and festivals.',
-    coordinates: [-75.1402, 39.9495],
-    organization: 'Delaware River Waterfront Corp',
-    participants: 120,
-    isActive: true
-  },
-  {
-    id: 'chinatown-quest',
-    category: 'active_quest',
-    title: 'Cultural Heritage Explorer',
-    description: 'Learn about Philadelphia\'s diverse cultural communities and traditions.',
-    coordinates: [-75.1541, 39.9557],
-    organization: 'Philadelphia Chinatown Development Corp',
-    reward: 100,
-    difficulty: 'easy'
+    organization: 'Fairmount Park Conservancy',
+    reward: 150,
+    difficulty: 'medium',
+    sprite: '/sprites/badge.gif/BADGE_SHINE.gif',
+    character: 'MOC Badge'
   }
 ];
 
@@ -151,7 +166,7 @@ interface BubbleTooltipProps {
  * Glass-style bubble tooltip component
  */
 const BubbleTooltip: React.FC<BubbleTooltipProps> = ({ bubble, position, onClose, onPop }) => {
-  const style = BUBBLE_STYLES[bubble.category];
+  const style = CHESS_BUBBLE_STYLES[bubble.category];
 
   const handlePop = () => {
     onPop(bubble.id);
@@ -186,11 +201,11 @@ const BubbleTooltip: React.FC<BubbleTooltipProps> = ({ bubble, position, onClose
             className={`p-2 rounded-full bg-gradient-to-br ${style.gradient}`}
             style={{ backgroundColor: `${style.color}40` }}
           >
-            <style.icon className="w-5 h-5 text-white" />
+            <span className="text-lg">{style.emoji}</span>
           </div>
           <div>
             <h3 className="text-white font-bold text-sm">{bubble.title}</h3>
-            <p className="text-gray-200 text-xs">{style.label}</p>
+            <p className="text-gray-200 text-xs">{style.character}</p>
           </div>
         </div>
 
@@ -215,13 +230,6 @@ const BubbleTooltip: React.FC<BubbleTooltipProps> = ({ bubble, position, onClose
             </div>
           )}
           
-          {bubble.participants && (
-            <div className="flex items-center gap-2 text-xs text-blue-300">
-              <Users className="w-3 h-3" />
-              <span>{bubble.participants} participants</span>
-            </div>
-          )}
-
           {bubble.difficulty && (
             <div className="flex items-center gap-2 text-xs">
               <div className={`w-2 h-2 rounded-full ${
@@ -249,9 +257,7 @@ const BubbleTooltip: React.FC<BubbleTooltipProps> = ({ bubble, position, onClose
             boxShadow: `0 4px 20px ${style.color}40`
           }}
         >
-          {bubble.category === 'active_quest' ? 'Start Quest' :
-           bubble.category === 'safe_space' ? 'Visit Space' :
-           'Join Community'}
+          Start {style.label}
         </button>
       </div>
     </motion.div>
@@ -266,14 +272,28 @@ interface GlassBubbleProps {
   onClick: (bubble: BubbleData, position: { x: number; y: number }) => void;
   onPop: (bubbleId: string) => void;
   isPopped?: boolean;
+  mousePosition: { x: number; y: number };
 }
 
 /**
  * Individual glass bubble component
  */
-const GlassBubble: React.FC<GlassBubbleProps> = ({ bubble, onClick, onPop, isPopped }) => {
-  const style = BUBBLE_STYLES[bubble.category];
+const GlassBubble: React.FC<GlassBubbleProps> = ({ bubble, onClick, onPop, isPopped, mousePosition }) => {
+  const style = CHESS_BUBBLE_STYLES[bubble.category];
   const [isHovered, setIsHovered] = useState(false);
+  const [bubblePosition, setBubblePosition] = useState({ x: 0, y: 0 });
+
+  // Update bubble position to follow mouse when hovered
+  useEffect(() => {
+    if (isHovered) {
+      setBubblePosition({
+        x: mousePosition.x * 0.1, // Subtle following movement
+        y: mousePosition.y * 0.1
+      });
+    } else {
+      setBubblePosition({ x: 0, y: 0 });
+    }
+  }, [isHovered, mousePosition]);
 
   const handleClick = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -301,6 +321,16 @@ const GlassBubble: React.FC<GlassBubbleProps> = ({ bubble, onClick, onPop, isPop
         damping: 15,
         exit: { type: "tween", duration: 0.6 }
       }}
+      animate={{
+        x: bubblePosition.x,
+        y: bubblePosition.y,
+        scale: isHovered ? 1.2 : 1
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 150,
+        damping: 20
+      }}
     >
       {/* Main Bubble */}
       <motion.div
@@ -308,22 +338,12 @@ const GlassBubble: React.FC<GlassBubbleProps> = ({ bubble, onClick, onPop, isPop
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={handleClick}
-        whileHover={{ scale: 1.2, zIndex: 100 }}
         whileTap={{ scale: 0.9 }}
-        animate={{
-          y: [0, -8, 0],
-          rotate: [0, 2, -2, 0]
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
       >
         {/* Glass Bubble Container */}
         <div
           className={`
-            w-16 h-16 rounded-full 
+            w-20 h-20 rounded-full 
             backdrop-blur-md border-2 border-white/40
             shadow-lg flex items-center justify-center
             transition-all duration-300
@@ -333,7 +353,7 @@ const GlassBubble: React.FC<GlassBubbleProps> = ({ bubble, onClick, onPop, isPop
             boxShadow: `0 8px 32px ${style.color}40, inset 0 1px 0 rgba(255,255,255,0.2)`
           }}
         >
-          <style.icon className="w-6 h-6 text-white drop-shadow-lg" />
+          <span className="text-2xl drop-shadow-lg">{style.emoji}</span>
         </div>
 
         {/* Pulse Ring */}
@@ -341,8 +361,8 @@ const GlassBubble: React.FC<GlassBubbleProps> = ({ bubble, onClick, onPop, isPop
           className="absolute inset-0 rounded-full border-2 pointer-events-none"
           style={{ borderColor: style.color }}
           animate={{
-            scale: [1, 1.5, 1],
-            opacity: [0.8, 0, 0.8],
+            scale: [1, 1.3],
+            opacity: [0.8, 0],
           }}
           transition={{
             duration: 2,
@@ -359,22 +379,13 @@ const GlassBubble: React.FC<GlassBubbleProps> = ({ bubble, onClick, onPop, isPop
               style={{
                 background: `linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)`
               }}
-              initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 90, opacity: 1 }}
-              exit={{ rotate: 270, opacity: 0 }}
+              initial={{ rotate: 0, opacity: 0 }}
+              animate={{ rotate: 360, opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.6 }}
             />
           )}
         </AnimatePresence>
-
-        {/* Activity Indicator */}
-        {bubble.isActive && (
-          <motion.div
-            className="absolute -top-1 -right-1 w-4 h-4 bg-cyber-green-400 rounded-full border-2 border-white"
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 1, repeat: Infinity }}
-          />
-        )}
 
         {/* Particle Effect on Hover */}
         <AnimatePresence>
@@ -437,6 +448,7 @@ const BubbleSystem: React.FC<BubbleSystemProps> = ({
     position: { x: number; y: number };
   } | null>(null);
   const [poppedBubbles, setPoppedBubbles] = useState<Set<string>>(new Set());
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   /**
    * Convert coordinates to screen position
@@ -487,6 +499,18 @@ const BubbleSystem: React.FC<BubbleSystemProps> = ({
     setTooltip(null);
   }, []);
 
+  /**
+   * Track mouse position for bubble following effect
+   */
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   return (
     <>
       {/* Bubble Markers */}
@@ -511,6 +535,7 @@ const BubbleSystem: React.FC<BubbleSystemProps> = ({
                   onClick={handleBubbleClick}
                   onPop={handleBubblePop}
                   isPopped={poppedBubbles.has(bubble.id)}
+                  mousePosition={mousePosition}
                 />
               </div>
             );
@@ -537,20 +562,21 @@ const BubbleSystem: React.FC<BubbleSystemProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1 }}
       >
-        <h4 className="text-white font-bold text-sm mb-3">Philadelphia Quest Map</h4>
+        <h4 className="text-white font-bold text-sm mb-3">CHESS Quest Bubbles</h4>
         <div className="space-y-2">
-          {Object.entries(BUBBLE_STYLES).map(([category, style]) => (
+          {Object.entries(CHESS_BUBBLE_STYLES).map(([category, style]) => (
             <div key={category} className="flex items-center gap-2 text-xs text-gray-100">
+              <span className="text-sm">{style.emoji}</span>
               <div
                 className="w-3 h-3 rounded-full border border-white/40"
                 style={{ backgroundColor: `${style.color}${Math.round(style.opacity * 255).toString(16)}` }}
               />
-              <span>{style.label}</span>
+              <span>{style.character}</span>
             </div>
           ))}
         </div>
         <div className="mt-3 text-xs text-gray-300">
-          Click bubbles to interact • {bubbles.length - poppedBubbles.size} active
+          Hover to follow mouse • Click to start quest • {bubbles.length - poppedBubbles.size} active
         </div>
       </motion.div>
     </>
