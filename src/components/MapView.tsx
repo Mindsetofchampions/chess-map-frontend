@@ -36,8 +36,8 @@ const MapView: React.FC<MapViewProps> = ({
   // Authentication context
   const { user, isAuthenticated } = useAuth();
 
-  // Get token from environment
-  const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN || import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  // Get token from environment using correct variable name
+  const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN_PK || import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
   /**
    * Fetch quests from Supabase
