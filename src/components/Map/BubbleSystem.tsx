@@ -11,9 +11,9 @@ import { MapPin, Users, Target, Shield, Sparkles, X } from 'lucide-react';
 import { CHESS_COLORS } from '../FloatingBubbles';
 
 /**
- * CHESS attribute types for quest bubbles
+ * CHESS attribute types for quest bubbles plus safe spaces and events
  */
-export type BubbleCategory = 'character' | 'health' | 'exploration' | 'stem' | 'stewardship';
+export type BubbleCategory = 'character' | 'health' | 'exploration' | 'stem' | 'stewardship' | 'safe_space' | 'event';
 
 /**
  * Bubble data interface
@@ -34,9 +34,9 @@ export interface BubbleData {
 }
 
 /**
- * CHESS attribute bubble style configuration
+ * CHESS attribute bubble style configuration plus safe spaces and events
  */
-const CHESS_BUBBLE_STYLES: Record<BubbleCategory, {
+const BUBBLE_STYLES: Record<BubbleCategory, {
   color: string;
   opacity: number;
   emoji: string;
@@ -83,6 +83,22 @@ const CHESS_BUBBLE_STYLES: Record<BubbleCategory, {
     label: 'Stewardship Quest',
     gradient: 'from-red-400/30 to-red-600/30',
     character: 'MOC Badge'
+  },
+  safe_space: {
+    color: '#34D399', // Emerald green for safety
+    opacity: 0.7,
+    emoji: '🛡️',
+    label: 'Safe Space',
+    gradient: 'from-emerald-400/30 to-emerald-600/30',
+    character: 'Safe Learning Zone'
+  },
+  event: {
+    color: '#A78BFA', // Light purple for events
+    opacity: 0.7,
+    emoji: '📅',
+    label: 'Community Event',
+    gradient: 'from-violet-400/30 to-violet-600/30',
+    character: 'Community Gathering'
   }
 };
 
@@ -91,7 +107,7 @@ const CHESS_BUBBLE_STYLES: Record<BubbleCategory, {
  */
 export const PHILADELPHIA_SAMPLE_DATA: BubbleData[] = [
   {
-    id: 'character-liberty-bell',
+    id: 'quest-character-liberty-bell',
     category: 'character',
     title: 'Liberty Bell Character Challenge',
     description: 'Learn about honesty and integrity through the story of the Liberty Bell with Hootie the Owl.',
@@ -103,7 +119,7 @@ export const PHILADELPHIA_SAMPLE_DATA: BubbleData[] = [
     character: 'Hootie the Owl'
   },
   {
-    id: 'health-fitness-trail',
+    id: 'quest-health-fitness-trail',
     category: 'health',
     title: 'Schuylkill River Fitness Trail',
     description: 'Complete wellness challenges with Brenda the Cat along Philadelphia\'s scenic river trail.',
@@ -115,7 +131,7 @@ export const PHILADELPHIA_SAMPLE_DATA: BubbleData[] = [
     character: 'Brenda the Cat'
   },
   {
-    id: 'exploration-historic-philly',
+    id: 'quest-exploration-historic-philly',
     category: 'exploration',
     title: 'Historic Philadelphia Discovery',
     description: 'Explore hidden gems and historic sites with Gino the Dog through Old City Philadelphia.',
@@ -127,7 +143,7 @@ export const PHILADELPHIA_SAMPLE_DATA: BubbleData[] = [
     character: 'Gino the Dog'
   },
   {
-    id: 'stem-franklin-institute',
+    id: 'quest-stem-franklin-institute',
     category: 'stem',
     title: 'STEM Innovation Lab',
     description: 'Build robots and conduct experiments with Hammer the Robot at Philadelphia\'s premier science museum.',
@@ -139,7 +155,7 @@ export const PHILADELPHIA_SAMPLE_DATA: BubbleData[] = [
     character: 'Hammer the Robot'
   },
   {
-    id: 'stewardship-fairmount-park',
+    id: 'quest-stewardship-fairmount-park',
     category: 'stewardship',
     title: 'Fairmount Park Conservation',
     description: 'Learn environmental stewardship and community leadership with the MOC Badge in America\'s largest urban park.',
@@ -149,6 +165,28 @@ export const PHILADELPHIA_SAMPLE_DATA: BubbleData[] = [
     difficulty: 'medium',
     sprite: '/sprites/badge.gif/BADGE_SHINE.gif',
     character: 'MOC Badge'
+  },
+  {
+    id: 'safe-space-free-library',
+    category: 'safe_space',
+    title: 'Free Library Study Sanctuary',
+    description: 'A quiet, safe learning environment with free tutoring and study resources available to all students.',
+    coordinates: [-75.1635, 39.9611],
+    organization: 'Free Library of Philadelphia',
+    participants: 45,
+    isActive: true,
+    character: 'Safe Learning Zone'
+  },
+  {
+    id: 'event-maker-festival',
+    category: 'event',
+    title: 'Philadelphia Maker Festival',
+    description: 'Join the community for hands-on STEM activities, 3D printing demos, and collaborative learning workshops.',
+    coordinates: [-75.1437, 39.9537],
+    organization: 'Philadelphia Maker Collective',
+    participants: 120,
+    isActive: true,
+    character: 'Community Gathering'
   }
 ];
 
@@ -166,7 +204,7 @@ interface BubbleTooltipProps {
  * Glass-style bubble tooltip component
  */
 const BubbleTooltip: React.FC<BubbleTooltipProps> = ({ bubble, position, onClose, onPop }) => {
-  const style = CHESS_BUBBLE_STYLES[bubble.category];
+  const style = BUBBLE_STYLES[bubble.category];
 
   const handlePop = () => {
     onPop(bubble.id);
@@ -279,7 +317,7 @@ interface GlassBubbleProps {
  * Individual glass bubble component
  */
 const GlassBubble: React.FC<GlassBubbleProps> = ({ bubble, onClick, onPop, isPopped, mousePosition }) => {
-  const style = CHESS_BUBBLE_STYLES[bubble.category];
+  const style = BUBBLE_STYLES[bubble.category];
   const [isHovered, setIsHovered] = useState(false);
   const [bubblePosition, setBubblePosition] = useState({ x: 0, y: 0 });
 
@@ -564,7 +602,7 @@ const BubbleSystem: React.FC<BubbleSystemProps> = ({
       >
         <h4 className="text-white font-bold text-sm mb-3">CHESS Quest Bubbles</h4>
         <div className="space-y-2">
-          {Object.entries(CHESS_BUBBLE_STYLES).map(([category, style]) => (
+          {Object.entries(BUBBLE_STYLES).map(([category, style]) => (
             <div key={category} className="flex items-center gap-2 text-xs text-gray-100">
               <span className="text-sm">{style.emoji}</span>
               <div
