@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
-import { motion } from 'framer-motion';
-import { Shield, Users, Target, MapPin } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Shield, Users, Target, MapPin, Sparkles, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { questHelpers, analyticsHelpers } from '../lib/supabase';
 import { Quest } from '../types/database';
@@ -28,79 +28,88 @@ interface QuestBubble {
   category: QuestCategory;
   title: string;
   description: string;
-  position: { x: number; y: number }; // Screen coordinates
+  position: { x: number; y: number }; // Screen coordinates as percentages
   coordinates: [number, number]; // Map coordinates [lng, lat]
   sprite: string;
   character: string;
   reward?: number;
   difficulty?: 'easy' | 'medium' | 'hard';
   organization?: string;
+  participants?: number;
 }
 
 /**
- * CHESS Category Styling
+ * CHESS Category Styling with Sprite Files
  */
 const QUEST_STYLES: Record<QuestCategory, {
   color: string;
-  emoji: string;
+  sprite: string;
   label: string;
   character: string;
+  gradient: string;
 }> = {
   character: {
     color: CHESS_COLORS.character, // Purple
-    emoji: '🦉',
+    sprite: '/sprites/owl.gif/HOOTIE_WINGLIFT.gif',
     label: 'Character Quest',
-    character: 'Hootie the Owl'
+    character: 'Hootie the Owl',
+    gradient: 'from-purple-400/30 to-purple-600/30'
   },
   health: {
     color: CHESS_COLORS.health, // Green
-    emoji: '🐱',
+    sprite: '/sprites/cat.gif/KITTY_BOUNCE.gif',
     label: 'Health Quest', 
-    character: 'Brenda the Cat'
+    character: 'Brenda the Cat',
+    gradient: 'from-green-400/30 to-green-600/30'
   },
   exploration: {
     color: CHESS_COLORS.exploration, // Orange
-    emoji: '🐕',
+    sprite: '/sprites/dog.gif/GINO_COMPASSSPIN.gif',
     label: 'Exploration Quest',
-    character: 'Gino the Dog'
+    character: 'Gino the Dog',
+    gradient: 'from-orange-400/30 to-orange-600/30'
   },
   stem: {
     color: CHESS_COLORS.stem, // Blue
-    emoji: '🤖', 
+    sprite: '/sprites/robot.gif/HAMMER_SWING.gif', 
     label: 'STEM Quest',
-    character: 'Hammer the Robot'
+    character: 'Hammer the Robot',
+    gradient: 'from-blue-400/30 to-blue-600/30'
   },
   stewardship: {
     color: CHESS_COLORS.stewardship, // Red
-    emoji: '🏛️',
+    sprite: '/sprites/badge.gif/BADGE_SHINE.gif',
     label: 'Stewardship Quest',
-    character: 'MOC Badge'
+    character: 'MOC Badge',
+    gradient: 'from-red-400/30 to-red-600/30'
   },
   safe_space: {
     color: '#06D6A0', // Bright Teal
-    emoji: '🛡️',
+    sprite: '/sprites/badge.gif/BADGE_SHINE.gif',
     label: 'Safe Space',
-    character: 'Protected Learning Zone'
+    character: 'Protected Learning Zone',
+    gradient: 'from-teal-400/30 to-teal-600/30'
   },
   event: {
-    color: '#FF6B9D', // Bright Pink
-    emoji: '📅',
+    color: '#A78BFA', // Bright Violet
+    sprite: '/sprites/owl.gif/HOOTIE_WINGLIFT.gif',
     label: 'Community Event',
-    character: 'Learning Event'
+    character: 'Learning Event',
+    gradient: 'from-violet-400/30 to-violet-600/30'
   }
 };
 
 /**
- * Philadelphia sample quest bubbles
+ * Philadelphia CHESS quest bubbles with sprite integration
  */
 const PHILADELPHIA_BUBBLES: QuestBubble[] = [
-  // CHESS Quest Bubbles
+  // CHESS Quest Bubbles - All 5 categories
   {
     id: 'character-liberty-bell',
     category: 'character',
     title: 'Liberty Bell Character Challenge',
     description: 'Learn about honesty and integrity through the story of the Liberty Bell with Hootie the Owl.',
-    position: { x: 400, y: 300 },
+    position: { x: 45, y: 35 },
     coordinates: [-75.1502, 39.9496],
     sprite: '/sprites/owl.gif/HOOTIE_WINGLIFT.gif',
     character: 'Hootie the Owl',
@@ -113,7 +122,7 @@ const PHILADELPHIA_BUBBLES: QuestBubble[] = [
     category: 'health',
     title: 'Schuylkill River Fitness Trail',
     description: 'Complete wellness challenges with Brenda the Cat along Philadelphia\'s scenic river trail.',
-    position: { x: 200, y: 150 },
+    position: { x: 25, y: 25 },
     coordinates: [-75.1810, 39.9656],
     sprite: '/sprites/cat.gif/KITTY_BOUNCE.gif',
     character: 'Brenda the Cat',
@@ -126,7 +135,7 @@ const PHILADELPHIA_BUBBLES: QuestBubble[] = [
     category: 'exploration',
     title: 'Historic Philadelphia Discovery',
     description: 'Explore hidden gems and historic sites with Gino the Dog through Old City Philadelphia.',
-    position: { x: 500, y: 200 },
+    position: { x: 65, y: 30 },
     coordinates: [-75.1503, 39.9551],
     sprite: '/sprites/dog.gif/GINO_COMPASSSPIN.gif',
     character: 'Gino the Dog',
@@ -139,7 +148,7 @@ const PHILADELPHIA_BUBBLES: QuestBubble[] = [
     category: 'stem',
     title: 'Franklin Institute Innovation Lab',
     description: 'Build robots and conduct experiments with Hammer the Robot at Philadelphia\'s premier science museum.',
-    position: { x: 300, y: 400 },
+    position: { x: 35, y: 55 },
     coordinates: [-75.1738, 39.9580],
     sprite: '/sprites/robot.gif/HAMMER_SWING.gif',
     character: 'Hammer the Robot',
@@ -152,7 +161,7 @@ const PHILADELPHIA_BUBBLES: QuestBubble[] = [
     category: 'stewardship',
     title: 'Fairmount Park Conservation',
     description: 'Learn environmental stewardship and community leadership with the MOC Badge in America\'s largest urban park.',
-    position: { x: 150, y: 350 },
+    position: { x: 20, y: 60 },
     coordinates: [-75.1723, 39.9495],
     sprite: '/sprites/badge.gif/BADGE_SHINE.gif',
     character: 'MOC Badge',
@@ -167,22 +176,24 @@ const PHILADELPHIA_BUBBLES: QuestBubble[] = [
     category: 'safe_space',
     title: 'Free Library Study Sanctuary',
     description: 'A quiet, safe learning environment with free tutoring and study resources available to all students.',
-    position: { x: 350, y: 250 },
+    position: { x: 55, y: 45 },
     coordinates: [-75.1635, 39.9611],
-    sprite: '/icons/safe-space-icon.png',
+    sprite: '/sprites/badge.gif/BADGE_SHINE.gif',
     character: 'Protected Learning Zone',
-    organization: 'Free Library of Philadelphia'
+    organization: 'Free Library of Philadelphia',
+    participants: 45
   },
   {
     id: 'safe-space-community-center',
     category: 'safe_space',
     title: 'Community Learning Center',
     description: 'Welcoming space for collaborative learning, homework help, and peer mentoring programs.',
-    position: { x: 450, y: 350 },
+    position: { x: 75, y: 70 },
     coordinates: [-75.1580, 39.9800],
-    sprite: '/icons/safe-space-icon.png',
+    sprite: '/sprites/badge.gif/BADGE_SHINE.gif',
     character: 'Protected Learning Zone',
-    organization: 'Philadelphia Community Centers'
+    organization: 'Philadelphia Community Centers',
+    participants: 60
   },
   
   // Event Bubbles
@@ -191,75 +202,222 @@ const PHILADELPHIA_BUBBLES: QuestBubble[] = [
     category: 'event',
     title: 'Philadelphia Maker Festival',
     description: 'Join the community for hands-on STEM activities, 3D printing demos, and collaborative learning workshops.',
-    position: { x: 250, y: 450 },
+    position: { x: 30, y: 75 },
     coordinates: [-75.1437, 39.9537],
-    sprite: '/icons/event-icon.png',
+    sprite: '/sprites/owl.gif/HOOTIE_WINGLIFT.gif',
     character: 'Learning Event',
-    organization: 'Philadelphia Maker Collective'
+    organization: 'Philadelphia Maker Collective',
+    participants: 120
   },
   {
     id: 'event-science-expo',
     category: 'event',
     title: 'Young Scientists Expo',
     description: 'Students showcase their research projects and compete in science fair competitions with community judges.',
-    position: { x: 550, y: 180 },
+    position: { x: 70, y: 20 },
     coordinates: [-75.1400, 39.9650],
-    sprite: '/icons/event-icon.png',
+    sprite: '/sprites/owl.gif/HOOTIE_WINGLIFT.gif',
     character: 'Learning Event',
-    organization: 'Philadelphia Science Alliance'
+    organization: 'Philadelphia Science Alliance',
+    participants: 85
   }
 ];
 
 /**
- * Individual Quest Bubble Component
+ * Bubble tooltip component
+ */
+interface BubbleTooltipProps {
+  bubble: QuestBubble;
+  position: { x: number; y: number };
+  onClose: () => void;
+  onStartQuest: (bubble: QuestBubble) => void;
+}
+
+const BubbleTooltip: React.FC<BubbleTooltipProps> = ({ bubble, position, onClose, onStartQuest }) => {
+  const style = QUEST_STYLES[bubble.category];
+
+  const handleStart = () => {
+    onStartQuest(bubble);
+    onClose();
+  };
+
+  return (
+    <motion.div
+      className="fixed z-50 pointer-events-auto"
+      style={{
+        left: `${Math.min(position.x, window.innerWidth - 320)}px`,
+        top: `${Math.max(position.y - 200, 20)}px`,
+      }}
+      initial={{ opacity: 0, scale: 0.8, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.8, y: 20 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+    >
+      <div className="bg-white/30 backdrop-blur-2xl border border-white/40 rounded-2xl shadow-2xl p-6 max-w-sm">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors min-w-touch min-h-touch touch-manipulation"
+          aria-label="Close tooltip"
+        >
+          <X className="w-4 h-4 text-white" />
+        </button>
+
+        {/* Header with Sprite */}
+        <div className="flex items-center gap-4 mb-4 pr-8">
+          <div 
+            className="w-12 h-12 rounded-full flex items-center justify-center border-2 border-white/40"
+            style={{ backgroundColor: `${style.color}40` }}
+          >
+            <img 
+              src={style.sprite} 
+              alt={style.character}
+              className="w-8 h-8 object-contain"
+              draggable={false}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent) {
+                  parent.innerHTML = `<div class="text-2xl">${
+                    bubble.category === 'character' ? '🦉' :
+                    bubble.category === 'health' ? '🐱' :
+                    bubble.category === 'exploration' ? '🐕' :
+                    bubble.category === 'stem' ? '🤖' :
+                    bubble.category === 'stewardship' ? '🏛️' :
+                    bubble.category === 'safe_space' ? '🛡️' : '📅'
+                  }</div>`;
+                }
+              }}
+            />
+          </div>
+          <div>
+            <h3 className="text-white font-bold text-lg">{bubble.title}</h3>
+            <p className="text-gray-200 text-sm">{style.character}</p>
+          </div>
+        </div>
+
+        {/* Description */}
+        <p className="text-gray-100 text-sm mb-4 leading-relaxed">
+          {bubble.description}
+        </p>
+
+        {/* Metadata */}
+        <div className="space-y-2 mb-6">
+          {bubble.organization && (
+            <div className="flex items-center gap-2 text-xs text-gray-200">
+              <MapPin className="w-3 h-3" />
+              <span>{bubble.organization}</span>
+            </div>
+          )}
+          
+          {bubble.reward && (
+            <div className="flex items-center gap-2 text-xs text-yellow-300">
+              <Sparkles className="w-3 h-3" />
+              <span>{bubble.reward} coins reward</span>
+            </div>
+          )}
+          
+          {bubble.difficulty && (
+            <div className="flex items-center gap-2 text-xs">
+              <div className={`w-2 h-2 rounded-full ${
+                bubble.difficulty === 'easy' ? 'bg-green-400' :
+                bubble.difficulty === 'medium' ? 'bg-yellow-400' :
+                'bg-red-400'
+              }`} />
+              <span className="text-gray-200 capitalize">{bubble.difficulty} difficulty</span>
+            </div>
+          )}
+
+          {bubble.participants && (
+            <div className="flex items-center gap-2 text-xs text-blue-300">
+              <Users className="w-3 h-3" />
+              <span>{bubble.participants} participants</span>
+            </div>
+          )}
+        </div>
+
+        {/* Action Button */}
+        <button
+          onClick={handleStart}
+          className="w-full py-3 px-4 rounded-xl font-semibold text-white transition-all duration-200 min-h-[44px] touch-manipulation hover:scale-105"
+          style={{ 
+            backgroundColor: `${style.color}80`,
+            boxShadow: `0 4px 20px ${style.color}40`,
+            border: `1px solid ${style.color}60`
+          }}
+        >
+          {bubble.category === 'safe_space' ? 'Enter Safe Space' :
+           bubble.category === 'event' ? 'Join Event' :
+           'Start Quest'}
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
+/**
+ * Individual Quest Bubble Component with Sprite
  */
 interface QuestBubbleProps {
   bubble: QuestBubble;
   mousePosition: { x: number; y: number };
-  onClick: (bubble: QuestBubble) => void;
-  isVisible: boolean;
+  containerRect: DOMRect | null;
+  onClick: (bubble: QuestBubble, position: { x: number; y: number }) => void;
 }
 
 const QuestBubbleComponent: React.FC<QuestBubbleProps> = ({ 
   bubble, 
   mousePosition, 
-  onClick,
-  isVisible 
+  containerRect,
+  onClick
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [followPosition, setFollowPosition] = useState({ x: 0, y: 0 });
   const style = QUEST_STYLES[bubble.category];
 
+  // Calculate absolute position from percentage
+  const absolutePosition = containerRect ? {
+    x: (bubble.position.x / 100) * containerRect.width,
+    y: (bubble.position.y / 100) * containerRect.height
+  } : { x: 0, y: 0 };
+
   // Update position to follow mouse when hovered
   useEffect(() => {
-    if (isHovered) {
+    if (isHovered && containerRect) {
+      const deltaX = mousePosition.x - absolutePosition.x;
+      const deltaY = mousePosition.y - absolutePosition.y;
+      
       setFollowPosition({
-        x: (mousePosition.x - bubble.position.x) * 0.1,
-        y: (mousePosition.y - bubble.position.y) * 0.1
+        x: deltaX * 0.1, // Follow 10% of mouse movement
+        y: deltaY * 0.1
       });
     } else {
       setFollowPosition({ x: 0, y: 0 });
     }
-  }, [isHovered, mousePosition, bubble.position]);
+  }, [isHovered, mousePosition, absolutePosition, containerRect]);
 
-  const handleClick = () => {
-    onClick(bubble);
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    onClick(bubble, {
+      x: rect.left + rect.width / 2,
+      y: rect.top
+    });
   };
-
-  if (!isVisible) return null;
 
   return (
     <motion.div
       className="absolute pointer-events-auto cursor-pointer"
       style={{
-        left: bubble.position.x,
-        top: bubble.position.y,
+        left: `${bubble.position.x}%`,
+        top: `${bubble.position.y}%`,
         transform: 'translate(-50%, -50%)',
-        zIndex: 20
+        zIndex: 30
       }}
       initial={{ scale: 0, opacity: 0 }}
       animate={{ 
-        scale: 1, 
+        scale: isHovered ? 1.2 : 1, 
         opacity: 1,
         x: followPosition.x,
         y: followPosition.y
@@ -268,15 +426,14 @@ const QuestBubbleComponent: React.FC<QuestBubbleProps> = ({
         type: "spring", 
         stiffness: 200, 
         damping: 15,
-        delay: PHILADELPHIA_BUBBLES.indexOf(bubble) * 0.3
+        delay: PHILADELPHIA_BUBBLES.indexOf(bubble) * 0.2
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleClick}
-      whileHover={{ scale: 1.2 }}
       whileTap={{ scale: 0.9 }}
     >
-      {/* Glass Bubble */}
+      {/* Glass Bubble with Sprite */}
       <div
         className="relative w-16 h-16 rounded-full backdrop-blur-md border-2 border-white/40 shadow-xl flex items-center justify-center transition-all duration-300"
         style={{
@@ -284,7 +441,29 @@ const QuestBubbleComponent: React.FC<QuestBubbleProps> = ({
           boxShadow: `0 8px 32px ${style.color}40, inset 0 1px 0 rgba(255,255,255,0.3)`
         }}
       >
-        <span className="text-2xl drop-shadow-lg select-none">{style.emoji}</span>
+        <img 
+          src={style.sprite}
+          alt={style.character}
+          className="w-10 h-10 object-contain drop-shadow-lg select-none"
+          draggable={false}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent && !parent.querySelector('.fallback-emoji')) {
+              const fallback = document.createElement('div');
+              fallback.className = 'fallback-emoji text-2xl';
+              fallback.textContent = 
+                bubble.category === 'character' ? '🦉' :
+                bubble.category === 'health' ? '🐱' :
+                bubble.category === 'exploration' ? '🐕' :
+                bubble.category === 'stem' ? '🤖' :
+                bubble.category === 'stewardship' ? '🏛️' :
+                bubble.category === 'safe_space' ? '🛡️' : '📅';
+              parent.appendChild(fallback);
+            }
+          }}
+        />
         
         {/* Shimmer effect on hover */}
         {isHovered && (
@@ -312,7 +491,7 @@ const QuestBubbleComponent: React.FC<QuestBubbleProps> = ({
           duration: 2,
           repeat: Infinity,
           ease: "easeInOut",
-          delay: PHILADELPHIA_BUBBLES.indexOf(bubble) * 0.5
+          delay: PHILADELPHIA_BUBBLES.indexOf(bubble) * 0.3
         }}
       />
 
@@ -365,21 +544,32 @@ const MapView: React.FC<MapViewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [showBubbles, setShowBubbles] = useState(false);
+  const [containerRect, setContainerRect] = useState<DOMRect | null>(null);
+  const [tooltip, setTooltip] = useState<{
+    bubble: QuestBubble;
+    position: { x: number; y: number };
+  } | null>(null);
   
   // Authentication context
   const { user } = useAuth();
 
   // Get token from environment
-  const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN_PK || import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN || import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
   /**
    * Handle bubble click
    */
-  const handleBubbleClick = useCallback((bubble: QuestBubble) => {
-    console.log('Bubble clicked:', bubble);
+  const handleBubbleClick = useCallback((bubble: QuestBubble, clickPosition: { x: number; y: number }) => {
+    setTooltip({ bubble, position: clickPosition });
+  }, []);
+
+  /**
+   * Handle quest start from tooltip
+   */
+  const handleStartQuest = useCallback((bubble: QuestBubble) => {
+    console.log(`Starting ${bubble.category} quest:`, bubble.title);
     
     if (bubble.category === 'safe_space') {
       console.log('Accessing safe space:', bubble.title);
@@ -390,17 +580,24 @@ const MapView: React.FC<MapViewProps> = ({
       if (onQuestComplete) {
         onQuestComplete(bubble.id);
       }
-      console.log('Starting quest:', bubble.title);
     }
   }, [onQuestComplete]);
 
   /**
-   * Track mouse position for bubble following
+   * Close tooltip
+   */
+  const closeTooltip = useCallback(() => {
+    setTooltip(null);
+  }, []);
+
+  /**
+   * Track mouse position and container bounds
    */
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (mapContainer.current) {
         const rect = mapContainer.current.getBoundingClientRect();
+        setContainerRect(rect);
         setMousePosition({
           x: e.clientX - rect.left,
           y: e.clientY - rect.top
@@ -408,14 +605,23 @@ const MapView: React.FC<MapViewProps> = ({
       }
     };
 
+    const handleResize = () => {
+      if (mapContainer.current) {
+        setContainerRect(mapContainer.current.getBoundingClientRect());
+      }
+    };
+
     if (mapContainer.current) {
       mapContainer.current.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('resize', handleResize);
+      setContainerRect(mapContainer.current.getBoundingClientRect());
     }
 
     return () => {
       if (mapContainer.current) {
         mapContainer.current.removeEventListener('mousemove', handleMouseMove);
       }
+      window.removeEventListener('resize', handleResize);
     };
   }, [mapLoaded]);
 
@@ -429,8 +635,10 @@ const MapView: React.FC<MapViewProps> = ({
 
     // Validate token
     if (!mapboxToken || mapboxToken.trim() === '' || mapboxToken === 'pk.YOUR_MAPBOX_TOKEN_HERE') {
-      setError('Mapbox token is required. Please add VITE_MAPBOX_TOKEN_PK to your .env file.');
+      setError('Mapbox token is required. Please add VITE_MAPBOX_TOKEN to your .env file.');
       setIsLoading(false);
+      // Still show bubbles even without map
+      setShowBubbles(true);
       return;
     }
 
@@ -462,7 +670,7 @@ const MapView: React.FC<MapViewProps> = ({
           // Show bubbles after a short delay
           setTimeout(() => {
             setShowBubbles(true);
-          }, 1000);
+          }, 500);
         }
       });
 
@@ -482,6 +690,8 @@ const MapView: React.FC<MapViewProps> = ({
         if (mounted) {
           setError(`Map failed to load: ${e.error?.message || 'Unknown error'}`);
           setIsLoading(false);
+          // Still show bubbles even with map error
+          setShowBubbles(true);
         }
       });
 
@@ -490,6 +700,8 @@ const MapView: React.FC<MapViewProps> = ({
       if (mounted) {
         setError(`Failed to initialize map: ${err.message}`);
         setIsLoading(false);
+        // Still show bubbles even with map error
+        setShowBubbles(true);
       }
     }
 
@@ -511,92 +723,109 @@ const MapView: React.FC<MapViewProps> = ({
         style={{ height: '100%', minHeight: '400px' }}
       />
       
-      {/* Quest Bubbles Overlay */}
-      {showBubbles && mapLoaded && !error && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 10 }}>
+      {/* Quest Bubbles Overlay - Always show after loading */}
+      {showBubbles && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 20 }}>
           {PHILADELPHIA_BUBBLES.map((bubble) => (
             <QuestBubbleComponent
               key={bubble.id}
               bubble={bubble}
               mousePosition={mousePosition}
+              containerRect={containerRect}
               onClick={handleBubbleClick}
-              isVisible={showBubbles}
             />
           ))}
         </div>
       )}
 
-      {/* Quest Legend */}
-      {showBubbles && mapLoaded && !error && (
+      {/* Quest Legend with Sprites */}
+      {showBubbles && (
         <motion.div
-          className="absolute bottom-4 left-4 z-20 bg-white/20 backdrop-blur-lg border border-white/30 rounded-xl p-4 max-w-xs"
+          className="absolute bottom-4 left-4 z-30 bg-white/20 backdrop-blur-lg border border-white/30 rounded-xl p-4 max-w-xs"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 2 }}
+          transition={{ delay: 1 }}
         >
-          <h4 className="text-white font-bold text-sm mb-3">Philadelphia CHESS Quests</h4>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <h4 className="text-white font-bold text-sm mb-3">Philadelphia CHESS Bubbles</h4>
+          <div className="space-y-2">
             {Object.entries(QUEST_STYLES).map(([category, style]) => (
-              <div key={category} className="flex items-center gap-2 text-gray-100">
-                <span className="text-sm">{style.emoji}</span>
+              <div key={category} className="flex items-center gap-2 text-xs">
+                <img 
+                  src={style.sprite}
+                  alt={style.character}
+                  className="w-4 h-4 object-contain"
+                  draggable={false}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent && !parent.querySelector('.fallback-emoji')) {
+                      const fallback = document.createElement('span');
+                      fallback.className = 'fallback-emoji text-sm';
+                      fallback.textContent = 
+                        category === 'character' ? '🦉' :
+                        category === 'health' ? '🐱' :
+                        category === 'exploration' ? '🐕' :
+                        category === 'stem' ? '🤖' :
+                        category === 'stewardship' ? '🏛️' :
+                        category === 'safe_space' ? '🛡️' : '📅';
+                      parent.appendChild(fallback);
+                    }
+                  }}
+                />
                 <div
                   className="w-3 h-3 rounded-full border border-white/40"
                   style={{ backgroundColor: style.color }}
                 />
-                <span className="truncate">{style.character}</span>
+                <span className="text-gray-100 truncate">{style.character}</span>
               </div>
             ))}
           </div>
           <div className="mt-3 text-xs text-gray-300">
-            🖱️ Hover to follow • 👆 Click to start
+            🖱️ Hover to follow • 👆 Click to interact
           </div>
         </motion.div>
       )}
 
+      {/* Bubble Tooltip */}
+      <AnimatePresence>
+        {tooltip && (
+          <BubbleTooltip
+            bubble={tooltip.bubble}
+            position={tooltip.position}
+            onClose={closeTooltip}
+            onStartQuest={handleStartQuest}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Loading Overlay */}
-      {isLoading && !error && (
+      {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80 rounded-xl z-10">
           <div className="text-center text-white">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-electric-blue-400 mx-auto mb-4"></div>
-            <h3 className="text-lg font-semibold mb-2">Loading Philadelphia Quest Map</h3>
-            <p className="text-sm text-gray-300">Initializing CHESS bubbles...</p>
+            <h3 className="text-lg font-semibold mb-2">Loading CHESS Quest Map</h3>
+            <p className="text-sm text-gray-300">Preparing bubbles and sprites...</p>
           </div>
         </div>
       )}
       
-      {/* Error Overlay */}
+      {/* Error Overlay - Still show bubbles */}
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-red-900/80 rounded-xl z-10 p-4">
-          <div className="text-center text-white max-w-md">
-            <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">⚠️</span>
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Map Error</h3>
-            <p className="text-sm mb-4">{error}</p>
-            {error.includes('token') && (
-              <div className="text-xs text-gray-300">
-                <p>1. Get a token from https://studio.mapbox.com/</p>
-                <p>2. Add VITE_MAPBOX_TOKEN_PK=your_token to .env</p>
-                <p>3. Restart the development server</p>
-              </div>
-            )}
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 btn-esports"
-            >
-              Retry Map Load
-            </button>
+        <div className="absolute top-4 right-4 bg-red-500/20 border border-red-500/30 rounded-xl p-3 z-20 max-w-sm">
+          <div className="text-red-200 text-sm">
+            <p className="font-semibold mb-1">Map Notice:</p>
+            <p>{error.includes('token') ? 'Map tiles unavailable - showing quest bubbles only' : error}</p>
           </div>
         </div>
       )}
 
-      {/* Debug Info */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="absolute top-4 right-4 bg-black/70 text-white p-2 rounded text-xs z-30">
-          <div>Map Loaded: {mapLoaded ? 'Yes' : 'No'}</div>
-          <div>Bubbles Visible: {showBubbles ? 'Yes' : 'No'}</div>
-          <div>Bubble Count: {PHILADELPHIA_BUBBLES.length}</div>
-          <div>Mouse: {mousePosition.x}, {mousePosition.y}</div>
+      {/* Bubble Count Debug */}
+      {process.env.NODE_ENV === 'development' && showBubbles && (
+        <div className="absolute top-4 left-4 bg-black/70 text-white p-2 rounded text-xs z-30">
+          <div>Bubbles Active: {PHILADELPHIA_BUBBLES.length}</div>
+          <div>Container: {containerRect ? 'Ready' : 'Loading'}</div>
+          <div>Mouse: {mousePosition.x.toFixed(0)}, {mousePosition.y.toFixed(0)}</div>
         </div>
       )}
     </div>
