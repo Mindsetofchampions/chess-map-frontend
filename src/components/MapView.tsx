@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { motion } from 'framer-motion';
+import { Shield, Users, Target } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { questHelpers, analyticsHelpers } from '../lib/supabase';
 import { Quest } from '../types/database';
 import { usePhiladelphiaData } from '../hooks/usePhiladelphiaData';
+import BubbleSystem, { PHILADELPHIA_SAMPLE_DATA } from '../components/Map/BubbleSystem';
 import QuestPopup from './QuestPopup';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -36,8 +38,8 @@ const MapView: React.FC<MapViewProps> = ({
   // Authentication context
   const { user, isAuthenticated } = useAuth();
 
-  // Philadelphia bubble data
-  const { bubbles, loading: bubbleLoading } = usePhiladelphiaData();
+  // Philadelphia bubble data - using sample data for immediate display
+  const bubbles = PHILADELPHIA_SAMPLE_DATA;
 
   // Get token from environment using correct variable name
   const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN_PK || import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -253,54 +255,12 @@ const MapView: React.FC<MapViewProps> = ({
         
         {/* Philadelphia Bubble System Overlay */}
         {!isLoading && !error && map.current && (
-          <div className="absolute inset-0 pointer-events-none">
-            {bubbles.map((bubble) => {
-              if (!map.current) return null;
-              
-              try {
-                const point = map.current.project(bubble.coordinates);
-                return (
-                  <div
-                    key={bubble.id}
-                    className="absolute pointer-events-auto"
-                    style={{
-                      left: point.x,
-                      top: point.y,
-                      transform: 'translate(-50%, -50%)'
-                    }}
-                  >
-                    <motion.div
-                      className="w-12 h-12 rounded-full backdrop-blur-md border-2 border-white/40 shadow-lg cursor-pointer flex items-center justify-center"
-                      style={{
-                        backgroundColor: bubble.category === 'safe_space' ? '#10B981B3' :
-                                        bubble.category === 'community_hub' ? '#3B82F6B3' :
-                                        '#F59E0BB3'
-                      }}
-                      whileHover={{ scale: 1.3, zIndex: 100 }}
-                      whileTap={{ scale: 0.8 }}
-                      animate={{
-                        y: [0, -6, 0],
-                        rotate: [0, 2, -2, 0]
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                      onClick={() => handleBubblePop(bubble.id)}
-                      title={bubble.title}
-                    >
-                      {bubble.category === 'safe_space' && <Shield className="w-5 h-5 text-white" />}
-                      {bubble.category === 'community_hub' && <Users className="w-5 h-5 text-white" />}
-                      {bubble.category === 'active_quest' && <Target className="w-5 h-5 text-white" />}
-                    </motion.div>
-                  </div>
-                );
-              } catch {
-                return null;
-              }
-            })}
-          </div>
+          <BubbleSystem
+            mapRef={map}
+            bubbles={bubbles}
+            onBubblePop={handleBubblePop}
+            onStartQuest={handleStartQuest}
+          />
         )}
       </div>
 
