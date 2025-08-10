@@ -14,6 +14,7 @@ import FloatingBubbles from './components/FloatingBubbles';
 import DraggableBubbles from './components/DraggableBubbles';
 import AdminDashboard from './pages/AdminDashboard';
 import MasterAdminDashboard from './pages/MasterAdminDashboard';
+import MapPage from './pages/MapPage';
 
 /**
  * Student Dashboard Component
@@ -739,6 +740,16 @@ const AppRouter: React.FC = () => {
           <Route 
             path="/master-admin" 
             element={<Navigate to="/master-admin/dashboard" replace />}
+          />
+          
+          {/* Map Page Route */}
+          <Route 
+            path="/map" 
+            element={
+              <ErrorBoundary>
+                <MapPage />
+              </ErrorBoundary>
+            } 
           />
 
           {/* Catch-all redirect */}
