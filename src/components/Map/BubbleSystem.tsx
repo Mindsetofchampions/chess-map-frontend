@@ -39,7 +39,7 @@ export interface BubbleData {
 const BUBBLE_STYLES: Record<BubbleCategory, {
   color: string;
   opacity: number;
-  emoji: string;
+  sprite: string;
   label: string;
   gradient: string;
   character: string;
@@ -47,7 +47,7 @@ const BUBBLE_STYLES: Record<BubbleCategory, {
   character: {
     color: CHESS_COLORS.character,
     opacity: 0.7,
-    emoji: '🦉',
+    sprite: '/sprites/owl.gif/HOOTIE_WINGLIFT.gif',
     label: 'Character Quest',
     gradient: 'from-purple-400/30 to-purple-600/30',
     character: 'Hootie the Owl'
@@ -55,7 +55,7 @@ const BUBBLE_STYLES: Record<BubbleCategory, {
   health: {
     color: CHESS_COLORS.health,
     opacity: 0.7,
-    emoji: '🐱',
+    sprite: '/sprites/cat.gif/KITTY_BOUNCE.gif',
     label: 'Health Quest',
     gradient: 'from-green-400/30 to-green-600/30',
     character: 'Brenda the Cat'
@@ -63,7 +63,7 @@ const BUBBLE_STYLES: Record<BubbleCategory, {
   exploration: {
     color: CHESS_COLORS.exploration,
     opacity: 0.7,
-    emoji: '🐕',
+    sprite: '/sprites/dog.gif/GINO_COMPASSSPIN.gif',
     label: 'Exploration Quest',
     gradient: 'from-orange-400/30 to-orange-600/30',
     character: 'Gino the Dog'
@@ -71,7 +71,7 @@ const BUBBLE_STYLES: Record<BubbleCategory, {
   stem: {
     color: CHESS_COLORS.stem,
     opacity: 0.7,
-    emoji: '🤖',
+    sprite: '/sprites/robot.gif/HAMMER_SWING.gif',
     label: 'STEM Quest',
     gradient: 'from-blue-400/30 to-blue-600/30',
     character: 'Hammer the Robot'
@@ -79,7 +79,7 @@ const BUBBLE_STYLES: Record<BubbleCategory, {
   stewardship: {
     color: CHESS_COLORS.stewardship,
     opacity: 0.7,
-    emoji: '🏛️',
+    sprite: '/sprites/badge.gif/BADGE_SHINE.gif',
     label: 'Stewardship Quest',
     gradient: 'from-red-400/30 to-red-600/30',
     character: 'MOC Badge'
@@ -87,7 +87,7 @@ const BUBBLE_STYLES: Record<BubbleCategory, {
   safe_space: {
     color: '#06D6A0', // Bright teal for safety
     opacity: 0.7,
-    emoji: '🛡️',
+    sprite: '/sprites/badge.gif/BADGE_SHINE.gif', // Reuse badge for safe spaces
     label: 'Safe Space',
     gradient: 'from-teal-400/30 to-teal-600/30',
     character: 'Safe Learning Zone'
@@ -95,7 +95,7 @@ const BUBBLE_STYLES: Record<BubbleCategory, {
   community_hub: {
     color: '#FF6B9D', // Bright pink for community events
     opacity: 0.7,
-    emoji: '📅',
+    sprite: '/sprites/owl.gif/HOOTIE_WINGLIFT.gif', // Reuse owl for community
     label: 'Community Event',
     gradient: 'from-pink-400/30 to-pink-600/30',
     character: 'Community Gathering'
@@ -260,7 +260,12 @@ const BubbleTooltip: React.FC<BubbleTooltipProps> = ({ bubble, position, onClose
             className={`p-2 rounded-full bg-gradient-to-br ${style.gradient}`}
             style={{ backgroundColor: `${style.color}40` }}
           >
-            <span className="text-lg">{style.emoji}</span>
+            <img 
+              src={style.sprite} 
+              alt={style.character}
+              className="w-6 h-6 object-contain"
+              draggable={false}
+            />
           </div>
           <div>
             <h3 className="text-white font-bold text-sm">{bubble.title}</h3>
@@ -412,7 +417,12 @@ const GlassBubble: React.FC<GlassBubbleProps> = ({ bubble, onClick, onPop, isPop
             boxShadow: `0 8px 32px ${style.color}40, inset 0 1px 0 rgba(255,255,255,0.2)`
           }}
         >
-          <span className="text-2xl drop-shadow-lg">{style.emoji}</span>
+          <img 
+            src={style.sprite}
+            alt={style.character}
+            className="w-10 h-10 object-contain drop-shadow-lg"
+            draggable={false}
+          />
         </div>
 
         {/* Pulse Ring */}
@@ -640,7 +650,12 @@ const BubbleSystem: React.FC<BubbleSystemProps> = ({
         <div className="space-y-2">
           {Object.entries(BUBBLE_STYLES).map(([category, style]) => (
             <div key={category} className="flex items-center gap-2 text-xs text-gray-100">
-              <span className="text-sm">{style.emoji}</span>
+              <img 
+                src={style.sprite}
+                alt={style.character}
+                className="w-4 h-4 object-contain"
+                draggable={false}
+              />
               <div
                 className="w-3 h-3 rounded-full border border-white/40"
                 style={{ backgroundColor: `${style.color}${Math.round(style.opacity * 255).toString(16)}` }}
