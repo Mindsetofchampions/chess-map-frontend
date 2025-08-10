@@ -85,19 +85,19 @@ const BUBBLE_STYLES: Record<BubbleCategory, {
     character: 'MOC Badge'
   },
   safe_space: {
-    color: '#34D399', // Emerald green for safety
+    color: '#06D6A0', // Bright teal for safety
     opacity: 0.7,
     emoji: '🛡️',
     label: 'Safe Space',
-    gradient: 'from-emerald-400/30 to-emerald-600/30',
+    gradient: 'from-teal-400/30 to-teal-600/30',
     character: 'Safe Learning Zone'
   },
-  event: {
-    color: '#A78BFA', // Light purple for events
+  community_hub: {
+    color: '#FF6B9D', // Bright pink for community events
     opacity: 0.7,
     emoji: '📅',
     label: 'Community Event',
-    gradient: 'from-violet-400/30 to-violet-600/30',
+    gradient: 'from-pink-400/30 to-pink-600/30',
     character: 'Community Gathering'
   }
 };
@@ -107,55 +107,51 @@ const BUBBLE_STYLES: Record<BubbleCategory, {
  */
 export const PHILADELPHIA_SAMPLE_DATA: BubbleData[] = [
   {
-    id: 'quest-character-liberty-bell',
+    id: 'character-quest-1',
     category: 'character',
     title: 'Liberty Bell Character Challenge',
     description: 'Learn about honesty and integrity through the story of the Liberty Bell with Hootie the Owl.',
     coordinates: [-75.1502, 39.9496],
     organization: 'Independence National Historical Park',
     reward: 100,
-    difficulty: 'medium',
     sprite: '/sprites/owl.gif/HOOTIE_WINGLIFT.gif',
     character: 'Hootie the Owl'
   },
   {
-    id: 'quest-health-fitness-trail',
+    id: 'health-quest-1',
     category: 'health',
     title: 'Schuylkill River Fitness Trail',
     description: 'Complete wellness challenges with Brenda the Cat along Philadelphia\'s scenic river trail.',
     coordinates: [-75.1810, 39.9656],
     organization: 'Philadelphia Parks & Recreation',
     reward: 75,
-    difficulty: 'easy',
     sprite: '/sprites/cat.gif/KITTY_BOUNCE.gif',
     character: 'Brenda the Cat'
   },
   {
-    id: 'quest-exploration-historic-philly',
+    id: 'exploration-quest-1',
     category: 'exploration',
     title: 'Historic Philadelphia Discovery',
     description: 'Explore hidden gems and historic sites with Gino the Dog through Old City Philadelphia.',
     coordinates: [-75.1503, 39.9551],
     organization: 'Visit Philadelphia',
     reward: 125,
-    difficulty: 'medium',
     sprite: '/sprites/dog.gif/GINO_COMPASSSPIN.gif',
     character: 'Gino the Dog'
   },
   {
-    id: 'quest-stem-franklin-institute',
+    id: 'stem-quest-1',
     category: 'stem',
     title: 'STEM Innovation Lab',
     description: 'Build robots and conduct experiments with Hammer the Robot at Philadelphia\'s premier science museum.',
     coordinates: [-75.1738, 39.9580],
     organization: 'Franklin Institute',
     reward: 200,
-    difficulty: 'hard',
     sprite: '/sprites/robot.gif/HAMMER_SWING.gif',
     character: 'Hammer the Robot'
   },
   {
-    id: 'quest-stewardship-fairmount-park',
+    id: 'stewardship-quest-1',
     category: 'stewardship',
     title: 'Fairmount Park Conservation',
     description: 'Learn environmental stewardship and community leadership with the MOC Badge in America\'s largest urban park.',
@@ -163,10 +159,11 @@ export const PHILADELPHIA_SAMPLE_DATA: BubbleData[] = [
     organization: 'Fairmount Park Conservancy',
     reward: 150,
     difficulty: 'medium',
-    sprite: '/sprites/badge.gif/BADGE_SHINE.gif',
     character: 'MOC Badge'
   },
   {
+  
+  // Safe Space Bubbles
     id: 'safe-space-free-library',
     category: 'safe_space',
     title: 'Free Library Study Sanctuary',
@@ -178,13 +175,37 @@ export const PHILADELPHIA_SAMPLE_DATA: BubbleData[] = [
     character: 'Safe Learning Zone'
   },
   {
+    id: 'safe-space-community-center',
+    category: 'safe_space',
+    title: 'North Philadelphia Community Center',
+    description: 'Welcoming space for collaborative learning, homework help, and peer mentoring programs.',
+    coordinates: [-75.1580, 39.9800],
+    organization: 'Philadelphia Community Centers',
+    participants: 60,
+    isActive: true,
+    character: 'Safe Learning Zone'
+  },
+  
+  // Event Bubbles
+  {
     id: 'event-maker-festival',
-    category: 'event',
+    category: 'community_hub',
     title: 'Philadelphia Maker Festival',
     description: 'Join the community for hands-on STEM activities, 3D printing demos, and collaborative learning workshops.',
     coordinates: [-75.1437, 39.9537],
     organization: 'Philadelphia Maker Collective',
     participants: 120,
+    isActive: true,
+    character: 'Community Gathering'
+  },
+  {
+    id: 'event-science-expo',
+    category: 'community_hub',
+    title: 'Young Scientists Expo',
+    description: 'Students showcase their research projects and compete in science fair competitions with community judges.',
+    coordinates: [-75.1400, 39.9650],
+    organization: 'Philadelphia Science Alliance',
+    participants: 85,
     isActive: true,
     character: 'Community Gathering'
   }
@@ -496,7 +517,14 @@ const BubbleSystem: React.FC<BubbleSystemProps> = ({
     
     try {
       const point = mapRef.current.project(coordinates);
-      return { x: point.x, y: point.y };
+      // Get the map container bounds
+      const container = mapRef.current.getContainer();
+      const rect = container.getBoundingClientRect();
+      
+      return { 
+        x: point.x, 
+        y: point.y 
+      };
     } catch {
       return null;
     }
@@ -552,20 +580,28 @@ const BubbleSystem: React.FC<BubbleSystemProps> = ({
   return (
     <>
       {/* Bubble Markers */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none z-10">
         <AnimatePresence>
           {bubbles.map((bubble) => {
             const position = getScreenPosition(bubble.coordinates);
             if (!position || poppedBubbles.has(bubble.id)) return null;
 
             return (
-              <div
+              <motion.div
                 key={bubble.id}
-                className="absolute"
+                className="absolute pointer-events-auto"
                 style={{
                   left: position.x,
                   top: position.y,
                   transform: 'translate(-50%, -50%)'
+                }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ 
+                  type: "spring", 
+                  stiffness: 200, 
+                  damping: 15,
+                  delay: bubbles.indexOf(bubble) * 0.2 
                 }}
               >
                 <GlassBubble
@@ -575,7 +611,7 @@ const BubbleSystem: React.FC<BubbleSystemProps> = ({
                   isPopped={poppedBubbles.has(bubble.id)}
                   mousePosition={mousePosition}
                 />
-              </div>
+              </motion.div>
             );
           })}
         </AnimatePresence>

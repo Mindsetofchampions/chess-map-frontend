@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { motion } from 'framer-motion';
-import { Shield, Users, Target } from 'lucide-react';
+import { Shield, Users, Target, MapPin } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { questHelpers, analyticsHelpers } from '../lib/supabase';
 import { Quest } from '../types/database';
-import { usePhiladelphiaData } from '../hooks/usePhiladelphiaData';
 import BubbleSystem, { PHILADELPHIA_SAMPLE_DATA } from '../components/Map/BubbleSystem';
 import QuestPopup from './QuestPopup';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -32,13 +31,14 @@ const MapView: React.FC<MapViewProps> = ({
   // Component state
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | undefined>();
   
   // Authentication context
   const { user, isAuthenticated } = useAuth();
 
-  // Philadelphia bubble data - using sample data for immediate display
+  // Use sample bubble data
   const bubbles = PHILADELPHIA_SAMPLE_DATA;
 
   // Get token from environment using correct variable name
@@ -198,6 +198,7 @@ const MapView: React.FC<MapViewProps> = ({
       map.current.on('load', () => {
         console.log('Map loaded successfully');
         if (map.current && mounted) {
+          setMapLoaded(true);
           setIsLoading(false);
           setError(null);
         }
@@ -254,13 +255,22 @@ const MapView: React.FC<MapViewProps> = ({
         />
         
         {/* Philadelphia Bubble System Overlay */}
-        {!isLoading && !error && map.current && (
+        {mapLoaded && !error && map.current && (
           <BubbleSystem
             mapRef={map}
             bubbles={bubbles}
             onBubblePop={handleBubblePop}
             onStartQuest={handleStartQuest}
           />
+        )}
+        
+        {/* Debug Info */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded text-xs">
+            <div>Map Loaded: {mapLoaded ? 'Yes' : 'No'}</div>
+            <div>Bubbles: {bubbles.length}</div>
+            <div>Error: {error || 'None'}</div>
+          </div>
         )}
       </div>
 
