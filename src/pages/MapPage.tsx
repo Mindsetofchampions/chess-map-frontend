@@ -13,6 +13,7 @@ import { supabase } from '../lib/supabase';
 import MapboxMap, { MapPoint } from '../components/Map/MapboxMap';
 import GlassContainer from '../components/GlassContainer';
 import { PersonaType } from '../components/Map/sprites';
+import { usePhiladelphiaData } from '../hooks/usePhiladelphiaData';
 import { 
   Home, 
   ArrowLeft, 
@@ -65,12 +66,19 @@ const MapPage: React.FC = () => {
   const { user } = useAuth();
   
   // State management
-  const [mapPoints, setMapPoints] = useState<MapPoint[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<MapPoint | null>(null);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
+  
+  // Philadelphia bubble data hook
+  const { 
+    bubbles, 
+    loading, 
+    error, 
+    refreshData,
+    addNewBubble 
+  } = usePhiladelphiaData();
+
+  // Legacy state for compatibility
+  const [mapPoints, setMapPoints] = useState<MapPoint[]>([]);
 
   /**
    * Persona mapping for different attributes
@@ -174,33 +182,6 @@ const MapPage: React.FC = () => {
   }, []);
 
   /**
-   * Fetch all map data
-   */
-  const fetchMapData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const [orgsData, eventsData] = await Promise.all([
-        fetchOrganizations(),
-        fetchEvents()
-      ]);
-
-      setOrganizations(orgsData);
-      setEvents(eventsData);
-
-      const points = transformToMapPoints(orgsData, eventsData);
-      setMapPoints(points);
-
-    } catch (err: any) {
-      console.error('Failed to fetch map data:', err);
-      setError('Failed to load map data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchOrganizations, fetchEvents, transformToMapPoints]);
-
-  /**
    * Handle marker click
    */
   const handleMarkerClick = useCallback((point: MapPoint) => {
@@ -209,45 +190,25 @@ const MapPage: React.FC = () => {
   }, []);
 
   /**
-   * Set up real-time subscriptions
+   * Handle bubble pop
    */
-  useEffect(() => {
-    // Set up real-time subscriptions for organizations
-    const orgSubscription = supabase
-      .channel('safe_spaces_channel')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'safe_spaces' },
-        (payload) => {
-          console.log('Organizations changed:', payload);
-          fetchMapData();
-        }
-      )
-      .subscribe();
-
-    // Set up real-time subscriptions for events
-    const eventSubscription = supabase
-      .channel('events_channel')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'events' },
-        (payload) => {
-          console.log('Events changed:', payload);
-          fetchMapData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      orgSubscription.unsubscribe();
-      eventSubscription.unsubscribe();
-    };
-  }, [fetchMapData]);
+  const handleBubblePop = useCallback((bubbleId: string) => {
+    console.log('Bubble popped:', bubbleId);
+  }, []);
 
   /**
-   * Fetch data on component mount
+   * Handle quest start from bubble
    */
-  useEffect(() => {
-    fetchMapData();
-  }, [fetchMapData]);
+  const handleStartQuest = useCallback((questId: string) => {
+    console.log('Quest started from bubble:', questId);
+  }, []);
+
+  /**
+   * Handle refresh map data
+   */
+  const handleRefreshMapData = useCallback(() => {
+    refreshData();
+  }, [refreshData]);
 
   /**
    * Navigation handlers
@@ -309,7 +270,7 @@ const MapPage: React.FC = () => {
           {/* Right Navigation */}
           <div className="flex items-center gap-3">
             <motion.button
-              onClick={fetchMapData}
+              onClick={handleRefreshMapData}
               className="flex items-center gap-2 bg-glass border-glass hover:bg-glass-dark text-gray-300 hover:text-white rounded-xl px-4 py-2 transition-all duration-200 text-sm font-medium min-h-touch touch-manipulation"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -341,20 +302,20 @@ const MapPage: React.FC = () => {
         >
           <GlassContainer variant="card" className="text-center p-4">
             <Building className="w-8 h-8 text-cyber-green-400 mx-auto mb-2" />
-            <h3 className="text-lg font-bold text-white">{organizations.length}</h3>
-            <p className="text-gray-300 text-xs">Organizations</p>
+            <h3 className="text-lg font-bold text-white">{bubbles.filter(b => b.category === 'safe_space').length}</h3>
+            <p className="text-gray-300 text-xs">Safe Spaces</p>
           </GlassContainer>
 
           <GlassContainer variant="card" className="text-center p-4">
             <Calendar className="w-8 h-8 text-electric-blue-400 mx-auto mb-2" />
-            <h3 className="text-lg font-bold text-white">{events.length}</h3>
-            <p className="text-gray-300 text-xs">Events</p>
+            <h3 className="text-lg font-bold text-white">{bubbles.filter(b => b.category === 'active_quest').length}</h3>
+            <p className="text-gray-300 text-xs">Active Quests</p>
           </GlassContainer>
 
           <GlassContainer variant="card" className="text-center p-4">
             <MapPin className="w-8 h-8 text-neon-purple-400 mx-auto mb-2" />
-            <h3 className="text-lg font-bold text-white">{mapPoints.length}</h3>
-            <p className="text-gray-300 text-xs">Total Markers</p>
+            <h3 className="text-lg font-bold text-white">{bubbles.filter(b => b.category === 'community_hub').length}</h3>
+            <p className="text-gray-300 text-xs">Community Hubs</p>
           </GlassContainer>
 
           <GlassContainer variant="card" className="text-center p-4">
@@ -390,9 +351,15 @@ const MapPage: React.FC = () => {
           <GlassContainer variant="card" className="p-0 overflow-hidden">
             <div className="relative h-[600px] w-full">
               <MapboxMap
-                points={mapPoints}
+                center={[-75.1652, 39.9526]} // Philadelphia coordinates
+                zoom={12}
+                points={[]} // Using bubble system instead
                 onMarkerClick={handleMarkerClick}
                 className="w-full h-full"
+                showBubbles={true}
+                bubbleData={bubbles}
+                onBubblePop={handleBubblePop}
+                onStartQuest={handleStartQuest}
               />
             </div>
           </GlassContainer>

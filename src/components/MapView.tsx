@@ -3,13 +3,14 @@ import mapboxgl from 'mapbox-gl';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { questHelpers, analyticsHelpers } from '../lib/supabase';
-import { Quest, MapMarker } from '../types/database';
+import { Quest } from '../types/database';
+import { usePhiladelphiaData } from '../hooks/usePhiladelphiaData';
 import QuestPopup from './QuestPopup';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface MapViewProps {
-  center?: [number, number];
-  zoom?: number;
+  center?: [number, number]; // Default to Philadelphia
+  zoom?: number; // Default zoom for Philadelphia
   onQuestComplete?: (questId: string) => void;
 }
 
@@ -18,8 +19,8 @@ interface MapViewProps {
  * Features real-time quest data, user interactions, and analytics logging
  */
 const MapView: React.FC<MapViewProps> = ({
-  center = [-74.006, 40.7128], // Default to NYC
-  zoom = 10,
+  center = [-75.1652, 39.9526], // Default to Philadelphia
+  zoom = 12,
   onQuestComplete,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -29,12 +30,14 @@ const MapView: React.FC<MapViewProps> = ({
   // Component state
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [quests, setQuests] = useState<Quest[]>([]);
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | undefined>();
   
   // Authentication context
   const { user, isAuthenticated } = useAuth();
+
+  // Philadelphia bubble data
+  const { bubbles, loading: bubbleLoading } = usePhiladelphiaData();
 
   // Get token from environment using correct variable name
   const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN_PK || import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -67,48 +70,27 @@ const MapView: React.FC<MapViewProps> = ({
   };
 
   /**
-   * Create map markers for quests
+   * Handle bubble interactions
    */
-  const createQuestMarkers = () => {
-    if (!map.current || !quests.length) return;
+  const handleBubblePop = useCallback((bubbleId: string) => {
+    console.log('Bubble popped:', bubbleId);
+    
+    // If it's a quest bubble, trigger quest completion
+    const bubble = bubbles.find(b => b.id === bubbleId);
+    if (bubble?.category === 'active_quest' && onQuestComplete) {
+      onQuestComplete(bubbleId);
+    }
+  }, [bubbles, onQuestComplete]);
 
-    // Clear existing markers
-    markers.current.forEach(marker => marker.remove());
-    markers.current = [];
-
-    quests.forEach((quest) => {
-      // Skip quests without location data
-      if (!quest.location) return;
-
-      // Create marker element
-      const markerElement = document.createElement('div');
-      markerElement.className = 'quest-marker';
-      markerElement.innerHTML = `
-        <div class="w-10 h-10 bg-electric-blue-500 border-2 border-electric-blue-300 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:scale-110 transition-transform duration-200">
-          <span class="text-white font-bold text-sm">Q</span>
-        </div>
-      `;
-
-      // Add click handler
-      markerElement.addEventListener('click', (e) => {
-        e.stopPropagation();
-        handleQuestMarkerClick(quest, e);
-      });
-
-      // Create and add marker to map
-      const marker = new mapboxgl.Marker({
-        element: markerElement,
-        anchor: 'center'
-      })
-        .setLngLat([quest.location.lng, quest.location.lat])
-        .addTo(map.current!);
-
-      markers.current.push(marker);
-    });
-  };
+  const handleStartQuest = useCallback((questId: string) => {
+    console.log('Quest started from bubble:', questId);
+    if (onQuestComplete) {
+      onQuestComplete(questId);
+    }
+  }, [onQuestComplete]);
 
   /**
-   * Handle quest marker click
+   * Handle quest marker click (legacy support)
    */
   const handleQuestMarkerClick = async (quest: Quest, event: Event) => {
     const target = event.target as HTMLElement;
@@ -127,9 +109,9 @@ const MapView: React.FC<MapViewProps> = ({
   };
 
   /**
-   * Handle quest start from popup
+   * Handle quest start from popup (legacy support)
    */
-  const handleStartQuest = async (questId: string) => {
+  const handleStartQuestFromPopup = async (questId: string) => {
     if (!user) return;
 
     try {
@@ -145,12 +127,30 @@ const MapView: React.FC<MapViewProps> = ({
       setSelectedQuest(null);
       setPopupPosition(undefined);
       
-      // Optionally redirect to quest details or start quest flow
       console.log('Starting quest:', questId);
       
     } catch (error: any) {
       console.error('Failed to start quest:', error);
       setError('Failed to start quest. Please try again.');
+    }
+  };
+
+  /**
+   * Legacy quest marker click handler
+   */
+  const handleLegacyQuestMarkerClick = async (quest: Quest, event: Event) => {
+    const target = event.target as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    
+    setPopupPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top
+    });
+    setSelectedQuest(quest);
+
+    // Log quest interaction
+    if (user) {
+      await analyticsHelpers.logQuestInteraction(user.id, quest.id, 'viewed');
     }
   };
 
@@ -241,38 +241,67 @@ const MapView: React.FC<MapViewProps> = ({
     };
   }, []);
 
-  // Separate effect for fetching quests
-  useEffect(() => {
-    // Only fetch quests after map is loaded and there's no error
-    if (!isLoading && !error && map.current) {
-      fetchQuests();
-    }
-  }, [isLoading, error, user]);
-
-  // Update markers when quests change
-  useEffect(() => {
-    if (!isLoading && !error && map.current) {
-      createQuestMarkers();
-    }
-  }, [quests, isLoading, error]);
-
-  // Cleanup markers on unmount
-  useEffect(() => {
-    return () => {
-      markers.current.forEach(marker => marker.remove());
-      markers.current = [];
-    };
-  }, []);
-
   return (
     <>
       <div className="w-full h-full relative">
-      {/* Map Container */}
-      <div
-        ref={mapContainer}
-        className="w-full h-full min-h-[400px] bg-gray-900 rounded-xl"
-        style={{ height: '100%', minHeight: '400px' }}
-      />
+        {/* Map Container with Bubble System */}
+        <div
+          ref={mapContainer}
+          className="w-full h-full min-h-[400px] bg-gray-900 rounded-xl relative"
+          style={{ height: '100%', minHeight: '400px' }}
+        />
+        
+        {/* Philadelphia Bubble System Overlay */}
+        {!isLoading && !error && map.current && (
+          <div className="absolute inset-0 pointer-events-none">
+            {bubbles.map((bubble) => {
+              if (!map.current) return null;
+              
+              try {
+                const point = map.current.project(bubble.coordinates);
+                return (
+                  <div
+                    key={bubble.id}
+                    className="absolute pointer-events-auto"
+                    style={{
+                      left: point.x,
+                      top: point.y,
+                      transform: 'translate(-50%, -50%)'
+                    }}
+                  >
+                    <motion.div
+                      className="w-12 h-12 rounded-full backdrop-blur-md border-2 border-white/40 shadow-lg cursor-pointer flex items-center justify-center"
+                      style={{
+                        backgroundColor: bubble.category === 'safe_space' ? '#10B981B3' :
+                                        bubble.category === 'community_hub' ? '#3B82F6B3' :
+                                        '#F59E0BB3'
+                      }}
+                      whileHover={{ scale: 1.3, zIndex: 100 }}
+                      whileTap={{ scale: 0.8 }}
+                      animate={{
+                        y: [0, -6, 0],
+                        rotate: [0, 2, -2, 0]
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                      onClick={() => handleBubblePop(bubble.id)}
+                      title={bubble.title}
+                    >
+                      {bubble.category === 'safe_space' && <Shield className="w-5 h-5 text-white" />}
+                      {bubble.category === 'community_hub' && <Users className="w-5 h-5 text-white" />}
+                      {bubble.category === 'active_quest' && <Target className="w-5 h-5 text-white" />}
+                    </motion.div>
+                  </div>
+                );
+              } catch {
+                return null;
+              }
+            })}
+          </div>
+        )}
       </div>
 
       {/* Quest Popup */}
@@ -288,7 +317,7 @@ const MapView: React.FC<MapViewProps> = ({
           }}
           isOpen={!!selectedQuest}
           onClose={closeQuestPopup}
-          onStartQuest={handleStartQuest}
+          onStartQuest={handleStartQuestFromPopup}
           position={popupPosition}
         />
       )}
@@ -296,8 +325,9 @@ const MapView: React.FC<MapViewProps> = ({
       {isLoading && !error && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80 rounded-xl z-10">
           <div className="text-center text-white">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p>Loading map...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-electric-blue-400 mx-auto mb-4"></div>
+            <h3 className="text-lg font-semibold mb-2">Loading Philadelphia Quest Map</h3>
+            <p className="text-sm text-gray-300">Initializing bubbles and locations...</p>
           </div>
         </div>
       )}
@@ -306,7 +336,10 @@ const MapView: React.FC<MapViewProps> = ({
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-red-900/80 rounded-xl z-10 p-4">
           <div className="text-center text-white max-w-md">
-            <h3 className="text-lg font-semibold mb-2">Map Loading Error</h3>
+            <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Philadelphia Map Error</h3>
             <p className="text-sm mb-4">{error}</p>
             {error.includes('token') && (
               <div className="text-xs text-gray-300">
@@ -317,9 +350,9 @@ const MapView: React.FC<MapViewProps> = ({
             )}
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm transition-colors"
+              className="mt-4 btn-esports"
             >
-              Retry
+              Retry Map Load
             </button>
           </div>
         </div>

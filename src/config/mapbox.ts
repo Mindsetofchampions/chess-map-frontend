@@ -44,8 +44,8 @@ export { MAPBOX_TOKEN, MAPBOX_STYLE };
  * Default map configuration
  */
 export const MAP_CONFIG = {
-  center: [-74.006, 40.7128] as [number, number], // NYC coordinates
-  zoom: 10,
+  center: [-75.1652, 39.9526] as [number, number], // Philadelphia coordinates
+  zoom: 11,
   pitch: 0,
   bearing: 0,
   attributionControl: true,

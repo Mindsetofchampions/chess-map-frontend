@@ -384,6 +384,16 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
           </div>
         </div>
       )}
+
+      {/* Bubble System Overlay */}
+      {showBubbles && !isLoading && !error && (
+        <BubbleSystem
+          mapRef={map}
+          bubbles={bubbleData}
+          onBubblePop={onBubblePop}
+          onStartQuest={onStartQuest}
+        />
+      )}
     </div>
   );
 };
