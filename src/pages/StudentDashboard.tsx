@@ -37,21 +37,16 @@ const StudentDashboard: React.FC = () => {
 
   // Additional role verification for debugging
   React.useEffect(() => {
-    console.log('🎓 StudentDashboard mounted with user:', {
-      id: user?.id,
-      email: user?.email,
-      role: user?.role,
-      isAdmin: user?.role === 'admin',
-      isStudent: user?.role === 'student'
-    });
+    // Production-safe role verification
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🎓 StudentDashboard role check:', user?.role);
+    }
     
     // If admin user somehow got here, redirect them
     if (user?.role === 'admin') {
-      console.warn('⚠️  Admin user detected in StudentDashboard, redirecting...');
       navigate('/admin/dashboard', { replace: true });
       return;
     } else if (user?.role === 'master_admin') {
-      console.warn('⚠️  Master admin user detected in StudentDashboard, redirecting...');
       navigate('/master-admin/dashboard', { replace: true });
       return;
     }

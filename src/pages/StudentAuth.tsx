@@ -70,28 +70,19 @@ const StudentAuth: React.FC = () => {
    * Redirect authenticated users
    */
   useEffect(() => {
-    console.log('🎓 StudentAuth ROLE REDIRECT DEBUG:', {
-      isAuthenticated,
-      userId: user?.id,
-      userEmail: user?.email,
-      userRole: user?.role,
-      roleType: typeof user?.role,
-      shouldRedirect: isAuthenticated && user,
-      contextUser: user
-    });
+    // Production-safe redirect logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🎓 StudentAuth redirect check for role:', user?.role);
+    }
     
     if (isAuthenticated && user) {
-      console.log('🎯 StudentAuth processing redirect for role:', user.role);
       if (user.role === 'admin') {
-        console.log('✅ ADMIN REDIRECT from StudentAuth to admin dashboard');
         navigate('/admin/dashboard', { replace: true });
       } else if (user.role === 'master_admin') {
-        console.log('✅ MASTER ADMIN REDIRECT from StudentAuth to master admin dashboard');
         navigate('/master-admin/dashboard', { replace: true });
       } else {
         // Redirect to student dashboard
         const from = (location.state as any)?.from?.pathname || '/student/dashboard';
-        console.log('✅ STUDENT REDIRECT to:', from);
         navigate(from, { replace: true });
       }
     }

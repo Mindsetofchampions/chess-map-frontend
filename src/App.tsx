@@ -80,18 +80,12 @@ const LandingPage: React.FC = () => {
 
   // Enhanced debugging for landing page redirects
   React.useEffect(() => {
-    if (isAuthenticated && user) {
-      console.log('🏠 LandingPage redirect logic - ROLE DEBUG:', {
+    // Production-safe redirect logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🏠 Landing page redirect check:', {
         isAuthenticated,
-        userId: user.id,
-        userEmail: user.email,
-        userRole: user.role,
-        roleType: typeof user.role,
-        roleComparison: {
-          isMasterAdmin: user.role === 'master_admin',
-          isAdmin: user.role === 'admin', 
-          isStudent: user.role === 'student'
-        }
+        userRole: user?.role,
+        shouldRedirect: isAuthenticated && user
       });
     }
   }, [isAuthenticated, user]);
