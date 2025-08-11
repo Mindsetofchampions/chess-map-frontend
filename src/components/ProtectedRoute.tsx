@@ -180,31 +180,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, loading, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  // 🚨 DEVELOPMENT ONLY: Bypass authentication for master admin inspection
-  // ⚠️  NEVER DEPLOY TO PRODUCTION WITH THIS ENABLED
-  const bypassMasterAdminAuth = import.meta.env.VITE_BYPASS_MASTER_ADMIN_AUTH === 'true';
-  
-  if (bypassMasterAdminAuth && requiredRole === 'master_admin') {
-    console.warn('🚨 DEVELOPMENT BYPASS: Master admin authentication bypassed for inspection');
-    console.warn('⚠️  This bypass should NEVER be enabled in production');
-    return <>{children}</>;
-  }
-
   // Enhanced debugging for protected routes
   React.useEffect(() => {
-    console.log('🛡️  ProtectedRoute ROLE EVALUATION:', {
-      path: location.pathname,
-      requiredRole,
-      userRole: user?.role,
-      roleType: typeof user?.role,
-      isAuthenticated,
-      loading,
-      userId: user?.id,
-      userEmail: user?.email,
-      shouldRedirect: isAuthenticated && user && requiredRole && user.role !== requiredRole,
-      roleMatches: user?.role === requiredRole,
-      authContextUser: user
-    });
+    // Production-safe logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🛡️  ProtectedRoute:', {
+        path: location.pathname,
+        requiredRole,
+        userRole: user?.role,
+        isAuthenticated
+      });
+    }
   }, [user, requiredRole, isAuthenticated, loading, location.pathname]);
 
   /**

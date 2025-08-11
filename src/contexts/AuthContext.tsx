@@ -284,19 +284,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   useEffect(() => {
     let isMounted = true;
-    let subscription: any;
+    let authSubscription: any;
 
     const initializeAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (isMounted) {
-          console.log('🔍 Initial session:', {
-            userId: session?.user?.id,
-            email: session?.user?.email,
-            userMetadata: session?.user?.user_metadata,
-            appMetadata: session?.user?.app_metadata
-          });
+          // Production-safe session logging
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔍 Session initialized:', {
+              hasUser: !!session?.user,
+              userRole: session?.user?.user_metadata?.role
+            });
+          }
           setUser(transformUser(session?.user || null));
           setLoading(false);
         }
@@ -309,29 +310,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
-    // Set up auth state listener
-    const { data: authSubscription } = supabase.auth.onAuthStateChange(
+    // Set up auth state listener with proper cleanup
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔄 Auth state changed:', {
-          event,
-          userId: session?.user?.id,
-          userEmail: session?.user?.email,
-          userMetadata: session?.user?.user_metadata,
-          appMetadata: session?.user?.app_metadata,
-          extractedRole: session?.user?.user_metadata?.role || session?.user?.app_metadata?.role,
-          sessionDetails: session
-        });
+        // Production-safe auth state logging
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔄 Auth state changed:', {
+            event,
+            hasUser: !!session?.user,
+            userRole: session?.user?.user_metadata?.role
+          });
+        }
         
         if (isMounted) {
           const transformedUser = transformUser(session?.user || null);
-          console.log('👤 User transformation result:', {
-            id: transformedUser?.id,
-            email: transformedUser?.email,
-            role: transformedUser?.role,
-            roleType: typeof transformedUser?.role,
-            fullUser: transformedUser,
-            rawSessionUser: session?.user
-          });
+          
           setUser(transformedUser);
           setLoading(false);
           
@@ -348,15 +341,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     );
     
-    subscription = authSubscription.subscription;
+    authSubscription = subscription;
 
     initializeAuth();
 
     // Cleanup function
     return () => {
       isMounted = false;
-      if (subscription) {
-        subscription.unsubscribe();
+      if (authSubscription) {
+        authSubscription.unsubscribe();
       }
     };
   }, [setAuthError]);

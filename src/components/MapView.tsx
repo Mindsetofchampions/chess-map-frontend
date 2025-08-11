@@ -452,10 +452,12 @@ const MapView: React.FC<MapViewProps> = ({
 
     // Set loading timeout to prevent infinite loading
     const loadingTimeout = setTimeout(() => {
-      console.log('⏰ Map loading timeout - showing bubbles without map');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('⏰ Map loading timeout - showing bubbles without map');
+      }
       setIsLoading(false);
       setError(null);
-    }, 3000); // 3 second timeout
+    }, 2000); // 2 second timeout for faster fallback
     try {
       setError(null);
 
@@ -466,7 +468,9 @@ const MapView: React.FC<MapViewProps> = ({
 
       // If no valid token, just show dark background with bubbles
       if (!mapboxToken || mapboxToken.includes('YOUR_') || mapboxToken.includes('example_')) {
-        console.log('📍 No Mapbox token - showing bubbles on dark background');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📍 No Mapbox token - showing bubbles on dark background');
+        }
         clearTimeout(loadingTimeout);
         setIsLoading(false);
         setError('No Mapbox token configured - showing bubbles only');
@@ -493,21 +497,27 @@ const MapView: React.FC<MapViewProps> = ({
       });
 
       mapInstance.current.on('load', () => {
-        console.log('✅ Map loaded successfully');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Map loaded successfully');
+        }
         clearTimeout(loadingTimeout);
         setIsLoading(false);
         setError(null);
       });
 
       mapInstance.current.on('error', (e: any) => {
-        console.error('❌ Map error:', e);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('❌ Map error:', e);
+        }
         clearTimeout(loadingTimeout);
         setError(null); // Don't block bubbles with errors
         setIsLoading(false);
       });
 
     } catch (err: any) {
-      console.error('❌ Map initialization error:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Map initialization error:', err);
+      }
       clearTimeout(loadingTimeout);
       setError(null);
       setIsLoading(false);
