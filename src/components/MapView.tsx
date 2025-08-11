@@ -455,7 +455,7 @@ const MapView: React.FC<MapViewProps> = ({
       console.log('⏰ Map loading timeout - showing bubbles without map');
       setIsLoading(false);
       setError(null);
-    }, 5000); // 5 second timeout
+    }, 3000); // 3 second timeout
     try {
       setError(null);
 
@@ -469,6 +469,7 @@ const MapView: React.FC<MapViewProps> = ({
         console.log('📍 No Mapbox token - showing bubbles on dark background');
         clearTimeout(loadingTimeout);
         setIsLoading(false);
+        setError('No Mapbox token configured - showing bubbles only');
         return;
       }
 
