@@ -8,7 +8,7 @@ jest.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
     button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
-    img: ({ children, ...props }: any) => <img {...props}>{children}</img>,
+    img: ({ ...props }: any) => <img {...props} />,
   },
   AnimatePresence: ({ children }: any) => children,
 }));
