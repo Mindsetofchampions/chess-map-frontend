@@ -5,34 +5,41 @@
  * and environment variable validation.
  */
 
-// Import environment variables with proper error handling
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN_PK;
-const MAPBOX_STYLE = import.meta.env.VITE_MAPBOX_STYLE;
+// Import environment variables with fallbacks
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN ||
+                    import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
+                    import.meta.env.VITE_MAPBOX_TOKEN_PK;
+
+const MAPBOX_STYLE = import.meta.env.VITE_MAP_STYLE_URL ||
+                    import.meta.env.VITE_MAPBOX_STYLE ||
+                    'mapbox://styles/mapbox/dark-v11'; // Default fallback
 
 /**
- * Validate required Mapbox environment variables
+ * Validate token format (only if token is provided)
  */
-if (!MAPBOX_TOKEN) {
-  throw new Error(
-    'Missing VITE_MAPBOX_TOKEN_PK environment variable. ' +
-    'Please add it to your .env file and restart the development server.'
-  );
-}
-
-if (!MAPBOX_STYLE) {
-  throw new Error(
-    'Missing VITE_MAPBOX_STYLE environment variable. ' +
-    'Please add it to your .env file and restart the development server.'
-  );
-}
+export const isValidMapboxToken = (token?: string): boolean => {
+  if (!token) return false;
+  if (token.includes('YOUR_') || token.includes('example_')) return false;
+  return token.startsWith('pk.');
+};
 
 /**
- * Validate token format
+ * Check if we have a valid Mapbox configuration
  */
-if (!MAPBOX_TOKEN.startsWith('pk.')) {
-  throw new Error(
-    'Invalid Mapbox token format. Token should start with "pk."'
-  );
+export const hasValidMapboxConfig = (): boolean => {
+  return isValidMapboxToken(MAPBOX_TOKEN);
+};
+
+/**
+ * Get map configuration with fallbacks
+ */
+export const getMapConfig = () => {
+  return {
+    token: MAPBOX_TOKEN,
+    style: MAPBOX_STYLE,
+    hasValidToken: hasValidMapboxConfig(),
+    ...MAP_CONFIG
+  };
 }
 
 /**
@@ -45,10 +52,12 @@ export { MAPBOX_TOKEN, MAPBOX_STYLE };
  */
 export const MAP_CONFIG = {
   center: [-75.1652, 39.9526] as [number, number], // Philadelphia coordinates
-  zoom: 11,
+  zoom: 12,
   pitch: 0,
   bearing: 0,
-  attributionControl: true,
+  attributionControl: false,
   navigationControl: true,
   fullscreenControl: true,
+  maxZoom: 18,
+  minZoom: 8,
 } as const;

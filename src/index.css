@@ -87,17 +87,46 @@
 .mapboxgl-map {
   width: 100% !important;
   height: 100% !important;
+  position: relative !important;
 }
 
 .mapboxgl-canvas-container {
   width: 100% !important;
   height: 100% !important;
+  position: relative !important;
 }
 
 .mapboxgl-canvas {
   width: 100% !important;
   height: 100% !important;
   display: block !important;
+  position: relative !important;
+}
+
+/* Fix for Mapbox rendering issues */
+.mapboxgl-map canvas {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Ensure map container has proper stacking context */
+.map-container {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Fix map initialization flicker */
+.mapboxgl-map {
+  transition: opacity 0.3s ease-in-out;
+}
+
+.mapboxgl-map.mapboxgl-map-loading {
+  opacity: 0;
+}
+
+.mapboxgl-map.mapboxgl-map-loaded {
+  opacity: 1;
 }
 
 /* Custom Mapbox popup styling */

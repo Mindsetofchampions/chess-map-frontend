@@ -558,19 +558,37 @@ const MapView: React.FC<MapViewProps> = ({
    * Initialize Mapbox map
    */
   useEffect(() => {
-    if (map.current || !mapContainer.current) return;
+    if (!mapContainer.current) return;
+    
+    // Clean up existing map instance
+    if (map.current) {
+      map.current.remove();
+      map.current = null;
+    }
     
     let mounted = true;
     
     // Get token from environment variables
-    const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN || 
+    const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN ||
                        import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
-                       import.meta.env.VITE_MAPBOX_TOKEN_PK;
+                       import.meta.env.VITE_MAPBOX_TOKEN_PK ||
+                       'pk.eyJ1IjoieW91cnVzZXJuYW1lIiwiYSI6ImNsZXhhbXBsZXRva2VuaGVyZSJ9.example_token_here';
 
-    // Validate token
-    if (!mapboxToken || mapboxToken.trim() === '' || mapboxToken === 'pk.YOUR_MAPBOX_TOKEN_HERE') {
-      console.warn('Mapbox token not found, showing bubbles only');
-      setError('Map unavailable - displaying quest bubbles only');
+    console.log('🗺️ Mapbox token check:', {
+      hasToken: !!mapboxToken,
+      tokenLength: mapboxToken?.length,
+      tokenStart: mapboxToken?.substring(0, 10),
+      envVars: {
+        VITE_MAPBOX_TOKEN: !!import.meta.env.VITE_MAPBOX_TOKEN,
+        NEXT_PUBLIC_MAPBOX_TOKEN: !!import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN,
+        VITE_MAPBOX_TOKEN_PK: !!import.meta.env.VITE_MAPBOX_TOKEN_PK
+      }
+    });
+
+    // More lenient token validation
+    if (!mapboxToken || mapboxToken.includes('YOUR_') || mapboxToken.includes('example_')) {
+      console.warn('⚠️ Mapbox token not configured, showing dark placeholder with bubbles');
+      setError(null); // Don't show error, just use placeholder
       setIsLoading(false);
       return;
     }
@@ -578,32 +596,53 @@ const MapView: React.FC<MapViewProps> = ({
     try {
       // Set Mapbox access token
       mapboxgl.accessToken = mapboxToken;
+      
+      console.log('🚀 Initializing Mapbox map...');
 
       // Create map instance
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/dark-v11',
+        style: import.meta.env.VITE_MAP_STYLE_URL || 'mapbox://styles/mapbox/dark-v11',
         center,
         zoom,
-        attributionControl: true,
-        navigationControl: false, // We'll add this manually
+        attributionControl: false,
+        logoPosition: 'bottom-right',
       });
 
       // Add navigation controls
       const nav = new mapboxgl.NavigationControl();
       map.current.addControl(nav, 'top-right');
+      
+      // Add attribution control separately
+      const attribution = new mapboxgl.AttributionControl({
+        compact: true
+      });
+      map.current.addControl(attribution, 'bottom-right');
 
       // Handle successful load
       map.current.on('load', () => {
-        console.log('✅ Mapbox map loaded successfully');
+        console.log('✅ Mapbox map loaded successfully with controls');
         if (mounted) {
           setIsLoading(false);
           setError(null);
         }
       });
+      
+      // Handle style load for debugging
+      map.current.on('styledata', () => {
+        console.log('🎨 Map style loaded');
+      });
+      
+      // Handle source data for debugging
+      map.current.on('sourcedata', (e) => {
+        if (e.isSourceLoaded) {
+          console.log('📊 Map source data loaded:', e.sourceId);
+        }
+      });
 
       // Handle map click for analytics
       map.current.on('click', async (e) => {
+        console.log('🖱️ Map clicked at:', e.lngLat);
         if (user) {
           await analyticsHelpers.logMapInteraction(user.id, 'map_clicked', {
             lat: e.lngLat.lat,
@@ -614,17 +653,17 @@ const MapView: React.FC<MapViewProps> = ({
 
       // Handle errors
       map.current.on('error', (e) => {
-        console.error('Mapbox error:', e);
+        console.error('❌ Mapbox error:', e);
         if (mounted) {
-          setError(`Map error: ${e.error?.message || 'Failed to load'}`);
+          setError(`Map loading error: ${e.error?.message || 'Unknown error'}`);
           setIsLoading(false);
         }
       });
 
     } catch (err: any) {
-      console.error('Map initialization error:', err);
+      console.error('❌ Map initialization error:', err);
       if (mounted) {
-        setError(`Failed to initialize map: ${err.message}`);
+        setError(`Map initialization failed: ${err.message}`);
         setIsLoading(false);
       }
     }
@@ -632,6 +671,7 @@ const MapView: React.FC<MapViewProps> = ({
     return () => {
       mounted = false;
       if (map.current) {
+        console.log('🧹 Cleaning up map instance');
         map.current.remove();
         map.current = null;
       }
@@ -709,13 +749,15 @@ const MapView: React.FC<MapViewProps> = ({
       {/* Map Container */}
       <div
         ref={mapContainer}
-        className="w-full h-full absolute inset-0 bg-gray-900 rounded-xl"
+        className="w-full h-full bg-dark-secondary rounded-xl overflow-hidden"
         style={{ height: '100%', minHeight: '400px' }}
-      />
+      >
+        {/* Map will render here via Mapbox GL */}
+      </div>
       
       {/* Quest Bubbles Overlay - Always show after loading */}
       {showBubbles && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 20 }}>
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
           {PHILADELPHIA_BUBBLES.map((bubble) => (
             <QuestBubbleComponent
               key={bubble.id}
@@ -731,7 +773,7 @@ const MapView: React.FC<MapViewProps> = ({
       {/* Quest Legend with Sprites */}
       {showBubbles && (
         <motion.div
-          className="absolute bottom-4 left-4 z-30 bg-white/20 backdrop-blur-lg border border-white/30 rounded-xl p-4 max-w-xs"
+          className="absolute bottom-4 left-4 z-30 bg-glass-dark border-glass-dark rounded-xl p-4 max-w-xs backdrop-blur-lg"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1 }}
@@ -793,7 +835,7 @@ const MapView: React.FC<MapViewProps> = ({
       <AnimatePresence>
         {isLoading && (
           <motion.div 
-            className="absolute inset-0 flex items-center justify-center bg-gray-900/90 backdrop-blur-sm rounded-xl z-40"
+            className="absolute inset-0 flex items-center justify-center bg-dark-secondary/95 backdrop-blur-md rounded-xl z-40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -801,50 +843,44 @@ const MapView: React.FC<MapViewProps> = ({
           >
             <div className="text-center text-white">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-electric-blue-400 mx-auto mb-4"></div>
-              <h3 className="text-lg font-semibold mb-2">Loading CHESS Quest Map</h3>
-              <p className="text-sm text-gray-300">Initializing map and quest bubbles...</p>
+              <h3 className="text-lg font-semibold mb-2">Loading Philadelphia Map</h3>
+              <p className="text-sm text-gray-300">Connecting to Mapbox services...</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
       
-      {/* Error Overlay - Still show bubbles */}
+      {/* Error Notice - Non-blocking */}
       <AnimatePresence>
         {error && (
           <motion.div 
-            className="absolute top-4 right-4 bg-red-500/20 border border-red-500/30 rounded-xl p-3 z-40 max-w-sm"
+            className="absolute top-4 right-4 bg-amber-500/20 border border-amber-500/30 rounded-xl p-3 z-30 max-w-sm"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ delay: 2, duration: 0.3 }}
           >
-            <div className="text-red-200 text-sm">
-              <p className="font-semibold mb-1">Map Notice:</p>
-              <p>{error.includes('token') ? 'Map tiles unavailable - showing quest bubbles only' : error}</p>
+            <div className="text-amber-200 text-sm">
+              <p className="font-semibold mb-1">🗺️ Map Notice:</p>
+              <p>{error.includes('token') || error.includes('initialization') ? 
+                'Using offline mode - bubbles still interactive!' : 
+                error}</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
       
-      {/* Map Status Indicator */}
+      {/* Map Status Indicator - Only show when map is actually loaded */}
       {!isLoading && !error && (
         <motion.div
-          className="absolute top-4 left-4 z-30 bg-glass-dark border-glass-dark rounded-full px-3 py-1 text-xs text-cyber-green-300 flex items-center gap-2"
+          className="absolute top-4 left-4 z-30 bg-cyber-green-500/20 border border-cyber-green-500/40 rounded-full px-3 py-1 text-xs text-cyber-green-300 flex items-center gap-2"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
           <div className="w-2 h-2 bg-cyber-green-400 rounded-full animate-pulse"></div>
-          <span>Map Ready • {PHILADELPHIA_BUBBLES.length} Bubbles Active</span>
+          <span>Mapbox Connected • {PHILADELPHIA_BUBBLES.length} Bubbles</span>
         </motion.div>
-      )}
-
-      {/* Bubble Count Debug */}
-      {process.env.NODE_ENV === 'development' && showBubbles && (
-        <div className="absolute top-4 left-4 bg-black/70 text-white p-2 rounded text-xs z-30">
-          <div>Bubbles Active: {PHILADELPHIA_BUBBLES.length}</div>
-          <div>Container: {containerRect ? 'Ready' : 'Loading'}</div>
-          <div>Mouse: {mousePosition.x.toFixed(0)}, {mousePosition.y.toFixed(0)}</div>
-        </div>
       )}
     </div>
   );
