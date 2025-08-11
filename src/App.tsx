@@ -291,23 +291,26 @@ const LandingPage: React.FC = () => {
           </div>
           
           <GlassContainer variant="card" className="mt-8 p-0 overflow-hidden">
-            <div className="relative h-[400px] md:h-[600px] w-full">
+            <div className="relative h-[350px] md:h-[600px] w-full">
               <MapView />
               
               {/* Map Overlay Info */}
-              <div className="absolute top-4 left-4 right-4 z-10">
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <div className="bg-glass-dark border-glass-dark rounded-full px-3 py-1 text-xs text-gray-100 backdrop-blur-xl font-medium">
+              <div className="absolute top-2 left-2 right-2 md:top-4 md:left-4 md:right-4 z-10">
+                <div className="flex flex-wrap gap-1 md:gap-2 justify-center">
+                  <div className="bg-glass-dark border-glass-dark rounded-full px-2 md:px-3 py-1 text-xs text-gray-100 backdrop-blur-xl font-medium">
                     <span className="w-2 h-2 bg-electric-blue-400 rounded-full inline-block mr-2"></span>
-                    Active Quests
+                    <span className="hidden md:inline">Active Quests</span>
+                    <span className="md:hidden">Quests</span>
                   </div>
-                  <div className="bg-glass-dark border-glass-dark rounded-full px-3 py-1 text-xs text-gray-100 backdrop-blur-xl font-medium">
+                  <div className="bg-glass-dark border-glass-dark rounded-full px-2 md:px-3 py-1 text-xs text-gray-100 backdrop-blur-xl font-medium">
                     <span className="w-2 h-2 bg-cyber-green-400 rounded-full inline-block mr-2"></span>
-                    Safe Spaces
+                    <span className="hidden md:inline">Safe Spaces</span>
+                    <span className="md:hidden">Safe</span>
                   </div>
-                  <div className="bg-glass-dark border-glass-dark rounded-full px-3 py-1 text-xs text-gray-100 backdrop-blur-xl font-medium">
+                  <div className="bg-glass-dark border-glass-dark rounded-full px-2 md:px-3 py-1 text-xs text-gray-100 backdrop-blur-xl font-medium">
                     <span className="w-2 h-2 bg-neon-purple-400 rounded-full inline-block mr-2"></span>
-                    Community Hubs
+                    <span className="hidden md:inline">Community Hubs</span>
+                    <span className="md:hidden">Events</span>
                   </div>
                 </div>
               </div>

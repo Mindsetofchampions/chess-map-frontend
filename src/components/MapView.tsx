@@ -854,17 +854,18 @@ const MapView: React.FC<MapViewProps> = ({
       <AnimatePresence>
         {error && (
           <motion.div 
-            className="absolute top-4 right-4 bg-amber-500/20 border border-amber-500/30 rounded-xl p-3 z-30 max-w-sm"
+            className="absolute top-4 right-4 bg-amber-500/20 border border-amber-500/30 rounded-xl p-2 md:p-3 z-30 max-w-xs md:max-w-sm"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ delay: 2, duration: 0.3 }}
           >
-            <div className="text-amber-200 text-sm">
-              <p className="font-semibold mb-1">🗺️ Map Notice:</p>
-              <p>{error.includes('token') || error.includes('initialization') ? 
+            <div className="text-amber-200 text-xs md:text-sm">
+              <p className="font-semibold mb-1">🗺️ Notice:</p>
+              <p className="hidden md:block">{error.includes('token') || error.includes('initialization') ? 
                 'Using offline mode - bubbles still interactive!' : 
                 error}</p>
+              <p className="md:hidden">Offline mode</p>
             </div>
           </motion.div>
         )}
@@ -873,13 +874,14 @@ const MapView: React.FC<MapViewProps> = ({
       {/* Map Status Indicator - Only show when map is actually loaded */}
       {!isLoading && !error && (
         <motion.div
-          className="absolute top-4 left-4 z-30 bg-cyber-green-500/20 border border-cyber-green-500/40 rounded-full px-3 py-1 text-xs text-cyber-green-300 flex items-center gap-2"
+          className="absolute top-4 left-4 z-30 bg-cyber-green-500/20 border border-cyber-green-500/40 rounded-full px-2 md:px-3 py-1 text-xs text-cyber-green-300 flex items-center gap-1 md:gap-2"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
           <div className="w-2 h-2 bg-cyber-green-400 rounded-full animate-pulse"></div>
-          <span>Mapbox Connected • {PHILADELPHIA_BUBBLES.length} Bubbles</span>
+          <span className="hidden md:inline">Mapbox Connected • {PHILADELPHIA_BUBBLES.length} Bubbles</span>
+          <span className="md:hidden">{PHILADELPHIA_BUBBLES.length}</span>
         </motion.div>
       )}
     </div>
