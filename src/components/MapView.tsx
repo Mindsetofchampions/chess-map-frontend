@@ -445,13 +445,18 @@ const MapView: React.FC<MapViewProps> = ({
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   /**
-   * Initialize map with dynamic import
+   * Initialize map with proper timeout and error handling
    */
   const initializeMap = useCallback(async () => {
     if (!mapContainer.current) return;
 
+    // Set loading timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      console.log('⏰ Map loading timeout - showing bubbles without map');
+      setIsLoading(false);
+      setError(null);
+    }, 5000); // 5 second timeout
     try {
-      setIsLoading(true);
       setError(null);
 
       // Get token with multiple fallbacks
@@ -462,6 +467,7 @@ const MapView: React.FC<MapViewProps> = ({
       // If no valid token, just show dark background with bubbles
       if (!mapboxToken || mapboxToken.includes('YOUR_') || mapboxToken.includes('example_')) {
         console.log('📍 No Mapbox token - showing bubbles on dark background');
+        clearTimeout(loadingTimeout);
         setIsLoading(false);
         return;
       }
@@ -487,19 +493,22 @@ const MapView: React.FC<MapViewProps> = ({
 
       mapInstance.current.on('load', () => {
         console.log('✅ Map loaded successfully');
+        clearTimeout(loadingTimeout);
         setIsLoading(false);
         setError(null);
       });
 
       mapInstance.current.on('error', (e: any) => {
         console.error('❌ Map error:', e);
-        setError(`Map error: ${e.error?.message || 'Unknown error'}`);
+        clearTimeout(loadingTimeout);
+        setError(null); // Don't block bubbles with errors
         setIsLoading(false);
       });
 
     } catch (err: any) {
       console.error('❌ Map initialization error:', err);
-      setError(null); // Don't block bubbles
+      clearTimeout(loadingTimeout);
+      setError(null);
       setIsLoading(false);
     }
   }, [center, zoom]);
