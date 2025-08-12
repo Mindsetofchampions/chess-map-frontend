@@ -15,6 +15,9 @@ import DraggableBubbles from './components/DraggableBubbles';
 import AdminDashboard from './pages/AdminDashboard';
 import MasterAdminDashboard from './pages/MasterAdminDashboard';
 import MapPage from './pages/MapPage';
+import DebugPage from './pages/DebugPage';
+import EnvMissing from './components/EnvMissing';
+import { isEnvReady, EnvMissingError } from './services/supabaseClient';
 
 /**
  * Student Dashboard Component
@@ -40,6 +43,10 @@ const StudentDashboard: React.FC = () => {
     }
   }, [user]);
 
+  // Check environment setup
+  if (!isEnvReady()) {
+    return <EnvMissing error="Supabase environment variables not configured" />;
+  }
   return (
     <GlassContainer variant="page">
       <div className="container mx-auto max-w-7xl">
@@ -748,6 +755,16 @@ const AppRouter: React.FC = () => {
               </ErrorBoundary>
             } 
           />
+          
+          {/* Debug Page Route */}
+          <Route 
+            path="/debug" 
+            element={
+              <ErrorBoundary>
+                <DebugPage />
+              </ErrorBoundary>
+            } 
+          />
 
           {/* Catch-all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -764,6 +781,11 @@ const AppRouter: React.FC = () => {
  * and provides global auth state management.
  */
 function App(): JSX.Element {
+  // Environment check at app level
+  if (!isEnvReady()) {
+    return <EnvMissing showInstructions={true} />;
+  }
+
   return (
     <AuthProvider>
       <AppRouter />
