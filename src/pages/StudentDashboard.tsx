@@ -1,3 +1,4 @@
+// src/pages/StudentDashboard.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -5,44 +6,36 @@ import { useAuth } from '../contexts/AuthContext';
 import { useQuests } from '../hooks/useQuests';
 import MapView from '../components/MapView';
 import GlassContainer from '../components/GlassContainer';
-import { 
-  MapPin, 
-  Coins, 
-  Trophy, 
-  Clock,
+import EvidenceUploadDemo from '../components/EvidenceUploadDemo';
+import {
+  MapPin,
+  Coins,
+  Trophy,
   Star,
   Target,
   TrendingUp,
   Award,
   Home,
   ArrowLeft,
-  Settings
+  Settings,
 } from 'lucide-react';
 
-/**
- * Student Dashboard Component
- * Protected route for authenticated students with quest management and progress tracking
- */
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { 
-    availableQuests, 
-    completedQuestIds, 
-    userBalance, 
-    loading, 
+  const {
+    availableQuests,
+    completedQuestIds,
+    userBalance,
+    loading,
     error,
-    completeQuest 
+    completeQuest,
   } = useQuests();
 
-  // Additional role verification for debugging
   React.useEffect(() => {
-    // Production-safe role verification
     if (process.env.NODE_ENV === 'development') {
       console.log('🎓 StudentDashboard role check:', user?.role);
     }
-    
-    // If admin user somehow got here, redirect them
     if (user?.role === 'admin') {
       navigate('/admin/dashboard', { replace: true });
       return;
@@ -50,11 +43,8 @@ const StudentDashboard: React.FC = () => {
       navigate('/master-admin/dashboard', { replace: true });
       return;
     }
-  }, [user]);
+  }, [user, navigate]);
 
-  /**
-   * Handle quest completion
-   */
   const handleQuestComplete = async (questId: string) => {
     const result = await completeQuest(questId);
     if (result) {
@@ -62,33 +52,22 @@ const StudentDashboard: React.FC = () => {
     }
   };
 
-  /**
-   * Navigate to home page
-   */
-  const handleGoHome = () => {
-    navigate('/', { replace: true });
-  };
+  const handleGoHome = () => navigate('/', { replace: true });
+  const handleSettings = () => console.log('Navigate to settings');
 
-  /**
-   * Navigate to profile/settings
-   */
-  const handleSettings = () => {
-    // TODO: Implement settings page
-    console.log('Navigate to settings');
-  };
+  const total = completedQuestIds.length + availableQuests.length;
+  const progressPct = total ? Math.floor((completedQuestIds.length / total) * 100) : 0;
 
   return (
     <GlassContainer variant="page">
       <div className="container mx-auto max-w-7xl">
-        
         {/* Navigation Header */}
-        <motion.div 
+        <motion.div
           className="flex items-center justify-between p-4 mb-4"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {/* Left Navigation */}
           <div className="flex items-center gap-3">
             <motion.button
               onClick={handleGoHome}
@@ -113,7 +92,6 @@ const StudentDashboard: React.FC = () => {
             </motion.button>
           </div>
 
-          {/* Right Navigation */}
           <div className="flex items-center gap-3">
             <motion.button
               onClick={handleSettings}
@@ -129,7 +107,7 @@ const StudentDashboard: React.FC = () => {
         </motion.div>
 
         {/* Student Header */}
-        <motion.div 
+        <motion.div
           className="flex items-center justify-between p-6 mb-6"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -148,13 +126,12 @@ const StudentDashboard: React.FC = () => {
               )}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-4">
-            {/* Coin Balance */}
-            <motion.div 
+            <motion.div
               className="bg-glass border-glass rounded-full px-4 py-2 flex items-center gap-2"
               whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
+              transition={{ type: 'spring', stiffness: 300 }}
             >
               <Coins className="w-5 h-5 text-yellow-400" />
               <span className="text-yellow-400 font-semibold">
@@ -162,7 +139,6 @@ const StudentDashboard: React.FC = () => {
               </span>
             </motion.div>
 
-            {/* Sign Out Button */}
             <motion.button
               onClick={signOut}
               className="bg-glass border-glass hover:bg-glass-dark text-gray-300 hover:text-white rounded-xl px-4 py-2 transition-all duration-200 text-sm font-medium min-h-touch touch-manipulation"
@@ -176,7 +152,7 @@ const StudentDashboard: React.FC = () => {
         </motion.div>
 
         {/* Stats Cards */}
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 md:grid-cols-4 gap-6 px-6 mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -196,9 +172,7 @@ const StudentDashboard: React.FC = () => {
 
           <GlassContainer variant="card" className="text-center">
             <Star className="w-10 h-10 text-neon-purple-400 mx-auto mb-3" />
-            <h3 className="text-2xl font-bold text-white">
-              {Math.floor((completedQuestIds.length / (completedQuestIds.length + availableQuests.length)) * 100) || 0}%
-            </h3>
+            <h3 className="text-2xl font-bold text-white">{progressPct}%</h3>
             <p className="text-gray-300 text-sm">Progress</p>
           </GlassContainer>
 
@@ -211,7 +185,7 @@ const StudentDashboard: React.FC = () => {
 
         {/* Error Display */}
         {error && (
-          <motion.div 
+          <motion.div
             className="mx-6 mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-xl"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -224,7 +198,7 @@ const StudentDashboard: React.FC = () => {
         )}
 
         {/* Quest Map */}
-        <motion.div 
+        <motion.div
           className="px-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -237,7 +211,7 @@ const StudentDashboard: React.FC = () => {
               <span>Explore quests in your area</span>
             </div>
           </div>
-          
+
           <GlassContainer variant="card" className="p-0 overflow-hidden">
             <div className="relative h-[600px] w-full">
               <MapView onQuestComplete={handleQuestComplete} />
@@ -245,15 +219,15 @@ const StudentDashboard: React.FC = () => {
           </GlassContainer>
         </motion.div>
 
-        {/* Recent Activity */}
-        <motion.div 
+        {/* Recent Activity + Evidence Upload */}
+        <motion.div
           className="px-6 mt-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.6 }}
         >
           <h2 className="text-2xl font-bold text-white mb-6">Recent Activity</h2>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Available Quests */}
             <GlassContainer variant="card">
@@ -261,7 +235,7 @@ const StudentDashboard: React.FC = () => {
                 <Target className="w-6 h-6 text-electric-blue-400" />
                 Available Quests
               </h3>
-              
+
               {loading ? (
                 <div className="space-y-3">
                   {Array.from({ length: 3 }).map((_, i) => (
@@ -289,16 +263,16 @@ const StudentDashboard: React.FC = () => {
               )}
             </GlassContainer>
 
-            {/* Achievements */}
+            {/* Achievements + Evidence Upload */}
             <GlassContainer variant="card">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
                 <Award className="w-6 h-6 text-yellow-400" />
                 Recent Achievements
               </h3>
-              
-              <div className="space-y-3">
+
+              <div className="space-y-4">
                 {completedQuestIds.length > 0 ? (
-                  completedQuestIds.slice(0, 5).map((questId, index) => (
+                  completedQuestIds.slice(0, 5).map((questId) => (
                     <div key={questId} className="bg-glass-light border-glass-light rounded-lg p-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-cyber-green-500/20 border border-cyber-green-500/30 rounded-full flex items-center justify-center">
@@ -312,10 +286,11 @@ const StudentDashboard: React.FC = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-300 text-center py-8">
-                    Complete your first quest to earn achievements!
-                  </p>
+                  <p className="text-gray-300">Complete your first quest to earn achievements!</p>
                 )}
+
+                {/* Evidence upload demo */}
+                <EvidenceUploadDemo />
               </div>
             </GlassContainer>
           </div>
