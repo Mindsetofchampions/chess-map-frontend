@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Users, Target, MapPin, Sparkles, X, Navigation } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { CHESS_COLORS } from './FloatingBubbles';
+import { PersonaChipMarker, PersonaChipCluster, addPersonaChipsToMap } from './PersonaChips';
+import { getAllPersonas, getPersonaByKey } from '../data/personas';
+import { PersonaDef, PersonaKey } from '../types';
 
 interface MapViewProps {
   center?: [number, number];
@@ -440,9 +443,53 @@ const MapView: React.FC<MapViewProps> = ({
     position: { x: number; y: number };
   } | null>(null);
   const [showLegend, setShowLegend] = useState(false);
+  const [personaMarkers, setPersonaMarkers] = useState<(PersonaChipMarker | PersonaChipCluster)[]>([]);
   
   const { user } = useAuth();
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  /**
+   * Add persona chips to map
+   */
+  const addPersonaChips = useCallback(() => {
+    if (!mapInstance.current) return;
+
+    // Clear existing persona markers
+    personaMarkers.forEach(marker => marker.remove());
+    
+    // Sample organizations with persona assignments for demo
+    const organizationsWithPersonas = [
+      {
+        id: 'org-1',
+        lat: 39.9526,
+        lng: -75.1652,
+        activePersonas: ['hootie', 'hammer'] as PersonaKey[]
+      },
+      {
+        id: 'org-2', 
+        lat: 39.9496,
+        lng: -75.1502,
+        activePersonas: ['kitty', 'gino'] as PersonaKey[]
+      },
+      {
+        id: 'org-3',
+        lat: 39.9656,
+        lng: -75.1810,
+        activePersonas: ['badge'] as PersonaKey[]
+      }
+    ];
+
+    const newMarkers = addPersonaChipsToMap(
+      mapInstance.current,
+      organizationsWithPersonas,
+      (persona: PersonaDef) => {
+        console.log('Persona clicked:', persona.name);
+        // Could open persona chat, show info modal, etc.
+      }
+    );
+    
+    setPersonaMarkers(newMarkers);
+  }, [personaMarkers]);
 
   /**
    * Initialize map with proper timeout and error handling
@@ -587,8 +634,22 @@ const MapView: React.FC<MapViewProps> = ({
         mapInstance.current.remove();
         mapInstance.current = null;
       }
+      // Clean up persona markers
+      personaMarkers.forEach(marker => marker.remove());
     };
-  }, [initializeMap]);
+  }, [initializeMap, personaMarkers]);
+
+  /**
+   * Add persona chips when map is ready
+   */
+  useEffect(() => {
+    if (mapInstance.current && !isLoading && !error) {
+      // Delay persona chips to ensure map is fully loaded
+      setTimeout(() => {
+        addPersonaChips();
+      }, 1000);
+    }
+  }, [isLoading, error, addPersonaChips]);
 
   return (
     <div className="w-full h-full relative">
