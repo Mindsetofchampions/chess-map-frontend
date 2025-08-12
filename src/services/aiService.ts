@@ -108,7 +108,8 @@
 + * Add variation instruction to prompt for de-duplication
 + */
 +export function addVariationInstruction(originalPrompt: string): string {
-+  return `${originalPrompt}
++  re
+}turn `${originalPrompt}
 +
 +IMPORTANT: Vary your response style and examples from your previous answer. Use different phrasing and approach the topic from a fresh angle while maintaining your persona.`;
 +}
