@@ -27,3 +27,12 @@ export async function uploadQuestEvidence({ file, userId, questId }: UploadParam
 
   return { id: data.id, path: data.url, questId: id };
 }
+/** why: bucket is private; get a temporary URL to view */
+export async function getEvidenceSignedUrl(path: string, expiresInSeconds = 600) {
+  const { data, error } = await supabase
+    .storage
+    .from('quest-evidence')
+    .createSignedUrl(path, expiresInSeconds);
+  if (error) throw error;
+  return data.signedUrl;
+}
