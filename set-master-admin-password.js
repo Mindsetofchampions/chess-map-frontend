@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const VITE_SUPABASE_URL="https://cpfcnauiuceialwdbzms.supabase.co"
-const VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwZmNuYXVpdWNlaWFsd2Riem1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2NTc5NDAsImV4cCI6MjA2OTIzMzk0MH0.NnE8X9Din3b-ZQMSDvap_r9FJdhn2q7sgQAhc93-vwQ"
+const VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwZmNuYXVpdWNlaWFsd2Riem1zIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzY1Nzk0MCwiZXhwIjoyMDY5MjMzOTQwfQ.XXuOInGkGEx4W3vW5I92o5sVqdBbAuu7mKCDUHmtXvs"
 
 const supabase = createClient(VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY);
 
