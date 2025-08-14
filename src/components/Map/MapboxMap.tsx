@@ -9,7 +9,8 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MAPBOX_TOKEN, MAPBOX_STYLE, MAP_CONFIG } from '../../config/mapbox';
-import { loadPersonaSprites, getSpriteId, PersonaType } from './sprites';
+import { getSpriteId, type PersonaKey } from '../../lib/sprites';
+import { ensurePersonaSprites } from '../map/ensureSpritesOnLoad';
 import { MapPin, Maximize, Navigation } from 'lucide-react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -21,7 +22,7 @@ export interface MapPoint {
   name: string;
   description?: string;
   coordinates: [number, number]; // [lng, lat]
-  persona: PersonaType;
+  persona: PersonaKey;
   type: 'organization' | 'event';
   metadata?: Record<string, any>;
 }
@@ -109,8 +110,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         try {
           if (!map.current) return;
 
-          // Load persona sprites
-          await loadPersonaSprites(map.current);
+          // Load persona sprites with error handling
+          await ensurePersonaSprites(map.current);
 
           // Add data source
           map.current.addSource('points', {
