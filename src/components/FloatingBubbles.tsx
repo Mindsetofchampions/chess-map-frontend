@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, X } from 'lucide-react';
+import { PERSONA_GIF, type PersonaKey } from '../assets/personas';
 
 /**
  * CHESS Attribute Color System
@@ -18,7 +19,7 @@ const CHESS_COLORS = {
  * CHESS attribute data interface
  */
 interface ChessAttribute {
-  id: string;
+  id: PersonaKey;
   name: string;
   character: string;
   sprite: string;
@@ -38,54 +39,67 @@ interface TooltipState {
 }
 
 /**
+ * Sprite loading state tracking
+ */
+interface SpriteState {
+  loaded: boolean;
+  failed: boolean;
+  attempts: number;
+}
+
+// Constants for sprite loading
+const MAX_RETRY_ATTEMPTS = 2;
+const RETRY_DELAY_MS = 500;
+
+/**
  * CHESS attributes configuration with character sprites and positioning
  */
 const CHESS_ATTRIBUTES: ChessAttribute[] = [
   {
-    id: 'character',
+    id: 'hootie',
     name: 'Character',
     character: 'Hootie the Owl',
-    sprite: '/sprites/owl.gif/HOOTIE_WINGLIFT.gif',
+    sprite: PERSONA_GIF.hootie,
     description: 'Hootie soars through character-building challenges—follow her for wisdom quests!',
     position: { x: '15%', y: '20%' },
     delay: 0,
     color: CHESS_COLORS.character
   },
   {
-    id: 'health',
+    id: 'kittykat',
     name: 'Health',
     character: 'Brenda the Cat',
-    sprite: '/sprites/cat.gif/KITTY_BOUNCE.gif',
+    sprite: PERSONA_GIF.kittykat,
     description: 'Brenda bounces into health challenges—follow her for wellness quests!',
     position: { x: '75%', y: '15%' },
     delay: 0.5,
     color: CHESS_COLORS.health
   },
   {
-    id: 'exploration',
+    id: 'gino',
     name: 'Exploration',
     character: 'Gino the Dog',
-    sprite: '/sprites/dog.gif/GINO_COMPASSSPIN.gif',
+    sprite: PERSONA_GIF.gino,
     description: 'Gino navigates exciting exploration adventures—follow him for discovery quests!',
     position: { x: '20%', y: '70%' },
     delay: 1.0,
     color: CHESS_COLORS.exploration
   },
   {
-    id: 'stem',
+    id: 'hammer',
     name: 'STEM',
     character: 'Hammer the Robot',
-    sprite: '/sprites/robot.gif/HAMMER_SWING.gif',
+    sprite: PERSONA_GIF.hammer,
     description: 'Hammer builds amazing STEM projects—follow them for innovation quests!',
     position: { x: '80%', y: '65%' },
     delay: 1.5,
     color: CHESS_COLORS.stem
   },
   {
-    id: 'stewardship',
+    id: 'badge',
     name: 'Stewardship',
     character: 'MOC Badge',
-    sprite: '/sprites/badge.gif/BADGE_SHINE.gif',
+    sprite: PERSONA_GIF.badge,
     description: 'The MOC Badge represents environmental stewardship—follow it for conservation quests!',
     position: { x: '50%', y: '45%' },
     delay: 2.0,
@@ -102,6 +116,8 @@ const CHESS_ATTRIBUTES: ChessAttribute[] = [
  * - Interactive tooltips with glassmorphic styling
  * - Mobile-responsive design with touch optimization
  * - Accessibility support with proper ARIA labels
+ * - Bounded retry logic for sprite loading
+ * - Graceful fallback to emoji if sprites fail to load
  * 
  * @returns {JSX.Element} Floating bubbles animation layer
  */
@@ -111,6 +127,77 @@ const FloatingBubbles: React.FC = () => {
     attribute: null,
     position: { x: 0, y: 0 }
   });
+
+  // Track sprite loading state for each attribute
+  const spriteStates = useRef<Record<PersonaKey, SpriteState>>({
+    hootie: { loaded: false, failed: false, attempts: 0 },
+    kittykat: { loaded: false, failed: false, attempts: 0 },
+    gino: { loaded: false, failed: false, attempts: 0 },
+    hammer: { loaded: false, failed: false, attempts: 0 },
+    badge: { loaded: false, failed: false, attempts: 0 }
+  });
+
+  const [spriteStatesUpdate, setSpriteStatesUpdate] = useState(0);
+
+  /**
+   * Handle sprite loading success
+   */
+  const handleSpriteLoad = useCallback((personaKey: PersonaKey) => {
+    if (spriteStates.current[personaKey]) {
+      spriteStates.current[personaKey] = { loaded: true, failed: false, attempts: 0 };
+      setSpriteStatesUpdate(prev => prev + 1);
+    }
+  }, []);
+
+  /**
+   * Handle sprite loading error with bounded retry
+   */
+  const handleSpriteError = useCallback((personaKey: PersonaKey, imgElement: HTMLImageElement) => {
+    const state = spriteStates.current[personaKey];
+    if (!state) return;
+
+    state.attempts += 1;
+
+    if (state.attempts >= MAX_RETRY_ATTEMPTS) {
+      // Final fallback - mark as failed and hide
+      state.failed = true;
+      state.loaded = false;
+      imgElement.style.display = 'none';
+      
+      // Create emoji fallback
+      const parent = imgElement.parentElement;
+      if (parent && !parent.querySelector('.emoji-fallback')) {
+        const emojiMap = {
+          hootie: '🦉',
+          kittykat: '🐱',
+          gino: '🐕',
+          hammer: '🤖',
+          badge: '🏛️'
+        };
+        
+        const fallback = document.createElement('div');
+        fallback.className = 'emoji-fallback text-2xl select-none pointer-events-none';
+        fallback.textContent = emojiMap[personaKey];
+        fallback.style.display = 'flex';
+        fallback.style.alignItems = 'center';
+        fallback.style.justifyContent = 'center';
+        fallback.style.width = '100%';
+        fallback.style.height = '100%';
+        parent.appendChild(fallback);
+      }
+
+      console.error(`❌ Sprite failed to load after ${state.attempts} attempts: ${personaKey}`);
+      setSpriteStatesUpdate(prev => prev + 1);
+      return;
+    }
+
+    // Retry with cache-busting parameter
+    setTimeout(() => {
+      const originalSrc = PERSONA_GIF[personaKey];
+      const cacheBustSrc = `${originalSrc}?retry=${state.attempts}&t=${Date.now()}`;
+      imgElement.src = cacheBustSrc;
+    }, RETRY_DELAY_MS * state.attempts);
+  }, []);
 
   /**
    * Handle bubble click to show tooltip
@@ -141,8 +228,7 @@ const FloatingBubbles: React.FC = () => {
   /**
    * Handle "Learn More" button click
    */
-  const handleLearnMore = (attributeId: string) => {
-    // TODO: Implement map centering on attribute quests
+  const handleLearnMore = (attributeId: PersonaKey) => {
     console.log(`Centering map on ${attributeId} quests`);
     closeTooltip();
   };
@@ -202,6 +288,7 @@ const FloatingBubbles: React.FC = () => {
                 items-center
                 justify-center
                 border-2
+                relative
               "
               style={{
                 backgroundColor: `${attribute.color}20`, // 20% opacity background
@@ -209,40 +296,6 @@ const FloatingBubbles: React.FC = () => {
               }}
               onClick={(e) => handleBubbleClick(attribute, e)}
               aria-label={`${attribute.character} - ${attribute.name} attribute bubble`}
-              
-              // Mobile responsive animation
-              animate={{
-                y: [0, -10, 0], // Mobile oscillation (smaller)
-              }}
-              transition={{
-                duration: 3,
-                delay: attribute.delay,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-              
-              // Override desktop animation on larger screens
-              className="
-                rounded-full 
-                shadow-lg 
-                p-3 
-                cursor-pointer 
-                transition-all 
-                duration-300
-                hover:shadow-xl
-                min-w-[44px]
-                min-h-[44px]
-                touch-manipulation
-                flex
-                items-center
-                justify-center
-                border-2
-                md:animate-none
-              "
-              style={{
-                backgroundColor: `${attribute.color}20`, // 20% opacity background
-                borderColor: `${attribute.color}60`, // 60% opacity border
-              }}
             >
               {/* Character Sprite */}
               <motion.img
@@ -255,41 +308,17 @@ const FloatingBubbles: React.FC = () => {
                   select-none 
                   pointer-events-none
                 "
+                style={{
+                  imageRendering: 'pixelated'
+                }}
                 draggable={false}
+                onLoad={() => handleSpriteLoad(attribute.id)}
+                onError={(e) => handleSpriteError(attribute.id, e.currentTarget)}
                 
                 // Sprite hover animation
                 whileHover={{
                   rotate: [0, -5, 5, 0],
                   transition: { duration: 0.4 }
-                }}
-                
-                // Error handling for missing sprites
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  
-                  // Create fallback icon
-                  const parent = target.parentNode as HTMLElement;
-                  if (parent && !parent.querySelector('.fallback-icon')) {
-                    const fallback = document.createElement('div');
-                    fallback.className = `
-                      fallback-icon
-                      w-10 h-10 
-                      md:w-12 md:h-12 
-                      bg-gradient-to-br 
-                      from-electric-blue-400 
-                      to-neon-purple-400 
-                      rounded-full 
-                      flex 
-                      items-center 
-                      justify-center 
-                      text-white 
-                      font-bold 
-                      text-sm
-                    `;
-                    fallback.textContent = attribute.name.charAt(0);
-                    parent.appendChild(fallback);
-                  }
                 }}
               />
               
