@@ -272,6 +272,7 @@ const Signup: React.FC = () => {
                 type="submit"
                 disabled={submitting || loading}
                 className="w-full bg-gradient-to-r from-cyber-green-500 to-cyber-green-600 hover:from-cyber-green-400 hover:to-cyber-green-500 text-white rounded-xl px-6 py-3 font-semibold shadow-lg border border-cyber-green-400/30 disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] transition-all duration-200"
+                data-testid="btn-signup"
                 whileHover={!submitting && !loading ? { scale: 1.02 } : {}}
                 whileTap={!submitting && !loading ? { scale: 0.98 } : {}}
               >

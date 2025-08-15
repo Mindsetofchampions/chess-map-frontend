@@ -17,6 +17,7 @@ import GlassContainer from './components/GlassContainer';
 import FloatingBubbles from './components/FloatingBubbles';
 import DraggableBubbles from './components/DraggableBubbles';
 import MapPage from './pages/MapPage';
+import SystemDiagnostics from './pages/admin/SystemDiagnostics';
 
 /**
  * Landing Page Component
@@ -634,6 +635,18 @@ const AppRouter: React.FC = () => {
             element={
               <ErrorBoundary>
                 <MapPage />
+              </ErrorBoundary>
+            }
+          />
+          
+          {/* System Diagnostics Route */}
+          <Route
+            path="/admin/diagnostics"
+            element={
+              <ErrorBoundary>
+                <ProtectedRoute>
+                  <SystemDiagnostics />
+                </ProtectedRoute>
               </ErrorBoundary>
             }
           />

@@ -13,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 import GlassContainer from '../components/GlassContainer';
 import WalletChip from '../components/wallet/WalletChip';
 import LedgerTable from '../components/wallet/LedgerTable';
+import LogoutButton from '../components/LogoutButton';
 
 /**
  * Dashboard Stats Card Props
@@ -72,7 +73,10 @@ const Dashboard: React.FC = () => {
             <p className="text-gray-300">Continue your CHESS Quest learning journey</p>
           </div>
           
-          <WalletChip showRefresh autoRefresh />
+          <div className="flex items-center gap-3">
+            <WalletChip showRefresh autoRefresh />
+            <LogoutButton />
+          </div>
         </motion.div>
 
         {/* Quick Stats */}

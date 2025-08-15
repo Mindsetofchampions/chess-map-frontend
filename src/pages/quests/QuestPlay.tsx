@@ -255,6 +255,7 @@ const QuestPlay: React.FC = () => {
                       key={option.id}
                       onClick={() => !submitted && setSelectedOption(option.id)}
                       disabled={submitted}
+                      data-testid={`btn-choice-${option.id}`}
                       className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-200 ${
                         submitted 
                           ? 'cursor-default opacity-75'

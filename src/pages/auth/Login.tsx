@@ -225,6 +225,7 @@ const Login: React.FC = () => {
                 type="submit"
                 disabled={submitting || loading}
                 className="w-full btn-esports disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
+                data-testid="btn-login"
                 whileHover={!submitting && !loading ? { scale: 1.02 } : {}}
                 whileTap={!submitting && !loading ? { scale: 0.98 } : {}}
               >

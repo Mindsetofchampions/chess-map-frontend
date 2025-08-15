@@ -304,6 +304,7 @@ const Approvals: React.FC = () => {
                           <button
                             onClick={() => handleApprove(quest.id, quest.reward_coins)}
                             disabled={!affordable || approving === quest.id}
+                            data-testid={`btn-approve-${quest.id}`}
                             className="bg-cyber-green-500/20 border border-cyber-green-500/30 text-cyber-green-300 hover:bg-cyber-green-500/30 rounded-lg px-4 py-2 font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[80px]"
                           >
                             {approving === quest.id ? (

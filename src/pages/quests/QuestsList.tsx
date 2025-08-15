@@ -286,6 +286,7 @@ const QuestsList: React.FC = () => {
                       <motion.button
                         onClick={() => handlePlayQuest(quest.id)}
                         className="w-full btn-esports flex items-center justify-center gap-2"
+                        data-testid={`btn-play-${quest.id}`}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
