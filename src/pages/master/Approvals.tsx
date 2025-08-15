@@ -72,7 +72,7 @@ const Approvals: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('quests')
-        .select('id, title, description, reward_coins, status, persona_key, created_at, created_by')
+        .select('id, title, description, reward_coins, status, attribute_id, created_at, created_by')
         .eq('status', 'submitted')
         .order('created_at', { ascending: true });
       
@@ -136,7 +136,16 @@ const Approvals: React.FC = () => {
   /**
    * Get persona display info
    */
-  const getPersonaInfo = (personaKey: string) => {
+  const getPersonaInfo = (attributeId: string | null) => {
+    // Default persona info when no attribute is linked
+    const defaultPersona = { name: 'General Quest', emoji: '📝' };
+    
+    if (!attributeId) {
+      return defaultPersona;
+    }
+    
+    // For now, return default since we don't have direct persona mapping
+    // This would need to be enhanced with proper attribute->persona mapping
     const personaMap = {
       hootie: { name: 'Hootie the Owl', emoji: '🦉' },
       kittykat: { name: 'Kitty Kat', emoji: '🐱' },
@@ -145,8 +154,7 @@ const Approvals: React.FC = () => {
       badge: { name: 'MOC Badge', emoji: '🏛️' }
     };
     
-    return personaMap[personaKey as keyof typeof personaMap] || 
-           { name: personaKey, emoji: '❓' };
+    return defaultPersona;
   };
 
   /**
@@ -249,7 +257,7 @@ const Approvals: React.FC = () => {
           <div className="space-y-4">
             <AnimatePresence>
               {quests.map((quest, index) => {
-                const personaInfo = getPersonaInfo(quest.persona_key);
+                const personaInfo = getPersonaInfo(quest.attribute_id);
                 const affordable = canAfford(quest.reward_coins);
                 
                 return (
@@ -292,7 +300,7 @@ const Approvals: React.FC = () => {
                           <div className={`flex items-center gap-1 font-semibold ${
                             affordable ? 'text-yellow-400' : 'text-red-400'
                           }`}>
-                            <Award className="w-4 h-4" />
+                            <Coins className="w-4 h-4" />
                             <span>{quest.reward_coins} coins</span>
                           </div>
                           {!affordable && (
