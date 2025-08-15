@@ -7,10 +7,10 @@
 
 // Reference the actual GIF files from public directory
 const hootieGif = '/sprites/owl.gif/HOOTIE_WINGLIFT.gif';
-const kittykatGif = '/sprites/cat.gif/KITTYKAT_IDLE.gif';
-const ginoGif = '/sprites/dog.gif/GINO_IDLE.gif';
-const hammerGif = '/sprites/robot.gif/HAMMER_IDLE.gif';
-const badgeGif = '/sprites/badge.gif/BADGE_IDLE.gif';
+const kittykatGif = '/sprites/cat.gif/KITTY_BOUNCE.gif';
+const ginoGif = '/sprites/dog.gif/GINO_COMPASSSPIN.gif';
+const hammerGif = '/sprites/robot.gif/HAMMER_SWING.gif';
+const badgeGif = '/sprites/badge.gif/BADGE_SHINE.gif';
 
 export const PERSONA_GIF = {
   hootie: hootieGif,
