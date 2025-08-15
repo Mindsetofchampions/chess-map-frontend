@@ -45,11 +45,9 @@ export const useQuests = (): UseQuestsReturn => {
 
       const { data, error: queryError } = await supabase
         .from('quests')
-        .select('id, title, description, status, active, reward_coins, qtype, config, persona_key, lng, lat, created_at')
+        .select('id, title, description, status, active, reward_coins, qtype, config, attribute_id, created_at')
         .eq('active', true)
         .eq('status', 'approved')
-        .not('lng', 'is', null)
-        .not('lat', 'is', null)
         .order('created_at', { ascending: false });
 
       if (queryError) {

@@ -38,9 +38,7 @@ export interface Quest {
   reward_coins: number;
   qtype: QuestType;
   config: any; // JSONB - structure depends on qtype
-  persona_key: string;
-  lng: number;
-  lat: number;
+  attribute_id?: string;
   created_at?: string;
   approved_at?: string;
   created_by?: string;

@@ -83,9 +83,9 @@ const MapPage: React.FC = () => {
   /**
    * Persona mapping for different attributes
    */
-  const getPersonaForAttribute = (attributeId?: string): PersonaKey => {
+  const getPersonaForAttribute = (attributeId?: string): string => {
     // This would map to your actual attribute IDs in the database
-    const attributePersonaMap: Record<string, PersonaKey> = {
+    const attributePersonaMap: Record<string, string> = {
       'character': 'hootie',
       'health': 'kittykat', 
       'exploration': 'gino',

@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Play, HelpCircle, Award, Search, Filter, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../components/ToastProvider';
@@ -43,7 +43,7 @@ const QuestsList: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('quests')
-        .select('id, title, description, status, active, reward_coins, qtype, config, persona_key, created_at')
+        .select('id, title, description, status, active, reward_coins, qtype, config, attribute_id, created_at')
         .eq('qtype', 'mcq') // Only MCQ quests for now
         .order('created_at', { ascending: false });
       
@@ -68,7 +68,7 @@ const QuestsList: React.FC = () => {
       quest.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       quest.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesPersona = filterPersona === 'all' || quest.persona_key === filterPersona;
+    const matchesPersona = filterPersona === 'all'; // Simplified since we don't have persona_key
     
     return matchesSearch && matchesPersona;
   });
@@ -76,7 +76,14 @@ const QuestsList: React.FC = () => {
   /**
    * Get persona display info
    */
-  const getPersonaInfo = (personaKey: string) => {
+  const getPersonaInfo = (attributeId?: string) => {
+    // Map attribute IDs to personas - this would need actual attribute data from your DB
+    const attributePersonaMap: Record<string, string> = {
+      // Add your actual attribute IDs here
+    };
+    
+    const personaKey = attributePersonaMap[attributeId || ''] || 'hootie'; // Default fallback
+    
     const personaMap = {
       hootie: { name: 'Hootie the Owl', emoji: '🦉', color: 'text-purple-400' },
       kittykat: { name: 'Kitty Kat', emoji: '🐱', color: 'text-green-400' },
@@ -190,9 +197,6 @@ const QuestsList: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="bg-glass border-glass rounded-xl p-6 animate-pulse">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-gray-600 rounded-full"></div>
-                  <div className="space-y-2">
                     <div className="w-32 h-4 bg-gray-600 rounded"></div>
                     <div className="w-24 h-3 bg-gray-600 rounded"></div>
                   </div>
@@ -238,7 +242,7 @@ const QuestsList: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <AnimatePresence>
               {filteredQuests.map((quest, index) => {
-                const personaInfo = getPersonaInfo(quest.persona_key);
+                const personaInfo = getPersonaInfo(quest.attribute_id);
                 
                 return (
                   <motion.div
