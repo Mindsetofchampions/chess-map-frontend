@@ -1,14 +1,20 @@
+/**
+ * Sprite Management for Mapbox Integration
+ * 
+ * Handles loading persona GIFs into Mapbox as symbols and creating
+ * DOM-based animated markers for quest bubbles.
+ */
+
 import mapboxgl from 'mapbox-gl';
 import { PERSONA_GIF, type PersonaKey } from '../assets/personas';
 
 /**
- * Load image with proper error handling
+ * Load image with error handling
  */
-function loadImage(src: string, crossOrigin = 'anonymous'): Promise<HTMLImageElement> {
+function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = crossOrigin; // prevents canvas taint if served from CDN later
-    img.decoding = 'sync';
+    img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
     img.src = src;
@@ -16,116 +22,142 @@ function loadImage(src: string, crossOrigin = 'anonymous'): Promise<HTMLImageEle
 }
 
 /**
- * Convert GIF to bitmap (first frame for Mapbox symbols)
+ * Convert GIF first frame to ImageBitmap for Mapbox symbols
  */
-async function toBitmapFirstFrame(src: string, size = 36): Promise<ImageBitmap> {
+async function gifToImageBitmap(src: string, size: number = 36): Promise<ImageBitmap> {
   const img = await loadImage(src);
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('2D context unavailable');
   
-  // Ensure crisp pixel art rendering
-  (ctx as any).imageSmoothingEnabled = false;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas context unavailable');
+  
+  // Crisp pixel art rendering
+  ctx.imageSmoothingEnabled = false;
   ctx.drawImage(img, 0, 0, size, size);
   
   return await createImageBitmap(canvas);
 }
 
 /**
- * Register persona sprites in Mapbox map
+ * Register persona sprites in Mapbox map for use in symbol layers
+ * Creates both normal and hover variants for each persona
  */
 export async function registerPersonaSprites(map: mapboxgl.Map): Promise<void> {
-  const tasks: Promise<void>[] = [];
+  const registrationTasks: Promise<void>[] = [];
   
   (Object.keys(PERSONA_GIF) as PersonaKey[]).forEach((key) => {
-    const src = PERSONA_GIF[key];
-    tasks.push((async () => {
+    registrationTasks.push((async () => {
       try {
-        // Register normal size sprite (36px)
-        const normal = await toBitmapFirstFrame(src, 36);
+        const src = PERSONA_GIF[key];
+        
+        // Register normal size (36px)
+        const normal = await gifToImageBitmap(src, 36);
         if (!map.hasImage(`${key}-normal`)) {
           map.addImage(`${key}-normal`, normal, { pixelRatio: 1 });
         }
         
-        // Register hover size sprite (46px)
-        const hover = await toBitmapFirstFrame(src, 46);
+        // Register hover size (46px)
+        const hover = await gifToImageBitmap(src, 46);
         if (!map.hasImage(`${key}-hover`)) {
           map.addImage(`${key}-hover`, hover, { pixelRatio: 1 });
         }
+        
+        console.log(`✅ Registered sprites for ${key}`);
       } catch (error) {
-        console.error(`Failed to register sprite for ${key}:`, error);
-        // Continue with other sprites even if one fails
+        console.error(`❌ Failed to register sprite for ${key}:`, error);
       }
     })());
   });
   
-  await Promise.all(tasks);
+  await Promise.all(registrationTasks);
 }
 
 /**
- * Create persona marker for DOM-based animation
+ * Create animated DOM-based persona marker for quest bubbles
+ * Uses actual GIF animation instead of static Mapbox symbols
  */
-export function createPersonaMarker(opts: {
+export function createPersonaMarker(options: {
   map: mapboxgl.Map;
   persona: PersonaKey;
-  lngLat: mapboxgl.LngLatLike;
-  size?: number;
+  lngLat: [number, number];
   title?: string;
-  draggable?: boolean;
+  onClick?: () => void;
+  size?: number;
 }): mapboxgl.Marker {
-  const { map, persona, lngLat, size = 48, title, draggable = false } = opts;
-  const src = PERSONA_GIF[persona];
+  const { map, persona, lngLat, title, onClick, size = 48 } = options;
   
   // Create marker element
-  const el = document.createElement('div');
-  el.style.width = `${size}px`;
-  el.style.height = `${size}px`;
-  el.style.display = 'inline-block';
-  el.style.cursor = 'pointer';
+  const element = document.createElement('div');
+  element.className = 'persona-quest-marker';
+  element.style.cssText = `
+    width: ${size}px;
+    height: ${size}px;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
   
-  // Create image element
+  // Add animated GIF
   const img = document.createElement('img');
-  img.src = src;
-  img.alt = title ?? persona;
-  img.width = size;
-  img.height = size;
-  img.style.imageRendering = 'pixelated'; // Crisp pixel art
-  img.style.width = '100%';
-  img.style.height = '100%';
-  img.style.borderRadius = '50%';
-  img.style.border = '2px solid rgba(255, 255, 255, 0.8)';
-  img.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+  img.src = PERSONA_GIF[persona];
+  img.alt = title || persona;
+  img.style.cssText = `
+    width: ${size - 6}px;
+    height: ${size - 6}px;
+    object-fit: cover;
+    border-radius: 50%;
+    pointer-events: none;
+  `;
   
-  el.appendChild(img);
+  element.appendChild(img);
   
-  if (title) {
-    el.setAttribute('role', 'img');
-    el.setAttribute('aria-label', title);
-    el.title = title;
+  // Add hover effects
+  element.addEventListener('mouseenter', () => {
+    element.style.transform = 'scale(1.2)';
+    element.style.zIndex = '1000';
+    element.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.4)';
+  });
+  
+  element.addEventListener('mouseleave', () => {
+    element.style.transform = 'scale(1)';
+    element.style.zIndex = 'auto';
+    element.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+  });
+  
+  // Add click handler
+  if (onClick) {
+    element.addEventListener('click', onClick);
   }
   
-  const marker = new mapboxgl.Marker({ element: el, draggable });
-  return marker.setLngLat(lngLat).addTo(map);
+  // Add accessibility
+  element.setAttribute('role', 'button');
+  element.setAttribute('tabindex', '0');
+  element.setAttribute('aria-label', title || `${persona} quest`);
+  
+  if (title) {
+    element.title = title;
+  }
+  
+  // Create and return Mapbox marker
+  const marker = new mapboxgl.Marker(element)
+    .setLngLat(lngLat)
+    .addTo(map);
+  
+  return marker;
 }
 
 /**
  * Get sprite ID for Mapbox symbol layers
  */
-export function getSpriteId(persona: PersonaKey, hover = false): string {
+export function getSpriteId(persona: PersonaKey, hover: boolean = false): string {
   return `${persona}-${hover ? 'hover' : 'normal'}`;
-}
-
-/**
- * Clean up persona sprites from map
- */
-function unloadPersonaSprites(map: mapboxgl.Map): void {
-  (Object.keys(PERSONA_GIF) as PersonaKey[]).forEach((k) => {
-    for (const id of [`${k}-normal`, `${k}-hover`]) {
-      if (map.hasImage(id)) {
-        map.removeImage(id);
-      }
-    }
-  });
 }

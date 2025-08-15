@@ -1,32 +1,33 @@
-// CHESS Persona Asset URLs (bundled by Vite)
-// Maps persona keys to their respective GIF assets from public directory
+/**
+ * Persona GIF Assets
+ * 
+ * Imports persona GIF files for use in quest bubbles and map markers.
+ * Uses existing sprites from public directory until dedicated assets are added.
+ */
 
-// Import actual GIF files from public/sprites directory
-const hootie = '/sprites/owl.gif/HOOTIE_WINGLIFT.gif';
-const kittykat = '/sprites/cat.gif/KITTY_BOUNCE.gif';
-const gino = '/sprites/dog.gif/GINO_COMPASSSPIN.gif';
-const hammer = '/sprites/robot.gif/HAMMER_SWING.gif';
-const badge = '/sprites/badge.gif/BADGE_SHINE.gif';
-
+// For now, reference the existing public sprite files
+// In production, these would be imported GIF files in this directory
 export const PERSONA_GIF = {
-  hootie,
-  kittykat, 
-  gino,
-  hammer,
-  badge
+  hootie: '/sprites/owl.gif/HOOTIE_WINGLIFT.gif',
+  kittykat: '/sprites/cat.gif/KITTY_BOUNCE.gif',
+  gino: '/sprites/dog.gif/GINO_COMPASSSPIN.gif',
+  hammer: '/sprites/robot.gif/HAMMER_SWING.gif',
+  badge: '/sprites/badge.gif/BADGE_SHINE.gif'
 } as const;
 
 export type PersonaKey = keyof typeof PERSONA_GIF;
 
-// Validation helper to check if persona key exists
-function isValidPersonaKey(key: string): key is PersonaKey {
-  return key in PERSONA_GIF;
-}
-
-// Get persona asset URL with fallback
-function getPersonaAsset(key: PersonaKey): string {
-  return PERSONA_GIF[key];
-}
-
-// Export for backward compatibility
-;
+/**
+ * Get persona display information
+ */
+export const getPersonaInfo = (key: PersonaKey) => {
+  const personaMap = {
+    hootie: { name: 'Hootie the Owl', emoji: '🦉', category: 'Character' },
+    kittykat: { name: 'Kitty Kat', emoji: '🐱', category: 'Health' },
+    gino: { name: 'Gino the Dog', emoji: '🐕', category: 'Exploration' },
+    hammer: { name: 'Hammer the Robot', emoji: '🤖', category: 'STEM' },
+    badge: { name: 'MOC Badge', emoji: '🏛️', category: 'Stewardship' }
+  };
+  
+  return personaMap[key] || { name: key, emoji: '❓', category: 'Unknown' };
+};

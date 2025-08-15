@@ -1,83 +1,23 @@
 import React from 'react';
-import { Routes, Route, BrowserRouter, Link, Navigate } from 'react-router-dom';
+import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom';
 import { MapPin, Shield, Compass, Users, Award, Zap, X, Star, Trophy, Heart, Sparkles, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { googleAuthHelpers } from './lib/supabase';
+import { ToastProvider } from './components/ToastProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
-import StudentAuth from './pages/StudentAuth';
-import AdminAuth from './pages/AdminAuth';
+import Login from './pages/auth/Login';
+import Signup from './pages/auth/Signup';
+import Dashboard from './pages/Dashboard';
+import QuestsList from './pages/quests/QuestsList';
+import QuestPlay from './pages/quests/QuestPlay';
+import Approvals from './pages/master/Approvals';
 import MapView from './components/MapView';
 import GlassContainer from './components/GlassContainer';
 import FloatingBubbles from './components/FloatingBubbles';
 import DraggableBubbles from './components/DraggableBubbles';
-import AdminDashboard from './pages/AdminDashboard';
-import MasterAdminDashboard from './pages/MasterAdminDashboard';
 import MapPage from './pages/MapPage';
-import DebugPage from './pages/DebugPage';
-import QuestTemplatesPage from './pages/admin/QuestTemplatesPage';
-import QuestCreatePage from './pages/admin/QuestCreatePage';
-import QuestApprovalsPage from './pages/master/QuestApprovalsPage';
-import EnvMissing from './components/EnvMissing';
-import { isEnvReady, EnvMissingError } from './services/supabaseClient';
-
-/**
- * Student Dashboard Component
- * Protected route for authenticated students
- */
-const StudentDashboard: React.FC = () => {
-  const { user } = useAuth();
-
-  // Additional role verification for debugging
-  React.useEffect(() => {
-    console.log('🎓 StudentDashboard mounted with user:', {
-      id: user?.id,
-      email: user?.email,
-      role: user?.role,
-      isAdmin: user?.role === 'admin',
-      isStudent: user?.role === 'student'
-    });
-    
-    // If admin user somehow got here, redirect them
-    if (user?.role === 'admin') {
-      console.warn('⚠️  Admin user detected in StudentDashboard, redirecting...');
-      window.location.href = '/admin';
-    }
-  }, [user]);
-
-  // Check environment setup
-  if (!isEnvReady()) {
-    return <EnvMissing error="Supabase environment variables not configured" />;
-  }
-  return (
-    <GlassContainer variant="page">
-      <div className="container mx-auto max-w-7xl">
-        {/* Student Header */}
-        <div className="flex items-center justify-between p-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Welcome back, {user?.email}!</h1>
-            <p className="text-gray-300">Continue your CHESS Quest journey</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="bg-glass border-glass rounded-full px-4 py-2">
-              <span className="text-yellow-400 font-semibold">🪙 0 Coins</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Quest Map */}
-        <div className="px-6">
-          <GlassContainer variant="card" className="p-0 overflow-hidden">
-            <div className="relative h-[600px] w-full">
-              <MapView />
-            </div>
-          </GlassContainer>
-        </div>
-      </div>
-    </GlassContainer>
-  );
-};
+import WalletChip from './components/wallet/WalletChip';
 
 /**
  * Landing Page Component
@@ -88,48 +28,9 @@ const LandingPage: React.FC = () => {
   const currentYear = new Date().getFullYear();
   const [activeModal, setActiveModal] = React.useState<string | null>(null);
 
-  // Enhanced debugging for landing page redirects
-  React.useEffect(() => {
-    // Production-safe redirect logging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🏠 Landing page redirect check:', {
-        isAuthenticated,
-        userRole: user?.role,
-        shouldRedirect: isAuthenticated && user
-      });
-    }
-  }, [isAuthenticated, user]);
-
-  /**
-   * Handle Google OAuth sign-in from home page
-   */
-  const handleGoogleSignIn = async () => {
-    const { error } = await googleAuthHelpers.signInWithGoogle();
-    if (error) {
-      console.error('Google sign-in failed:', error);
-      // Error handling is managed by AuthContext
-    }
-  };
-
   // Redirect authenticated users to their appropriate dashboard
   if (isAuthenticated && user) {
-    console.log('🔄 Processing redirect for role:', user.role);
-    
-    // Fixed redirect logic with proper precedence order
-    if (user.role === 'master_admin') {
-      console.log('✅ Redirecting master_admin to /master-admin/dashboard');
-      return <Navigate to="/master-admin/dashboard" replace />;
-    } else if (user.role === 'admin') {
-      console.log('✅ Redirecting admin to /admin/dashboard');
-      return <Navigate to="/admin/dashboard" replace />;
-    } else if (user.role === 'student') {
-      console.log('✅ Redirecting student to /student/dashboard');
-      return <Navigate to="/student/dashboard" replace />;
-    } else {
-      // Fallback for undefined/invalid roles
-      console.warn('⚠️ Invalid or undefined role, redirecting to student dashboard:', user.role);
-      return <Navigate to="/student/dashboard" replace />;
-    }
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (
@@ -168,23 +69,23 @@ const LandingPage: React.FC = () => {
               
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                <Link
-                  to="/student-auth"
+                <a
+                  href="/login"
                   className="btn-esports flex items-center justify-center gap-2 hover:scale-105 hover:-translate-y-1 transition-all duration-300"
-                  aria-label="Student sign up or sign in"
+                  aria-label="Sign in to start learning"
+                >
+                  <Award className="w-5 h-5" />
+                  Start Learning
+                </a>
+                
+                <a
+                  href="/signup"
+                  className="bg-gradient-to-r from-cyber-green-500 to-cyber-green-600 hover:from-cyber-green-400 hover:to-cyber-green-500 text-white rounded-full px-8 py-4 shadow-2xl transition-all duration-300 font-semibold text-center min-h-[44px] touch-manipulation hover:shadow-cyber-green-500/50 hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-2 border border-cyber-green-400/30"
+                  aria-label="Create account"
                 >
                   <Users className="w-5 h-5" />
-                  Student Sign Up/Sign In
-                </Link>
-                
-                <Link
-                  to="/admin-auth"
-                  className="bg-gradient-to-r from-cyber-green-500 to-cyber-green-600 hover:from-cyber-green-400 hover:to-cyber-green-500 text-white rounded-full px-8 py-4 shadow-2xl transition-all duration-300 font-semibold text-center min-h-[44px] touch-manipulation hover:shadow-cyber-green-500/50 hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-2 border border-cyber-green-400/30"
-                  aria-label="Admin login"
-                >
-                  <Shield className="w-5 h-5" />
-                  Admin Login
-                </Link>
+                  Join Now
+                </a>
               </div>
             </div>
             
@@ -334,35 +235,23 @@ const LandingPage: React.FC = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-                <Link
-                  to="/student-auth"
+                <a
+                  href="/login"
                   className="btn-esports flex items-center justify-center gap-2 hover:scale-105 hover:-translate-y-1 transition-all duration-300"
-                  aria-label="Get started as a student"
+                  aria-label="Get started now"
                 >
                   <Users className="w-5 h-5" />
                   Get Started Now
-                </Link>
+                </a>
                 
-                <Link
-                  to="/admin-auth"
+                <a
+                  href="/quests"
                   className="bg-glass border-glass hover:bg-glass-dark text-white rounded-full px-8 py-4 shadow-xl transition-all duration-300 font-semibold min-h-[44px] touch-manipulation hover:shadow-2xl hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-2 font-medium"
-                  aria-label="View admin dashboard"
+                  aria-label="Explore quests"
                 >
                   <Compass className="w-5 h-5" />
-                  Explore Dashboard
-                </Link>
-              </div>
-              
-              {/* Google SSO Button */}
-              <div className="flex justify-center pt-4">
-                <button
-                  onClick={handleGoogleSignIn}
-                  className="w-full md:w-auto flex items-center justify-center gap-2 bg-white/20 backdrop-blur-lg border border-gray-300 rounded-full px-6 py-3 hover:bg-white/30 transition-all duration-300 font-medium min-h-[44px] touch-manipulation hover:scale-105 hover:-translate-y-1"
-                  aria-label="Sign in with Google"
-                >
-                  <img src="/icons/google.svg" alt="" className="w-5 h-5" />
-                  <span className="text-white font-medium">Sign in with Google</span>
-                </button>
+                  Explore Quests
+                </a>
               </div>
             </div>
           </GlassContainer>
@@ -690,118 +579,64 @@ const AppRouter: React.FC = () => {
         <Routes>
           {/* Landing Page - Public */}
           <Route path="/" element={<LandingPage />} />
-
+          
           {/* Authentication Routes - Public */}
-          <Route path="/student-auth" element={<StudentAuth />} />
-          <Route path="/admin-auth" element={<AdminAuth />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
 
-          {/* Protected Student Routes */}
-          <Route 
-            path="/student/dashboard" 
+          {/* Protected Routes */}
+          <Route
+            path="/dashboard"
             element={
               <ErrorBoundary>
-                <ProtectedRoute requiredRole="student">
-                  <StudentDashboard />
+                <ProtectedRoute>
+                  <Dashboard />
                 </ProtectedRoute>
               </ErrorBoundary>
-            } 
+            }
           />
           
-          {/* Student redirect route */}
-          <Route 
-            path="/student" 
-            element={<Navigate to="/student/dashboard" replace />}
-          />
-
-          {/* Protected Admin Routes */}
-          <Route 
-            path="/admin/dashboard" 
+          <Route
+            path="/quests"
             element={
               <ErrorBoundary>
-                <ProtectedRoute requiredRole="admin">
-                  <AdminDashboard />
+                <ProtectedRoute>
+                  <QuestsList />
                 </ProtectedRoute>
               </ErrorBoundary>
-            } 
+            }
           />
           
-          {/* Admin redirect route */}
-          <Route 
-            path="/admin" 
-            element={<Navigate to="/admin/dashboard" replace />}
-          />
-          
-          {/* Admin Quest Routes */}
-          <Route 
-            path="/admin/quests/templates" 
+          <Route
+            path="/quests/:questId"
             element={
               <ErrorBoundary>
-                <ProtectedRoute requiredRole="admin">
-                  <QuestTemplatesPage />
+                <ProtectedRoute>
+                  <QuestPlay />
                 </ProtectedRoute>
               </ErrorBoundary>
-            } 
+            }
           />
           
-          <Route 
-            path="/admin/quests/create" 
+          <Route
+            path="/master/quests/approvals"
             element={
               <ErrorBoundary>
-                <ProtectedRoute requiredRole="admin">
-                  <QuestCreatePage />
+                <ProtectedRoute requireMaster>
+                  <Approvals />
                 </ProtectedRoute>
               </ErrorBoundary>
-            } 
-          />
-          
-          {/* Protected Master Admin Routes */}
-          <Route 
-            path="/master-admin/dashboard" 
-            element={
-              <ErrorBoundary>
-                <ProtectedRoute requiredRole="master_admin">
-                  <MasterAdminDashboard />
-                </ProtectedRoute>
-              </ErrorBoundary>
-            } 
-          />
-          
-          {/* Master Admin Quest Routes */}
-          <Route 
-            path="/master-admin/quests/approvals" 
-            element={
-              <ErrorBoundary>
-                <ProtectedRoute requiredRole="master_admin">
-                  <QuestApprovalsPage />
-                </ProtectedRoute>
-              </ErrorBoundary>
-            } 
-          />
-          
-          {/* Master Admin redirect route */}
-          <Route 
-            path="/master-admin" 
-            element={<Navigate to="/master-admin/dashboard" replace />}
+            }
           />
           
           {/* Map Page Route */}
-          <Route 
-            path="/map" 
+          <Route
+            path="/map"
             element={
               <ErrorBoundary>
                 <MapPage />
               </ErrorBoundary>
-            } 
-          />
-          
-          {/* Debug Page Route */}
-          <Route 
-            path="/debug" 
-            element={
-              <ErrorBoundary>
-                <DebugPage />
-              </ErrorBoundary>
-            } 
+            }
           />
 
           {/* Catch-all redirect */}
@@ -819,15 +654,12 @@ const AppRouter: React.FC = () => {
  * and provides global auth state management.
  */
 function App(): JSX.Element {
-  // Environment check at app level
-  if (!isEnvReady()) {
-    return <EnvMissing showInstructions={true} />;
-  }
-
   return (
-    <AuthProvider>
-      <AppRouter />
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <AppRouter />
+      </AuthProvider>
+    </ToastProvider>
   );
 }
 
