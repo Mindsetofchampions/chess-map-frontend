@@ -11,6 +11,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Play, HelpCircle, Award, Search, Filter, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../components/ToastProvider';
+import { PERSONA_GIF, getPersonaInfo } from '../../assets/personas';
 import GlassContainer from '../../components/GlassContainer';
 import type { Quest } from '../../types/backend';
 
@@ -76,24 +77,18 @@ const QuestsList: React.FC = () => {
   /**
    * Get persona display info
    */
-  const getPersonaInfo = (attributeId?: string) => {
+  const getPersonaForAttribute = (attributeId?: string) => {
     // Map attribute IDs to personas - this would need actual attribute data from your DB
     const attributePersonaMap: Record<string, string> = {
-      // Add your actual attribute IDs here
+      'character': 'hootie',
+      'health': 'kittykat', 
+      'exploration': 'gino',
+      'stem': 'hammer',
+      'stewardship': 'badge'
     };
     
     const personaKey = attributePersonaMap[attributeId || ''] || 'hootie'; // Default fallback
-    
-    const personaMap = {
-      hootie: { name: 'Hootie the Owl', emoji: '🦉', color: 'text-purple-400' },
-      kittykat: { name: 'Kitty Kat', emoji: '🐱', color: 'text-green-400' },
-      gino: { name: 'Gino the Dog', emoji: '🐕', color: 'text-orange-400' },
-      hammer: { name: 'Hammer the Robot', emoji: '🤖', color: 'text-blue-400' },
-      badge: { name: 'MOC Badge', emoji: '🏛️', color: 'text-red-400' }
-    };
-    
-    return personaMap[personaKey as keyof typeof personaMap] || 
-           { name: personaKey, emoji: '❓', color: 'text-gray-400' };
+    return personaKey;
   };
 
   /**
@@ -245,7 +240,9 @@ const QuestsList: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <AnimatePresence>
               {filteredQuests.map((quest, index) => {
-                const personaInfo = getPersonaInfo(quest.attribute_id);
+                const personaKey = getPersonaForAttribute(quest.attribute_id);
+                const personaInfo = getPersonaInfo(personaKey as any);
+                const spriteUrl = PERSONA_GIF[personaKey as keyof typeof PERSONA_GIF];
                 
                 return (
                   <motion.div
@@ -260,12 +257,32 @@ const QuestsList: React.FC = () => {
                       
                       {/* Quest Header */}
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="text-3xl">{personaInfo.emoji}</div>
+                        <div className="w-12 h-12 rounded-full bg-glass-dark border-glass-light p-2 flex items-center justify-center">
+                          <img
+                            src={spriteUrl}
+                            alt={`${personaInfo.name} sprite`}
+                            className="w-8 h-8 object-contain"
+                            style={{ imageRendering: 'pixelated' }}
+                            draggable={false}
+                            onError={(e) => {
+                              // Fallback to emoji if sprite fails to load
+                              const target = e.currentTarget;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent && !parent.querySelector('.emoji-fallback')) {
+                                const fallback = document.createElement('div');
+                                fallback.className = 'emoji-fallback text-2xl';
+                                fallback.textContent = personaInfo.emoji;
+                                parent.appendChild(fallback);
+                              }
+                            }}
+                          />
+                        </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-white text-lg leading-tight">
                             {quest.title}
                           </h3>
-                          <p className={`text-sm ${personaInfo.color}`}>
+                          <p className="text-sm text-gray-300">
                             {personaInfo.name}
                           </p>
                         </div>
