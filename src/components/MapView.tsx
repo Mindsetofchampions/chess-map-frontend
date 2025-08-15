@@ -439,128 +439,6 @@ const MapView: React.FC<MapViewProps> = ({
   const { mapQuests } = useQuests();
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-  /**
-   * Add persona chips to map
-   */
-  const addPersonaChips = useCallback(() => {
-    if (!mapInstance.current) return;
-
-    // Clear existing persona markers
-    personaMarkers.forEach(marker => marker.remove());
-    
-    // Sample organizations with persona assignments for demo
-    const organizationsWithPersonas = [
-      {
-        id: 'org-1',
-        lat: 39.9526,
-        lng: -75.1652,
-        activePersonas: ['hootie', 'hammer'] as PersonaKey[]
-      },
-      {
-        id: 'org-2', 
-        lat: 39.9496,
-        lng: -75.1502,
-        activePersonas: ['kitty', 'gino'] as PersonaKey[]
-      },
-      {
-        id: 'org-3',
-        lat: 39.9656,
-        lng: -75.1810,
-        activePersonas: ['badge'] as PersonaKey[]
-      }
-    ];
-
-    const newMarkers = addPersonaChipsToMap(
-      mapInstance.current,
-      organizationsWithPersonas,
-      (persona: PersonaDef) => {
-        console.log('Persona clicked:', persona.name);
-        // Could open persona chat, show info modal, etc.
-      }
-    );
-    
-    setPersonaMarkers(newMarkers);
-  }, [personaMarkers]);
-
-  /**
-   * Initialize map with proper timeout and error handling
-   */
-  const initializeMap = useCallback(async () => {
-    if (!mapContainer.current) return;
-
-    // Set loading timeout to prevent infinite loading
-    const loadingTimeout = setTimeout(() => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('⏰ Map loading timeout - showing bubbles without map');
-      }
-      setIsLoading(false);
-      setError(null);
-    }, 2000); // 2 second timeout for faster fallback
-    try {
-      setError(null);
-
-      // Get token with multiple fallbacks
-      const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN ||
-                         import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
-                         import.meta.env.VITE_MAPBOX_TOKEN_PK;
-
-      // If no valid token, just show dark background with bubbles
-      if (!mapboxToken || mapboxToken.includes('YOUR_') || mapboxToken.includes('example_')) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('📍 No Mapbox token - showing bubbles on dark background');
-        }
-        clearTimeout(loadingTimeout);
-        setIsLoading(false);
-        setError('No Mapbox token configured - showing bubbles only');
-        return;
-      }
-
-      // Dynamic import to prevent build issues
-      const mapboxgl = await import('mapbox-gl');
-      
-      mapboxgl.default.accessToken = mapboxToken;
-      
-      // Clean up existing map
-      if (mapInstance.current) {
-        mapInstance.current.remove();
-        mapInstance.current = null;
-      }
-
-      mapInstance.current = new mapboxgl.default.Map({
-        container: mapContainer.current,
-        style: import.meta.env.VITE_MAP_STYLE_URL || 'mapbox://styles/mapbox/dark-v11',
-        center,
-        zoom,
-        attributionControl: false,
-      });
-
-      mapInstance.current.on('load', () => {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ Map loaded successfully');
-        }
-        clearTimeout(loadingTimeout);
-        setIsLoading(false);
-        setError(null);
-      });
-
-      mapInstance.current.on('error', (e: any) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('❌ Map error:', e);
-        }
-        clearTimeout(loadingTimeout);
-        setError(null); // Don't block bubbles with errors
-        setIsLoading(false);
-      });
-
-    } catch (err: any) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ Map initialization error:', err);
-      }
-      clearTimeout(loadingTimeout);
-      setError(null);
-      setIsLoading(false);
-    }
-  }, [center, zoom]);
 
   /**
    * Handle bubble interactions
@@ -615,9 +493,95 @@ const MapView: React.FC<MapViewProps> = ({
   }, []);
 
   /**
-   * Initialize map on mount
+   * Initialize map when container is ready
    */
   useEffect(() => {
+    // Ensure container is available before initializing map
+    if (!mapContainer.current) return;
+
+    const initializeMap = async () => {
+      // Set loading timeout to prevent infinite loading
+      const loadingTimeout = setTimeout(() => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('⏰ Map loading timeout - showing bubbles without map');
+        }
+        setIsLoading(false);
+        setError(null);
+      }, 2000);
+
+      try {
+        setError(null);
+
+        // Get token with multiple fallbacks
+        const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN ||
+                           import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
+                           import.meta.env.VITE_MAPBOX_TOKEN_PK;
+
+        // If no valid token, just show dark background with bubbles
+        if (!mapboxToken || mapboxToken.includes('YOUR_') || mapboxToken.includes('example_')) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('📍 No Mapbox token - showing bubbles on dark background');
+          }
+          clearTimeout(loadingTimeout);
+          setIsLoading(false);
+          setError('No Mapbox token configured - showing bubbles only');
+          return;
+        }
+
+        // Dynamic import to prevent build issues
+        const mapboxgl = await import('mapbox-gl');
+        
+        mapboxgl.default.accessToken = mapboxToken;
+        
+        // Clean up existing map
+        if (mapInstance.current) {
+          mapInstance.current.remove();
+          mapInstance.current = null;
+        }
+
+        // Verify container is still available after async operations
+        if (!mapContainer.current) {
+          clearTimeout(loadingTimeout);
+          setIsLoading(false);
+          return;
+        }
+
+        mapInstance.current = new mapboxgl.default.Map({
+          container: mapContainer.current,
+          style: import.meta.env.VITE_MAP_STYLE_URL || 'mapbox://styles/mapbox/dark-v11',
+          center,
+          zoom,
+          attributionControl: false,
+        });
+
+        mapInstance.current.on('load', () => {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ Map loaded successfully');
+          }
+          clearTimeout(loadingTimeout);
+          setIsLoading(false);
+          setError(null);
+        });
+
+        mapInstance.current.on('error', (e: any) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('❌ Map error:', e);
+          }
+          clearTimeout(loadingTimeout);
+          setError(null); // Don't block bubbles with errors
+          setIsLoading(false);
+        });
+
+      } catch (err: any) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('❌ Map initialization error:', err);
+        }
+        clearTimeout(loadingTimeout);
+        setError(null);
+        setIsLoading(false);
+      }
+    };
+
     initializeMap();
 
     return () => {
@@ -628,19 +592,55 @@ const MapView: React.FC<MapViewProps> = ({
       // Clean up persona markers
       personaMarkers.forEach(marker => marker.remove());
     };
-  }, [initializeMap, personaMarkers]);
+  }, [center, zoom]);
 
   /**
    * Add persona chips when map is ready
    */
   useEffect(() => {
     if (mapInstance.current && !isLoading && !error) {
+      // Clear existing persona markers first
+      personaMarkers.forEach(marker => marker.remove());
+      
       // Delay persona chips to ensure map is fully loaded
       setTimeout(() => {
-        addPersonaChips();
+        if (!mapInstance.current) return;
+
+        // Sample organizations with persona assignments for demo
+        const organizationsWithPersonas = [
+          {
+            id: 'org-1',
+            lat: 39.9526,
+            lng: -75.1652,
+            activePersonas: ['hootie', 'hammer'] as PersonaKey[]
+          },
+          {
+            id: 'org-2', 
+            lat: 39.9496,
+            lng: -75.1502,
+            activePersonas: ['kittykat', 'gino'] as PersonaKey[]
+          },
+          {
+            id: 'org-3',
+            lat: 39.9656,
+            lng: -75.1810,
+            activePersonas: ['badge'] as PersonaKey[]
+          }
+        ];
+
+        const newMarkers = addPersonaChipsToMap(
+          mapInstance.current,
+          organizationsWithPersonas,
+          (persona: PersonaDef) => {
+            console.log('Persona clicked:', persona.name);
+            // Could open persona chat, show info modal, etc.
+          }
+        );
+        
+        setPersonaMarkers(newMarkers);
       }, 1000);
     }
-  }, [isLoading, error, addPersonaChips]);
+  }, [isLoading, error, personaMarkers]);
 
   return (
     <div className="w-full h-full relative">
