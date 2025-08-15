@@ -17,13 +17,13 @@ export type QuestType = 'mcq' | 'text' | 'video';
  * Quest status workflow
  * Tracks the approval lifecycle from creation to completion
  */
-export type QuestStatus = 'draft' | 'submitted' | 'approved' | 'rejected' | 'archived';
+type QuestStatus = 'draft' | 'submitted' | 'approved' | 'rejected' | 'archived';
 
 /**
  * Submission status for student answers
  * Differentiates between auto-graded and manually reviewed submissions
  */
-export type SubmissionStatus = 'pending' | 'accepted' | 'rejected' | 'autograded';
+type SubmissionStatus = 'pending' | 'accepted' | 'rejected' | 'autograded';
 
 /**
  * MCQ option interface for multiple choice questions
@@ -38,7 +38,7 @@ export interface MCQOption {
  * Quest configuration by type
  * Type-specific settings for different quest interactions
  */
-export interface QuestConfig {
+interface QuestConfig {
   // MCQ configuration
   mcq?: {
     options: MCQOption[];
@@ -218,7 +218,7 @@ export interface QuestStats {
 /**
  * Validation schemas for quest data
  */
-export interface ValidationResult {
+interface ValidationResult {
   valid: boolean;
   errors: string[];
 }
@@ -227,7 +227,7 @@ export interface ValidationResult {
  * Quest play session state
  * Tracks student progress through quest interaction
  */
-export interface QuestPlaySession {
+interface QuestPlaySession {
   quest: Quest;
   submission?: QuestSubmission;
   startedAt: Date;

@@ -134,7 +134,7 @@ export const googleAuthHelpers = {
 /**
  * Quest Helper Functions
  */
-export const questHelpers = {
+const questHelpers = {
   async getActiveQuests() {
     try {
       const { data, error } = await supabase
@@ -238,7 +238,7 @@ export const analyticsHelpers = {
 /**
  * Subscription Helper Functions
  */
-export const subscriptionHelpers = {
+const subscriptionHelpers = {
   subscribeToQuests(callback: (quests: Quest[]) => void) {
     const subscription = supabase
       .channel('quests_channel')

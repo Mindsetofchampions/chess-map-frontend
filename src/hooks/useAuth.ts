@@ -307,7 +307,7 @@ export function useAuth(): UseAuthReturn {
 /**
  * Hook for role-based access control
  */
-export function useRequireAuth(requiredRole?: string) {
+function useRequireAuth(requiredRole?: string) {
   const auth = useAuth();
   
   const hasRequiredRole = useCallback((role: string): boolean => {

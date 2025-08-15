@@ -25,7 +25,7 @@ import type {
  * Quest Templates API
  * Handles CRUD operations for quest templates
  */
-export const QuestTemplatesApi = {
+const QuestTemplatesApi = {
   /**
    * List all quest templates
    * Accessible to all authenticated users for quest creation
@@ -109,7 +109,7 @@ export const QuestTemplatesApi = {
  * Quests API
  * Handles quest instances created from templates
  */
-export const QuestsApi = {
+const QuestsApi = {
   /**
    * List quests with filtering options
    * Respects RLS policies for role-based access
@@ -291,7 +291,7 @@ export const QuestsApi = {
  * Quest Submissions API
  * Handles student answers and admin reviews
  */
-export const QuestSubmissionsApi = {
+const QuestSubmissionsApi = {
   /**
    * Submit MCQ answer with auto-grading
    * Automatically determines correctness and awards coins
@@ -428,7 +428,7 @@ export const QuestSubmissionsApi = {
  * Quest Nodes API
  * Manages reusable map locations for quest placement
  */
-export const QuestNodesApi = {
+const QuestNodesApi = {
   /**
    * List active quest nodes
    */
@@ -465,7 +465,7 @@ export const QuestNodesApi = {
  * Coin System API
  * Handles wallet operations and transaction history
  */
-export const CoinSystemApi = {
+const CoinSystemApi = {
   /**
    * Get user's wallet balance
    */
@@ -522,7 +522,7 @@ export const CoinSystemApi = {
  * Quest Statistics API
  * Provides analytics for admin dashboards
  */
-export const QuestStatsApi = {
+const QuestStatsApi = {
   /**
    * Get comprehensive quest system statistics
    */
@@ -566,4 +566,3 @@ export const QuestService = {
   stats: QuestStatsApi
 };
 
-export default QuestService;

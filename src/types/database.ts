@@ -9,12 +9,12 @@
  * User role type definition
  * Restricts roles to specific allowed values
  */
-export type UserRole = 'student' | 'admin';
+type UserRole = 'student' | 'admin';
 
 /**
  * Master admin role type for enhanced permissions
  */
-export type MasterAdminRole = 'master_admin';
+type MasterAdminRole = 'master_admin';
 
 /**
  * Combined user roles including master admin
@@ -59,7 +59,7 @@ export interface Quest {
  * User coins balance interface
  * Tracks student coin accumulation
  */
-export interface UserCoins {
+interface UserCoins {
   user_id: string;
   balance: number;
   updated_at: string;
@@ -69,7 +69,7 @@ export interface UserCoins {
  * Quest completion record interface
  * Tracks when students complete quests
  */
-export interface QuestCompletion {
+interface QuestCompletion {
   id: string;
   user_id: string;
   quest_id: string;
@@ -82,7 +82,7 @@ export interface QuestCompletion {
  * Analytics log entry interface
  * Tracks user interactions for insights
  */
-export interface AnalyticsLog {
+interface AnalyticsLog {
   id: string;
   user_id: string;
   action: string;
@@ -105,7 +105,7 @@ export interface AuthState {
  * Quest completion request interface
  * Data structure for completing quests
  */
-export interface CompleteQuestRequest {
+interface CompleteQuestRequest {
   quest_id: string;
   user_id: string;
   response_data?: Record<string, any>;
@@ -115,7 +115,7 @@ export interface CompleteQuestRequest {
  * Quest completion response interface
  * Server response after quest completion
  */
-export interface CompleteQuestResponse {
+interface CompleteQuestResponse {
   success: boolean;
   coins_earned: number;
   new_balance: number;
@@ -126,7 +126,7 @@ export interface CompleteQuestResponse {
  * Supabase RPC function types
  * Type definitions for custom database functions
  */
-export interface SupabaseRPC {
+interface SupabaseRPC {
   complete_quest: {
     args: CompleteQuestRequest;
     returns: CompleteQuestResponse;
@@ -145,7 +145,7 @@ export interface SupabaseRPC {
  * API response wrapper interface
  * Standardizes all API responses
  */
-export interface ApiResponse<T = any> {
+interface ApiResponse<T = any> {
   data: T | null;
   error: string | null;
   loading: boolean;
@@ -155,7 +155,7 @@ export interface ApiResponse<T = any> {
  * Map marker interface
  * Represents interactive elements on the map
  */
-export interface MapMarker {
+interface MapMarker {
   id: string;
   type: 'quest' | 'safe_space' | 'community_hub';
   position: {

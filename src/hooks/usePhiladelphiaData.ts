@@ -262,4 +262,3 @@ export const usePhiladelphiaData = (): UsePhiladelphiaDataReturn => {
   };
 };
 
-export default usePhiladelphiaData;

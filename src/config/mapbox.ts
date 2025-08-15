@@ -17,7 +17,7 @@ const MAPBOX_STYLE = import.meta.env.VITE_MAP_STYLE_URL ||
 /**
  * Validate token format (only if token is provided)
  */
-export const isValidMapboxToken = (token?: string): boolean => {
+const isValidMapboxToken = (token?: string): boolean => {
   if (!token) return false;
   if (token.includes('YOUR_') || token.includes('example_')) return false;
   return token.startsWith('pk.');
@@ -26,14 +26,14 @@ export const isValidMapboxToken = (token?: string): boolean => {
 /**
  * Check if we have a valid Mapbox configuration
  */
-export const hasValidMapboxConfig = (): boolean => {
+const hasValidMapboxConfig = (): boolean => {
   return isValidMapboxToken(MAPBOX_TOKEN);
 };
 
 /**
  * Get map configuration with fallbacks
  */
-export const getMapConfig = () => {
+const getMapConfig = () => {
   return {
     token: MAPBOX_TOKEN,
     style: MAPBOX_STYLE,

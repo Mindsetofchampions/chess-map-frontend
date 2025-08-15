@@ -120,7 +120,7 @@ export function getSpriteId(persona: PersonaKey, hover = false): string {
 /**
  * Clean up persona sprites from map
  */
-export function unloadPersonaSprites(map: mapboxgl.Map): void {
+function unloadPersonaSprites(map: mapboxgl.Map): void {
   (Object.keys(PERSONA_GIF) as PersonaKey[]).forEach((k) => {
     for (const id of [`${k}-normal`, `${k}-hover`]) {
       if (map.hasImage(id)) {

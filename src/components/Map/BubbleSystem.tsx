@@ -105,7 +105,7 @@ const BUBBLE_STYLES: Record<BubbleCategory, {
 /**
  * Sample Philadelphia CHESS quest bubbles
  */
-export const PHILADELPHIA_SAMPLE_DATA: BubbleData[] = [
+const PHILADELPHIA_SAMPLE_DATA: BubbleData[] = [
   {
     id: 'character-quest-1',
     category: 'character',
@@ -672,4 +672,3 @@ const BubbleSystem: React.FC<BubbleSystemProps> = ({
   );
 };
 
-export default BubbleSystem;

@@ -38,7 +38,7 @@ interface UploadResult {
  * Validate video file before upload
  * Checks file size, type, and extension for security
  */
-export function validateVideoFile(file: File): FileValidation {
+function validateVideoFile(file: File): FileValidation {
   // Check file size
   const maxBytes = VIDEO_UPLOAD_CONFIG.maxSizeMB * 1024 * 1024;
   if (file.size > maxBytes) {
@@ -80,7 +80,7 @@ export function validateVideoFile(file: File): FileValidation {
  * Generate secure storage path for video files
  * Format: userId/questId/timestamp-filename
  */
-export function generateVideoPath(userId: string, questId: string, filename: string): string {
+function generateVideoPath(userId: string, questId: string, filename: string): string {
   const timestamp = Date.now();
   const sanitizedFilename = filename
     .replace(/[^a-zA-Z0-9.-]/g, '_')
@@ -165,7 +165,7 @@ export async function getVideoSignedUrl(
  * Delete video file from storage
  * Used when submissions are rejected or need cleanup
  */
-export async function deleteQuestVideo(storagePath: string): Promise<boolean> {
+async function deleteQuestVideo(storagePath: string): Promise<boolean> {
   try {
     const { error } = await supabase.storage
       .from(VIDEO_UPLOAD_CONFIG.bucket)
@@ -186,7 +186,7 @@ export async function deleteQuestVideo(storagePath: string): Promise<boolean> {
 /**
  * Get storage usage statistics for a user
  */
-export async function getUserStorageStats(userId: string): Promise<{
+async function getUserStorageStats(userId: string): Promise<{
   totalFiles: number;
   totalSizeBytes: number;
   filesByQuest: Record<string, number>;
@@ -229,11 +229,3 @@ export async function getUserStorageStats(userId: string): Promise<{
   }
 }
 
-export default {
-  uploadQuestVideo,
-  getVideoSignedUrl,
-  deleteQuestVideo,
-  validateVideoFile,
-  getUserStorageStats,
-  VIDEO_UPLOAD_CONFIG
-};

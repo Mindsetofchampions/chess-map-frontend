@@ -643,4 +643,3 @@ export const useQuests = (): UseQuestsReturn => {
   };
 };
 
-export default useQuests;

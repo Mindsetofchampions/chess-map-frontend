@@ -28,11 +28,7 @@
     "pre-push": "npm run quality && npm run test:coverage"
   },
   "dependencies": {
-    "@supabase/auth-ui-react": "^0.4.6",
-    "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.39.0",
-    "@types/mapbox-gl": "^3.4.1",
-    "concurrently": "^8.0.0",
     "framer-motion": "^12.23.11",
     "lucide-react": "^0.292.0",
     "mapbox-gl": "^3.14.0",

@@ -1,6 +1,6 @@
 import { PersonaDef, PersonaKey } from '../types';
 
-export const PERSONAS: PersonaDef[] = [
+const PERSONAS: PersonaDef[] = [
   {
     key: 'atlas',
     name: 'Atlas',
@@ -73,17 +73,17 @@ export function getPersonaByKey(key: PersonaKey): PersonaDef | undefined {
   return PERSONAS.find(persona => persona.key === key);
 }
 
-export function getAllPersonas(): PersonaDef[] {
+function getAllPersonas(): PersonaDef[] {
   return PERSONAS;
 }
 
-export function getPersonasByCategory(category: string): PersonaDef[] {
+function getPersonasByCategory(category: string): PersonaDef[] {
   return PERSONAS.filter(persona => 
     persona.category.toLowerCase().includes(category.toLowerCase())
   );
 }
 
-export function getPersonaKeywords(): Record<PersonaKey, string[]> {
+function getPersonaKeywords(): Record<PersonaKey, string[]> {
   return PERSONAS.reduce((acc, persona) => {
     acc[persona.key] = persona.keywords;
     return acc;

@@ -242,4 +242,3 @@ export const useWallet = (userId?: string): UseWalletReturn => {
   };
 };
 
-export default useWallet;

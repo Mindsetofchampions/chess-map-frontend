@@ -397,7 +397,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
  * Higher-order component for authentication requirements
  * Wraps components that require specific authentication states
  */
-export const withAuth = <P extends object>(
+const withAuth = <P extends object>(
   Component: React.ComponentType<P>,
   requiredRole?: AllUserRoles
 ) => {
@@ -458,4 +458,3 @@ export const withAuth = <P extends object>(
   });
 };
 
-export default AuthContext;

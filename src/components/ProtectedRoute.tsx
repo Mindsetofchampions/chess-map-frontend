@@ -270,7 +270,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
  * Higher-order component wrapper for protected routes
  * Provides a convenient way to wrap components with route protection
  */
-export const withProtectedRoute = <P extends object>(
+const withProtectedRoute = <P extends object>(
   Component: React.ComponentType<P>,
   requiredRole?: AllUserRoles,
   redirectTo?: string

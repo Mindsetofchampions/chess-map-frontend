@@ -55,7 +55,7 @@ export function isEnvReady(): boolean {
 /**
  * Wait for auth session to be ready
  */
-export async function awaitReadySession(client: SupabaseClient = supabase!): Promise<Session | null> {
+async function awaitReadySession(client: SupabaseClient = supabase!): Promise<Session | null> {
   try {
     const { data } = await client.auth.getSession();
     if (data?.session) {
@@ -103,7 +103,7 @@ export async function getCurrentSession(): Promise<Session | null> {
 /**
  * Safe auth operations with error handling
  */
-export const authOperations = {
+const authOperations = {
   async signIn(email: string, password: string) {
     if (!isEnvReady()) {
       throw new EnvMissingError('Supabase environment not configured');

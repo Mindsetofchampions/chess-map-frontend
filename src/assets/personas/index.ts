@@ -19,14 +19,14 @@ export const PERSONA_GIF = {
 export type PersonaKey = keyof typeof PERSONA_GIF;
 
 // Validation helper to check if persona key exists
-export function isValidPersonaKey(key: string): key is PersonaKey {
+function isValidPersonaKey(key: string): key is PersonaKey {
   return key in PERSONA_GIF;
 }
 
 // Get persona asset URL with fallback
-export function getPersonaAsset(key: PersonaKey): string {
+function getPersonaAsset(key: PersonaKey): string {
   return PERSONA_GIF[key];
 }
 
 // Export for backward compatibility
-export { hootie, kittykat, gino, hammer, badge };
+;

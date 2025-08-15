@@ -316,7 +316,7 @@ export class PersonaChipCluster {
 /**
  * Utility function to create persona chips for organizations
  */
-export function createPersonaChipsForOrg(
+function createPersonaChipsForOrg(
   orgPosition: { lat: number; lng: number },
   activePersonaKeys: PersonaKey[],
   onPersonaClick?: (persona: PersonaDef) => void
