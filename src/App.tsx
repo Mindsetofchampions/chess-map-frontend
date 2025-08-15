@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom';
-import { MapPin, Shield, Compass, Users, Award, Zap, X, Star, Trophy, Heart, Sparkles, AlertTriangle } from 'lucide-react';
+import { MapPin, Shield, Compass, Users, Award, Zap, X, Star, Trophy, Heart, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './components/ToastProvider';
@@ -17,19 +17,18 @@ import GlassContainer from './components/GlassContainer';
 import FloatingBubbles from './components/FloatingBubbles';
 import DraggableBubbles from './components/DraggableBubbles';
 import MapPage from './pages/MapPage';
-import WalletChip from './components/wallet/WalletChip';
 
 /**
  * Landing Page Component
  * Public landing page with marketing content
  */
 const LandingPage: React.FC = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
   const currentYear = new Date().getFullYear();
   const [activeModal, setActiveModal] = React.useState<string | null>(null);
 
   // Redirect authenticated users to their appropriate dashboard
-  if (isAuthenticated && user) {
+  if (user) {
     return <Navigate to="/dashboard" replace />;
   }
 

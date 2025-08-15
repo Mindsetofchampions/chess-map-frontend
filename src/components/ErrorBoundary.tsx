@@ -106,7 +106,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   /**
    * Lifecycle method called after an error is caught
    */
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error details
     console.error('Error Boundary caught an error:', error);
     console.error('Error Info:', errorInfo);
