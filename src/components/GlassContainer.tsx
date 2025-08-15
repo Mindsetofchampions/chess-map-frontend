@@ -17,6 +17,8 @@ interface GlassContainerProps {
   delay?: number;
   /** Optional click handler */
   onClick?: React.MouseEventHandler<HTMLDivElement>;
+  /** Optional click handler */
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
 }
 
 /**
