@@ -15,6 +15,8 @@ interface GlassContainerProps {
   animate?: boolean;
   /** Animation delay in seconds */
   delay?: number;
+  /** Optional click handler */
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
 }
 
 /**
@@ -35,7 +37,8 @@ const GlassContainer: React.FC<GlassContainerProps> = ({
   className = '',
   variant = 'card',
   animate = true,
-  delay = 0
+  delay = 0,
+  onClick
 }) => {
   // Variant-specific styles
   const variantClasses = {
@@ -103,6 +106,7 @@ const GlassContainer: React.FC<GlassContainerProps> = ({
     return (
       <motion.div
         className={containerClasses}
+        onClick={onClick}
         {...animationProps}
       >
         {children}
@@ -116,7 +120,7 @@ const GlassContainer: React.FC<GlassContainerProps> = ({
   }
 
   return (
-    <div className={containerClasses}>
+    <div className={containerClasses} onClick={onClick}>
       {children}
       
       {/* Decorative gradient border for card variant */}
