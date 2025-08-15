@@ -10,11 +10,11 @@ import QuestMapOverlay from '../pages/student/QuestMapOverlay';
 
 /** WHY: consistent sprites tied to backend /personas/<key>.gif */
 const SPRITE = {
-  hootie: '/personas/hootie.gif',
-  kittykat: '/personas/kittykat.gif',
-  gino: '/personas/gino.gif',
-  hammer: '/personas/hammer.gif',
-  badge: '/personas/badge.gif',
+  hootie: '/sprites/owl.gif/HOOTIE_WINGLIFT.gif',
+  kittykat: '/sprites/cat.gif/KITTY_BOUNCE.gif',
+  gino: '/sprites/dog.gif/GINO_COMPASSSPIN.gif',
+  hammer: '/sprites/robot.gif/HAMMER_SWING.gif',
+  badge: '/sprites/badge.gif/BADGE_SHINE.gif',
 } as const;
 
 interface MapViewProps {
