@@ -2,19 +2,19 @@
  * Persona GIF Assets
  * 
  * Imports persona GIF files for use in quest bubbles and map markers.
- * Uses actual GIF assets from the personas directory.
+ * Uses actual GIF assets from the public sprites directory.
  */
 
-// Import the actual GIF files
-import hootieGif from './hootie.gif';
-import kittykitGif from './kittykat.gif';
-import ginoGif from './gino.gif';
-import hammerGif from './hammer.gif';
-import badgeGif from './badge.gif';
+// Reference the actual GIF files from public directory
+const hootieGif = '/sprites/owl.gif/HOOTIE_WINGLIFT.gif';
+const kittykatGif = '/sprites/cat.gif/KITTYKAT_IDLE.gif';
+const ginoGif = '/sprites/dog.gif/GINO_IDLE.gif';
+const hammerGif = '/sprites/robot.gif/HAMMER_IDLE.gif';
+const badgeGif = '/sprites/badge.gif/BADGE_IDLE.gif';
 
 export const PERSONA_GIF = {
   hootie: hootieGif,
-  kittykat: kittykitGif,
+  kittykat: kittykatGif,
   gino: ginoGif,
   hammer: hammerGif,
   badge: badgeGif
