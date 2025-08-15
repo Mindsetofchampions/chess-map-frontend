@@ -59,7 +59,7 @@ const QuestPlay: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('quests')
-        .select('id, title, description, status, active, reward_coins, qtype, config, persona_key, created_at')
+        .select('id, title, description, status, active, reward_coins, qtype, config, attribute_id, created_at')
         .eq('id', questId)
         .single();
       
@@ -126,9 +126,20 @@ const QuestPlay: React.FC = () => {
   }, [quest, selectedOption, submitting, showSuccess, showError, refreshWallet]);
 
   /**
-   * Get persona display info
+   * Get persona display info from attribute ID
    */
-  const getPersonaInfo = (personaKey: string) => {
+  const getPersonaInfo = (attributeId: string | null) => {
+    // Map attribute IDs to persona keys
+    const attributeToPersona: Record<string, string> = {
+      'f47ac10b-58cc-4372-a567-0e02b2c3d479': 'hootie',     // Critical Thinking
+      'f47ac10b-58cc-4372-a567-0e02b2c3d480': 'kittykat',   // Creativity  
+      'f47ac10b-58cc-4372-a567-0e02b2c3d481': 'gino',       // Leadership
+      'f47ac10b-58cc-4372-a567-0e02b2c3d482': 'hammer',     // Innovation
+      'f47ac10b-58cc-4372-a567-0e02b2c3d483': 'badge'       // Civic Engagement
+    };
+    
+    const personaKey = attributeId ? attributeToPersona[attributeId] || 'hootie' : 'hootie';
+    
     const personaMap = {
       hootie: { name: 'Hootie the Owl', emoji: '🦉', color: 'text-purple-400' },
       kittykat: { name: 'Kitty Kat', emoji: '🐱', color: 'text-green-400' },
@@ -183,7 +194,7 @@ const QuestPlay: React.FC = () => {
   }
 
   const mcqConfig = quest.config as MCQConfig;
-  const personaInfo = getPersonaInfo(quest.persona_key);
+  const personaInfo = getPersonaInfo(quest.attribute_id);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary">
