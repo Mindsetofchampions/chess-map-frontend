@@ -101,10 +101,10 @@ const MasterAdminDashboard: React.FC = () => {
     {
       id: 'quests',
       label: 'Quest Management',
-      icon: Map,
+      icon: MapPin,
       description: 'Review and approve quest submissions',
       color: 'electric-blue',
-      href: '/master-admin/quests'
+      href: '/master-admin/quests/approvals'
     },
     {
       id: 'challenges',

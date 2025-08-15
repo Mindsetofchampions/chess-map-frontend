@@ -45,7 +45,8 @@ const AdminDashboard: React.FC = () => {
   // Navigation menu items
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, active: true },
-    { id: 'quests', label: 'Quests', icon: MapPin },
+    { id: 'quest-templates', label: 'Quest Templates', icon: MapPin, href: '/admin/quests/templates' },
+    { id: 'create-quest', label: 'Create Quest', icon: Plus, href: '/admin/quests/create' },
     { id: 'attributes', label: 'Attributes', icon: Settings },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'users', label: 'Users', icon: Users },
@@ -55,7 +56,13 @@ const AdminDashboard: React.FC = () => {
   // Handle navigation item click
   const handleNavClick = (itemId: string) => {
     setActiveItem(itemId);
-    setSidebarOpen(false); // Close mobile sidebar
+    setSidebarOpen(false);
+    
+    // Navigate to specific pages
+    const item = navItems.find(nav => nav.id === itemId);
+    if (item?.href) {
+      window.location.href = item.href;
+    }
   };
 
   // Toggle sidebar for mobile

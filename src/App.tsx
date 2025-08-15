@@ -16,6 +16,9 @@ import AdminDashboard from './pages/AdminDashboard';
 import MasterAdminDashboard from './pages/MasterAdminDashboard';
 import MapPage from './pages/MapPage';
 import DebugPage from './pages/DebugPage';
+import QuestTemplatesPage from './pages/admin/QuestTemplatesPage';
+import QuestCreatePage from './pages/admin/QuestCreatePage';
+import QuestApprovalsPage from './pages/master/QuestApprovalsPage';
 import EnvMissing from './components/EnvMissing';
 import { isEnvReady, EnvMissingError } from './services/supabaseClient';
 
@@ -728,6 +731,29 @@ const AppRouter: React.FC = () => {
             element={<Navigate to="/admin/dashboard" replace />}
           />
           
+          {/* Admin Quest Routes */}
+          <Route 
+            path="/admin/quests/templates" 
+            element={
+              <ErrorBoundary>
+                <ProtectedRoute requiredRole="admin">
+                  <QuestTemplatesPage />
+                </ProtectedRoute>
+              </ErrorBoundary>
+            } 
+          />
+          
+          <Route 
+            path="/admin/quests/create" 
+            element={
+              <ErrorBoundary>
+                <ProtectedRoute requiredRole="admin">
+                  <QuestCreatePage />
+                </ProtectedRoute>
+              </ErrorBoundary>
+            } 
+          />
+          
           {/* Protected Master Admin Routes */}
           <Route 
             path="/master-admin/dashboard" 
@@ -735,6 +761,18 @@ const AppRouter: React.FC = () => {
               <ErrorBoundary>
                 <ProtectedRoute requiredRole="master_admin">
                   <MasterAdminDashboard />
+                </ProtectedRoute>
+              </ErrorBoundary>
+            } 
+          />
+          
+          {/* Master Admin Quest Routes */}
+          <Route 
+            path="/master-admin/quests/approvals" 
+            element={
+              <ErrorBoundary>
+                <ProtectedRoute requiredRole="master_admin">
+                  <QuestApprovalsPage />
                 </ProtectedRoute>
               </ErrorBoundary>
             } 

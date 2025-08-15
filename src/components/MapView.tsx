@@ -2,10 +2,13 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Users, Target, MapPin, Sparkles, X, Navigation } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useQuests } from '../hooks/useQuests';
 import { CHESS_COLORS } from './FloatingBubbles';
 import { PersonaChipMarker, PersonaChipCluster, addPersonaChipsToMap } from './PersonaChips';
 import { getAllPersonas, getPersonaByKey } from '../data/personas';
 import { PersonaDef, PersonaKey } from '../types';
+import QuestMapOverlay from '../pages/student/QuestMapOverlay';
+import QuestPlayModal from '../modals/QuestPlayModal';
 
 interface MapViewProps {
   center?: [number, number];
@@ -446,6 +449,7 @@ const MapView: React.FC<MapViewProps> = ({
   const [personaMarkers, setPersonaMarkers] = useState<(PersonaChipMarker | PersonaChipCluster)[]>([]);
   
   const { user } = useAuth();
+  const { mapQuests } = useQuests();
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   /**
@@ -671,6 +675,11 @@ const MapView: React.FC<MapViewProps> = ({
             onClick={handleBubbleClick}
           />
         ))}
+        
+        {/* Student Quest Overlay */}
+        {user?.role === 'student' && mapInstance.current && (
+          <QuestMapOverlay map={mapInstance.current} />
+        )}
       </div>
 
       {/* Mobile Legend Toggle */}

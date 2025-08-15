@@ -1,319 +1,645 @@
 /**
- * Custom hook for quest management and interactions
+ * Enhanced Quest Management Hook
  * 
- * Provides a clean interface for quest-related operations including
- * fetching, completing, and tracking quest interactions with caching
- * and real-time updates.
+ * Provides comprehensive quest state management with real-time updates,
+ * role-based filtering, and optimistic UI updates. Integrates with the
+ * CHESS persona system and coin rewards.
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase, analyticsHelpers } from '../lib/supabase';
-import { questHelpers, analyticsHelpers, subscriptionHelpers } from '../lib/supabase';
-import { Quest, QuestCompletion, CompleteQuestResponse } from '../types/database';
-import { useAuth } from './useAuth';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '../lib/supabase';
+import { QuestService } from '../services/quests';
+import { useAuth } from '../contexts/AuthContext';
+import type { 
+  Quest, 
+  QuestTemplate, 
+  QuestSubmission, 
+  QuestWithTemplate,
+  QuestStats,
+  CreateQuestData,
+  CreateTemplateData
+} from '../types/quest';
 
 /**
  * Quest hook state interface
  */
 interface UseQuestsState {
-  // Data state
-  quests: Quest[];
-  completions: QuestCompletion[];
-  userBalance: number;
-  
+  // Data collections
+  templates: QuestTemplate[];
+  quests: QuestWithTemplate[];
+  mapQuests: Quest[];
+  userSubmissions: QuestSubmission[];
+  pendingApprovals: QuestWithTemplate[];
+  stats: QuestStats | null;
+
   // Loading states
-  loading: boolean;
-  completing: string | null; // Quest ID currently being completed
-  
+  loading: {
+    templates: boolean;
+    quests: boolean;
+    mapQuests: boolean;
+    submissions: boolean;
+    approvals: boolean;
+    stats: boolean;
+  };
+
   // Error states
-  error: string | null;
-  
-  // Computed properties
-  availableQuests: Quest[];
-  completedQuestIds: string[];
+  errors: {
+    templates: string | null;
+    quests: string | null;
+    mapQuests: string | null;
+    submissions: string | null;
+    approvals: string | null;
+    stats: string | null;
+  };
+
+  // Operation states
+  creating: boolean;
+  submitting: boolean;
+  approving: string | null;
 }
 
 /**
  * Quest hook return interface
  */
 interface UseQuestsReturn extends UseQuestsState {
-  // Actions
+  // Template operations
+  refreshTemplates: () => Promise<void>;
+  createTemplate: (data: CreateTemplateData) => Promise<QuestTemplate>;
+  updateTemplate: (id: string, data: Partial<CreateTemplateData>) => Promise<QuestTemplate>;
+
+  // Quest operations
   refreshQuests: () => Promise<void>;
-  completeQuest: (questId: string, responseData?: Record<string, any>) => Promise<CompleteQuestResponse | null>;
-  markQuestViewed: (questId: string) => Promise<void>;
-  
-  // Utilities
+  createQuest: (data: CreateQuestData) => Promise<Quest>;
+  submitForApproval: (questId: string) => Promise<Quest>;
+  approveQuest: (questId: string) => Promise<Quest>;
+  rejectQuest: (questId: string, reason?: string) => Promise<Quest>;
+
+  // Map quest operations
+  refreshMapQuests: () => Promise<void>;
+  getQuestById: (id: string) => Promise<QuestWithTemplate | null>;
+
+  // Submission operations
+  submitMCQAnswer: (questId: string, choice: string) => Promise<QuestSubmission>;
+  submitTextAnswer: (questId: string, text: string) => Promise<QuestSubmission>;
+  submitVideoAnswer: (questId: string, videoUrl: string) => Promise<QuestSubmission>;
+  getUserSubmission: (questId: string) => Promise<QuestSubmission | null>;
+
+  // Admin operations
+  refreshPendingApprovals: () => Promise<void>;
+  refreshStats: () => Promise<void>;
+
+  // Utility functions
+  clearError: (section: keyof UseQuestsState['errors']) => void;
   isQuestCompleted: (questId: string) => boolean;
-  getQuestById: (questId: string) => Quest | undefined;
-  clearError: () => void;
+  canUserAccessQuest: (quest: Quest) => boolean;
 }
 
 /**
- * Custom hook for quest management
+ * Enhanced quest management hook
  * 
- * Provides comprehensive quest functionality including data fetching,
- * completion tracking, real-time updates, and analytics integration.
- * 
- * @returns {UseQuestsReturn} Quest state and management functions
+ * Provides centralized state management for all quest-related operations
+ * with real-time updates, optimistic UI, and comprehensive error handling.
  */
 export const useQuests = (): UseQuestsReturn => {
-  const { user, isAuthenticated } = useAuth();
-  
+  const { user, profile } = useAuth();
+  const mountedRef = useRef(true);
+
   // State management
   const [state, setState] = useState<UseQuestsState>({
+    // Data
+    templates: [],
     quests: [],
-    completions: [],
-    userBalance: 0,
-    loading: true,
-    completing: null,
-    error: null,
-    availableQuests: [],
-    completedQuestIds: [],
+    mapQuests: [],
+    userSubmissions: [],
+    pendingApprovals: [],
+    stats: null,
+
+    // Loading states
+    loading: {
+      templates: false,
+      quests: false,
+      mapQuests: false,
+      submissions: false,
+      approvals: false,
+      stats: false,
+    },
+
+    // Error states
+    errors: {
+      templates: null,
+      quests: null,
+      mapQuests: null,
+      submissions: null,
+      approvals: null,
+      stats: null,
+    },
+
+    // Operation states
+    creating: false,
+    submitting: false,
+    approving: null,
   });
 
   /**
-   * Clear error state
+   * Generic error handler with auto-clear
    */
-  const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, error: null }));
-  }, []);
+  const setError = useCallback((section: keyof UseQuestsState['errors'], error: string) => {
+    setState(prev => ({
+      ...prev,
+      errors: { ...prev.errors, [section]: error }
+    }));
 
-  /**
-   * Set error with automatic clearing
-   */
-  const setError = useCallback((error: string) => {
-    setState(prev => ({ ...prev, error }));
     // Auto-clear error after 10 seconds
     setTimeout(() => {
-      setState(prev => ({ ...prev, error: null }));
+      setState(prev => ({
+        ...prev,
+        errors: { ...prev.errors, [section]: null }
+      }));
     }, 10000);
   }, []);
 
   /**
-   * Fetch all quest data
+   * Clear specific error
    */
-  const fetchQuestData = useCallback(async () => {
-    if (!isAuthenticated || !user) return;
+  const clearError = useCallback((section: keyof UseQuestsState['errors']) => {
+    setState(prev => ({
+      ...prev,
+      errors: { ...prev.errors, [section]: null }
+    }));
+  }, []);
 
-    setState(prev => ({ ...prev, loading: true, error: null }));
-
+  /**
+   * Template operations
+   */
+  const refreshTemplates = useCallback(async () => {
+    setState(prev => ({ ...prev, loading: { ...prev.loading, templates: true } }));
+    
     try {
-      // Fetch quests and user data in parallel
-      const [questsResult, completionsResult, balanceResult] = await Promise.all([
-        questHelpers.getActiveQuests(),
-        questHelpers.getUserCompletions(user.id),
-        questHelpers.getUserBalance(user.id),
-      ]);
-
-      // Handle quest fetch result
-      if (questsResult.error) {
-        throw new Error(`Failed to fetch quests: ${questsResult.error}`);
+      const templates = await QuestService.templates.list();
+      if (mountedRef.current) {
+        setState(prev => ({
+          ...prev,
+          templates,
+          loading: { ...prev.loading, templates: false },
+          errors: { ...prev.errors, templates: null }
+        }));
       }
-
-      // Handle completions fetch result
-      if (completionsResult.error) {
-        throw new Error(`Failed to fetch completions: ${completionsResult.error}`);
+    } catch (error: any) {
+      if (mountedRef.current) {
+        setError('templates', error.message);
+        setState(prev => ({ ...prev, loading: { ...prev.loading, templates: false } }));
       }
+    }
+  }, [setError]);
 
-      // Handle balance fetch result
-      if (balanceResult.error) {
-        throw new Error(`Failed to fetch balance: ${balanceResult.error}`);
-      }
-
-      const quests = questsResult.data || [];
-      const completions = completionsResult.data || [];
-      const userBalance = balanceResult.data || 0;
+  const createTemplate = useCallback(async (data: CreateTemplateData): Promise<QuestTemplate> => {
+    setState(prev => ({ ...prev, creating: true }));
+    
+    try {
+      const template = await QuestService.templates.create(data);
       
-      // Compute derived state
-      const completedQuestIds = completions.map(c => c.quest_id);
-      const availableQuests = quests.filter(q => !completedQuestIds.includes(q.id));
-
+      // Optimistic update
       setState(prev => ({
         ...prev,
-        quests,
-        completions,
-        userBalance,
-        availableQuests,
-        completedQuestIds,
-        loading: false,
-        error: null,
+        templates: [template, ...prev.templates],
+        creating: false
       }));
-
+      
+      return template;
     } catch (error: any) {
-      console.error('Failed to fetch quest data:', error);
-      setError(error.message || 'Failed to load quest data');
-      setState(prev => ({ ...prev, loading: false }));
+      setState(prev => ({ ...prev, creating: false }));
+      setError('templates', error.message);
+      throw error;
     }
-  }, [isAuthenticated, user, setError]);
+  }, [setError]);
+
+  const updateTemplate = useCallback(async (id: string, data: Partial<CreateTemplateData>): Promise<QuestTemplate> => {
+    try {
+      const updated = await QuestService.templates.update(id, data);
+      
+      // Update in state
+      setState(prev => ({
+        ...prev,
+        templates: prev.templates.map(t => t.id === id ? updated : t)
+      }));
+      
+      return updated;
+    } catch (error: any) {
+      setError('templates', error.message);
+      throw error;
+    }
+  }, [setError]);
 
   /**
-   * Refresh quest data
+   * Quest operations
    */
   const refreshQuests = useCallback(async () => {
-    await fetchQuestData();
-  }, [fetchQuestData]);
-
-  /**
-   * Complete a quest
-   */
-  const completeQuest = useCallback(async (
-    questId: string, 
-    responseData?: Record<string, any>
-  ): Promise<CompleteQuestResponse | null> => {
-    if (!user) {
-      setError('User must be authenticated to complete quests');
-      return null;
-    }
-
-    // Prevent multiple completions
-    if (state.completing) {
-      setError('Another quest is currently being completed');
-      return null;
-    }
-
-    // Check if quest is already completed
-    if (state.completedQuestIds.includes(questId)) {
-      setError('Quest has already been completed');
-      return null;
-    }
-
-    setState(prev => ({ ...prev, completing: questId, error: null }));
-
+    setState(prev => ({ ...prev, loading: { ...prev.loading, quests: true } }));
+    
     try {
-      // Complete quest via RPC
-      const result = await questHelpers.completeQuest({
-        quest_id: questId,
-        user_id: user.id,
-        response_data: responseData,
-      });
-
-      if (result.error) {
-        throw new Error(result.error);
+      const quests = await QuestService.quests.list();
+      if (mountedRef.current) {
+        setState(prev => ({
+          ...prev,
+          quests,
+          loading: { ...prev.loading, quests: false },
+          errors: { ...prev.errors, quests: null }
+        }));
       }
-
-      if (!result.data) {
-        throw new Error('No response data received');
+    } catch (error: any) {
+      if (mountedRef.current) {
+        setError('quests', error.message);
+        setState(prev => ({ ...prev, loading: { ...prev.loading, quests: false } }));
       }
+    }
+  }, [setError]);
 
-      // Log quest completion
-      await analyticsHelpers.logQuestInteraction(user.id, questId, 'completed');
+  const refreshMapQuests = useCallback(async () => {
+    setState(prev => ({ ...prev, loading: { ...prev.loading, mapQuests: true } }));
+    
+    try {
+      const mapQuests = await QuestService.quests.listApprovedForMap();
+      if (mountedRef.current) {
+        setState(prev => ({
+          ...prev,
+          mapQuests,
+          loading: { ...prev.loading, mapQuests: false },
+          errors: { ...prev.errors, mapQuests: null }
+        }));
+      }
+    } catch (error: any) {
+      if (mountedRef.current) {
+        setError('mapQuests', error.message);
+        setState(prev => ({ ...prev, loading: { ...prev.loading, mapQuests: false } }));
+      }
+    }
+  }, [setError]);
 
-      // Refresh quest data to get updated state
-      await fetchQuestData();
-
-      setState(prev => ({ ...prev, completing: null }));
+  const createQuest = useCallback(async (data: CreateQuestData): Promise<Quest> => {
+    setState(prev => ({ ...prev, creating: true }));
+    
+    try {
+      const quest = await QuestService.quests.createFromTemplate(data);
       
-      return result.data;
-
+      // Refresh quests to include new one
+      await refreshQuests();
+      
+      setState(prev => ({ ...prev, creating: false }));
+      return quest;
     } catch (error: any) {
-      console.error('Failed to complete quest:', error);
-      setError(error.message || 'Failed to complete quest');
-      setState(prev => ({ ...prev, completing: null }));
+      setState(prev => ({ ...prev, creating: false }));
+      setError('quests', error.message);
+      throw error;
+    }
+  }, [refreshQuests, setError]);
+
+  const submitForApproval = useCallback(async (questId: string): Promise<Quest> => {
+    setState(prev => ({ ...prev, submitting: true }));
+    
+    try {
+      const quest = await QuestService.quests.submitForApproval(questId);
+      
+      // Update quest in state
+      setState(prev => ({
+        ...prev,
+        quests: prev.quests.map(q => q.id === questId ? { ...q, ...quest } : q),
+        submitting: false
+      }));
+      
+      return quest;
+    } catch (error: any) {
+      setState(prev => ({ ...prev, submitting: false }));
+      setError('quests', error.message);
+      throw error;
+    }
+  }, [setError]);
+
+  const approveQuest = useCallback(async (questId: string): Promise<Quest> => {
+    setState(prev => ({ ...prev, approving: questId }));
+    
+    try {
+      const quest = await QuestService.quests.approve(questId);
+      
+      // Update quest in state and refresh map quests
+      setState(prev => ({
+        ...prev,
+        quests: prev.quests.map(q => q.id === questId ? { ...q, ...quest } : q),
+        pendingApprovals: prev.pendingApprovals.filter(q => q.id !== questId),
+        approving: null
+      }));
+      
+      // Refresh map quests to include newly approved quest
+      await refreshMapQuests();
+      
+      return quest;
+    } catch (error: any) {
+      setState(prev => ({ ...prev, approving: null }));
+      setError('approvals', error.message);
+      throw error;
+    }
+  }, [refreshMapQuests, setError]);
+
+  const rejectQuest = useCallback(async (questId: string, reason?: string): Promise<Quest> => {
+    setState(prev => ({ ...prev, approving: questId }));
+    
+    try {
+      const quest = await QuestService.quests.reject(questId, reason);
+      
+      // Update quest in state
+      setState(prev => ({
+        ...prev,
+        quests: prev.quests.map(q => q.id === questId ? { ...q, ...quest } : q),
+        pendingApprovals: prev.pendingApprovals.filter(q => q.id !== questId),
+        approving: null
+      }));
+      
+      return quest;
+    } catch (error: any) {
+      setState(prev => ({ ...prev, approving: null }));
+      setError('approvals', error.message);
+      throw error;
+    }
+  }, [setError]);
+
+  const getQuestById = useCallback(async (id: string): Promise<QuestWithTemplate | null> => {
+    try {
+      return await QuestService.quests.getById(id);
+    } catch (error: any) {
+      setError('quests', error.message);
       return null;
     }
-  }, [user, state.completing, state.completedQuestIds, setError, fetchQuestData]);
+  }, [setError]);
 
   /**
-   * Mark quest as viewed for analytics
+   * Submission operations
    */
-  const markQuestViewed = useCallback(async (questId: string) => {
-    if (!user) return;
-
+  const submitMCQAnswer = useCallback(async (questId: string, choice: string): Promise<QuestSubmission> => {
     try {
-      await analyticsHelpers.logQuestInteraction(user.id, questId, 'viewed');
+      const submission = await QuestService.submissions.submitMCQ(questId, choice);
+      
+      // Add to user submissions
+      setState(prev => ({
+        ...prev,
+        userSubmissions: [submission, ...prev.userSubmissions.filter(s => s.quest_id !== questId)]
+      }));
+      
+      return submission;
     } catch (error: any) {
-      console.error('Failed to log quest view:', error);
-      // Don't show error to user for analytics failures
+      setError('submissions', error.message);
+      throw error;
     }
-  }, [user]);
+  }, [setError]);
+
+  const submitTextAnswer = useCallback(async (questId: string, text: string): Promise<QuestSubmission> => {
+    try {
+      const submission = await QuestService.submissions.submitText(questId, text);
+      
+      setState(prev => ({
+        ...prev,
+        userSubmissions: [submission, ...prev.userSubmissions.filter(s => s.quest_id !== questId)]
+      }));
+      
+      return submission;
+    } catch (error: any) {
+      setError('submissions', error.message);
+      throw error;
+    }
+  }, [setError]);
+
+  const submitVideoAnswer = useCallback(async (questId: string, videoUrl: string): Promise<QuestSubmission> => {
+    try {
+      const submission = await QuestService.submissions.submitVideo(questId, videoUrl);
+      
+      setState(prev => ({
+        ...prev,
+        userSubmissions: [submission, ...prev.userSubmissions.filter(s => s.quest_id !== questId)]
+      }));
+      
+      return submission;
+    } catch (error: any) {
+      setError('submissions', error.message);
+      throw error;
+    }
+  }, [setError]);
+
+  const getUserSubmission = useCallback(async (questId: string): Promise<QuestSubmission | null> => {
+    try {
+      return await QuestService.submissions.getUserSubmission(questId);
+    } catch (error: any) {
+      setError('submissions', error.message);
+      return null;
+    }
+  }, [setError]);
 
   /**
-   * Check if a quest is completed
+   * Admin operations
+   */
+  const refreshPendingApprovals = useCallback(async () => {
+    setState(prev => ({ ...prev, loading: { ...prev.loading, approvals: true } }));
+    
+    try {
+      const pendingApprovals = await QuestService.quests.listPendingApproval();
+      if (mountedRef.current) {
+        setState(prev => ({
+          ...prev,
+          pendingApprovals,
+          loading: { ...prev.loading, approvals: false },
+          errors: { ...prev.errors, approvals: null }
+        }));
+      }
+    } catch (error: any) {
+      if (mountedRef.current) {
+        setError('approvals', error.message);
+        setState(prev => ({ ...prev, loading: { ...prev.loading, approvals: false } }));
+      }
+    }
+  }, [setError]);
+
+  const refreshStats = useCallback(async () => {
+    setState(prev => ({ ...prev, loading: { ...prev.loading, stats: true } }));
+    
+    try {
+      const stats = await QuestService.stats.getStats();
+      if (mountedRef.current) {
+        setState(prev => ({
+          ...prev,
+          stats,
+          loading: { ...prev.loading, stats: false },
+          errors: { ...prev.errors, stats: null }
+        }));
+      }
+    } catch (error: any) {
+      if (mountedRef.current) {
+        setError('stats', error.message);
+        setState(prev => ({ ...prev, loading: { ...prev.loading, stats: false } }));
+      }
+    }
+  }, [setError]);
+
+  /**
+   * Utility functions
    */
   const isQuestCompleted = useCallback((questId: string): boolean => {
-    return state.completedQuestIds.includes(questId);
-  }, [state.completedQuestIds]);
+    return state.userSubmissions.some(s => 
+      s.quest_id === questId && 
+      (s.status === 'accepted' || s.status === 'autograded')
+    );
+  }, [state.userSubmissions]);
 
-  /**
-   * Get quest by ID
-   */
-  const getQuestById = useCallback((questId: string): Quest | undefined => {
-    return state.quests.find(q => q.id === questId);
-  }, [state.quests]);
-
-  /**
-   * Initialize quest data on mount and user change
-   */
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      fetchQuestData();
-    } else {
-      // Reset state when user logs out
-      setState({
-        quests: [],
-        completions: [],
-        userBalance: 0,
-        loading: false,
-        completing: null,
-        error: null,
-        availableQuests: [],
-        completedQuestIds: [],
-      });
+  const canUserAccessQuest = useCallback((quest: Quest): boolean => {
+    if (!user) return false;
+    
+    // Admins can access all quests
+    if (profile?.role === 'master_admin' || profile?.role === 'org_admin' || profile?.role === 'staff') {
+      return true;
     }
-  }, [isAuthenticated, user, fetchQuestData]);
+    
+    // Students can only access approved and active quests
+    return quest.status === 'approved' && quest.active;
+  }, [user, profile]);
 
   /**
-   * Set up real-time subscriptions
+   * Set up real-time subscriptions based on user role
    */
   useEffect(() => {
-    if (!isAuthenticated || !user) return;
+    if (!user) return;
 
-    let questSubscription: any;
-    let balanceSubscription: any;
+    const subscriptions: any[] = [];
 
-    // Subscribe to quest updates
-    questSubscription = subscriptionHelpers.subscribeToQuests((updatedQuests) => {
-      setState(prev => {
-        const completedQuestIds = prev.completions.map(c => c.quest_id);
-        const availableQuests = updatedQuests.filter(q => !completedQuestIds.includes(q.id));
-        
-        return {
-          ...prev,
-          quests: updatedQuests,
-          availableQuests,
-        };
-      });
-    });
+    // Subscribe to quest updates for map display
+    const questSubscription = supabase
+      .channel('quests_channel')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'quests' },
+        (payload) => {
+          console.log('Quest updated:', payload);
+          // Refresh relevant data based on the change
+          if (payload.new && (payload.new as any).status === 'approved') {
+            refreshMapQuests();
+          }
+          refreshQuests();
+        }
+      )
+      .subscribe();
 
-    // Subscribe to balance updates
-    balanceSubscription = subscriptionHelpers.subscribeToUserBalance(user.id, (newBalance) => {
-      setState(prev => ({ ...prev, userBalance: newBalance }));
-    });
+    subscriptions.push(questSubscription);
+
+    // Subscribe to submissions for real-time feedback
+    if (profile?.role === 'student') {
+      const submissionSubscription = supabase
+        .channel(`submissions_${user.id}`)
+        .on('postgres_changes',
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'quest_submissions',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Submission updated:', payload);
+            // Refresh user submissions when they're reviewed
+            if (payload.new && (payload.new as any).status !== 'pending') {
+              // Refresh wallet balance and submissions
+              refreshStats();
+            }
+          }
+        )
+        .subscribe();
+
+      subscriptions.push(submissionSubscription);
+    }
 
     // Cleanup subscriptions
     return () => {
-      if (questSubscription) {
-        questSubscription.unsubscribe();
-      }
-      if (balanceSubscription) {
-        balanceSubscription.unsubscribe();
+      subscriptions.forEach(sub => sub.unsubscribe());
+    };
+  }, [user, profile, refreshQuests, refreshMapQuests, refreshStats]);
+
+  /**
+   * Initialize data based on user role
+   */
+  useEffect(() => {
+    if (!user || !profile) return;
+
+    // Load different data sets based on user role
+    const initializeData = async () => {
+      try {
+        // Always load templates for quest creation
+        await refreshTemplates();
+
+        if (profile.role === 'student') {
+          // Students need map quests and their submissions
+          await Promise.all([
+            refreshMapQuests(),
+            // Load user submissions would go here
+          ]);
+        } else if (profile.role === 'master_admin') {
+          // Master admin needs approval queue and stats
+          await Promise.all([
+            refreshQuests(),
+            refreshPendingApprovals(),
+            refreshStats(),
+            refreshMapQuests()
+          ]);
+        } else if (profile.role === 'org_admin' || profile.role === 'staff') {
+          // Regular admins need their quests and stats
+          await Promise.all([
+            refreshQuests(),
+            refreshStats(),
+            refreshMapQuests()
+          ]);
+        }
+      } catch (error) {
+        console.error('Failed to initialize quest data:', error);
       }
     };
-  }, [isAuthenticated, user]);
+
+    initializeData();
+  }, [user, profile, refreshTemplates, refreshQuests, refreshMapQuests, refreshPendingApprovals, refreshStats]);
+
+  /**
+   * Cleanup on unmount
+   */
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   return {
     // State
     ...state,
-    
-    // Actions
+
+    // Template operations
+    refreshTemplates,
+    createTemplate,
+    updateTemplate,
+
+    // Quest operations
     refreshQuests,
-    completeQuest,
-    markQuestViewed,
-    
-    // Utilities
-    isQuestCompleted,
+    createQuest,
+    submitForApproval,
+    approveQuest,
+    rejectQuest,
+
+    // Map operations
+    refreshMapQuests,
     getQuestById,
+
+    // Submission operations
+    submitMCQAnswer,
+    submitTextAnswer,
+    submitVideoAnswer,
+    getUserSubmission,
+
+    // Admin operations
+    refreshPendingApprovals,
+    refreshStats,
+
+    // Utilities
     clearError,
+    isQuestCompleted,
+    canUserAccessQuest,
   };
 };
 
