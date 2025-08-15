@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Target, MapPin, Sparkles, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { CHESS_COLORS } from './FloatingBubbles';
-import type { PersonaDef, PersonaKey } from '../types';
+import type { PersonaDef, PersonaKey as TypesPersonaKey } from '../types';
 import { type PersonaKey } from '../assets/personas';
 import { 
   PHILADELPHIA_BUBBLES, 
