@@ -8,11 +8,11 @@
 // For now, reference the existing public sprite files
 // In production, these would be imported GIF files in this directory
 export const PERSONA_GIF = {
-  hootie: '/sprites/owl.gif/HOOTIE_WINGLIFT.gif',
-  kittykat: '/sprites/cat.gif/KITTY_BOUNCE.gif',
-  gino: '/sprites/dog.gif/GINO_COMPASSSPIN.gif',
-  hammer: '/sprites/robot.gif/HAMMER_SWING.gif',
-  badge: '/sprites/badge.gif/BADGE_SHINE.gif'
+  hootie: '/sprites/HOOTIE_WINGLIFT.gif',
+  kittykat: '/sprites/KITTY_BOUNCE.gif',
+  gino: '/sprites/GINO_COMPASSSPIN.gif',
+  hammer: '/sprites/HAMMER_SWING.gif',
+  badge: '/sprites/BADGE_SHINE.gif'
 } as const;
 
 export type PersonaKey = keyof typeof PERSONA_GIF;
