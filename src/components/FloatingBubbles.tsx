@@ -2,18 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, X } from 'lucide-react';
 import { PERSONA_GIF, type PersonaKey } from '../assets/personas';
-
-/**
- * CHESS Attribute Color System
- * Each attribute has a unique color for visual consistency
- */
-const CHESS_COLORS = {
-  character: '#8B5CF6',    // Purple - Wisdom & Character
-  health: '#10B981',       // Green - Health & Wellness  
-  exploration: '#F59E0B',  // Orange - Adventure & Discovery
-  stem: '#3B82F6',         // Blue - Technology & Innovation
-  stewardship: '#EF4444'   // Red - Leadership & Responsibility
-} as const;
+import { CHESS_COLORS } from '../hooks/usePhiladelphiaData';
 
 /**
  * CHESS attribute data interface

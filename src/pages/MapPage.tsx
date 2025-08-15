@@ -12,8 +12,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import MapView from '../components/MapView';
 import GlassContainer from '../components/GlassContainer';
-import { PersonaType } from '../components/Map/sprites';
-import { usePhiladelphiaData } from '../hooks/usePhiladelphiaData';
+import { type PersonaKey } from '../types';
+import { usePhiladelphiaData, type QuestBubble } from '../hooks/usePhiladelphiaData';
 import { 
   Home, 
   ArrowLeft, 
@@ -83,9 +83,9 @@ const MapPage: React.FC = () => {
   /**
    * Persona mapping for different attributes
    */
-  const getPersonaForAttribute = (attributeId?: string): PersonaType => {
+  const getPersonaForAttribute = (attributeId?: string): PersonaKey => {
     // This would map to your actual attribute IDs in the database
-    const attributePersonaMap: Record<string, PersonaType> = {
+    const attributePersonaMap: Record<string, PersonaKey> = {
       'character': 'hootie',
       'health': 'kittykat', 
       'exploration': 'gino',

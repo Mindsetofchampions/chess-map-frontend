@@ -5,16 +5,14 @@ import { Target, MapPin, Sparkles, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { CHESS_COLORS } from './FloatingBubbles';
 import type { PersonaDef, PersonaKey } from '../types';
+import { type PersonaKey } from '../assets/personas';
+import { 
+  PHILADELPHIA_BUBBLES, 
+  QUEST_STYLES, 
+  type QuestCategory,
+  type QuestBubble 
+} from '../hooks/usePhiladelphiaData';
 import QuestMapOverlay from '../pages/student/QuestMapOverlay';
-
-/** WHY: consistent sprites tied to backend /personas/<key>.gif */
-const SPRITE = {
-  hootie: '/sprites/owl.gif/HOOTIE_WINGLIFT.gif',
-  kittykat: '/sprites/cat.gif/KITTY_BOUNCE.gif',
-  gino: '/sprites/dog.gif/GINO_COMPASSSPIN.gif',
-  hammer: '/sprites/robot.gif/HAMMER_SWING.gif',
-  badge: '/sprites/badge.gif/BADGE_SHINE.gif',
-} as const;
 
 interface MapViewProps {
   center?: [number, number];
@@ -22,171 +20,6 @@ interface MapViewProps {
   onQuestComplete?: (questId: string) => void;
 }
 
-/** CHESS Quest Categories */
-type QuestCategory =
-  | 'character'
-  | 'health'
-  | 'exploration'
-  | 'stem'
-  | 'stewardship'
-  | 'safe_space'
-  | 'event';
-
-interface QuestBubble {
-  id: string;
-  category: QuestCategory;
-  title: string;
-  description: string;
-  position: { x: number; y: number }; // % of container
-  sprite: string;
-  character: string;
-  reward?: number;
-  difficulty?: 'easy' | 'medium' | 'hard';
-  organization?: string;
-  participants?: number;
-}
-
-/** WHY: stable palette + sprite per category */
-const QUEST_STYLES: Record<
-  QuestCategory,
-  { color: string; sprite: string; label: string; character: string; gradient: string }
-> = {
-  character: {
-    color: CHESS_COLORS.character,
-    sprite: SPRITE.hootie,
-    label: 'Character Quest',
-    character: 'Hootie the Owl',
-    gradient: 'from-purple-400/30 to-purple-600/30',
-  },
-  health: {
-    color: CHESS_COLORS.health,
-    sprite: SPRITE.kittykat,
-    label: 'Health Quest',
-    character: 'Brenda the Cat',
-    gradient: 'from-green-400/30 to-green-600/30',
-  },
-  exploration: {
-    color: CHESS_COLORS.exploration,
-    sprite: SPRITE.gino,
-    label: 'Exploration Quest',
-    character: 'Gino the Dog',
-    gradient: 'from-orange-400/30 to-orange-600/30',
-  },
-  stem: {
-    color: CHESS_COLORS.stem,
-    sprite: SPRITE.hammer,
-    label: 'STEM Quest',
-    character: 'Hammer the Robot',
-    gradient: 'from-blue-400/30 to-blue-600/30',
-  },
-  stewardship: {
-    color: CHESS_COLORS.stewardship,
-    sprite: SPRITE.badge,
-    label: 'Stewardship Quest',
-    character: 'MOC Badge',
-    gradient: 'from-red-400/30 to-red-600/30',
-  },
-  safe_space: {
-    color: '#06D6A0',
-    sprite: SPRITE.badge,
-    label: 'Safe Space',
-    character: 'Protected Learning Zone',
-    gradient: 'from-teal-400/30 to-teal-600/30',
-  },
-  event: {
-    color: '#A78BFA',
-    sprite: SPRITE.hootie,
-    label: 'Community Event',
-    character: 'Learning Event',
-    gradient: 'from-violet-400/30 to-violet-600/30',
-  },
-};
-
-/** Philly demo bubbles */
-const PHILADELPHIA_BUBBLES: QuestBubble[] = [
-  {
-    id: 'character-liberty-bell',
-    category: 'character',
-    title: 'Liberty Bell Character Challenge',
-    description: 'Learn about honesty and integrity with Hootie the Owl.',
-    position: { x: 45, y: 35 },
-    sprite: SPRITE.hootie,
-    character: 'Hootie the Owl',
-    reward: 100,
-    difficulty: 'medium',
-    organization: 'Independence Park',
-  },
-  {
-    id: 'health-trail',
-    category: 'health',
-    title: 'Schuylkill River Fitness',
-    description: 'Wellness challenges with Brenda the Cat.',
-    position: { x: 25, y: 25 },
-    sprite: SPRITE.kittykat,
-    character: 'Brenda the Cat',
-    reward: 75,
-    difficulty: 'easy',
-    organization: 'Parks & Recreation',
-  },
-  {
-    id: 'exploration-old-city',
-    category: 'exploration',
-    title: 'Historic Discovery',
-    description: 'Explore with Gino the Dog through Old City.',
-    position: { x: 65, y: 30 },
-    sprite: SPRITE.gino,
-    character: 'Gino the Dog',
-    reward: 125,
-    difficulty: 'medium',
-    organization: 'Visit Philadelphia',
-  },
-  {
-    id: 'stem-franklin',
-    category: 'stem',
-    title: 'Innovation Lab',
-    description: 'Build robots with Hammer the Robot.',
-    position: { x: 35, y: 55 },
-    sprite: SPRITE.hammer,
-    character: 'Hammer the Robot',
-    reward: 200,
-    difficulty: 'hard',
-    organization: 'Franklin Institute',
-  },
-  {
-    id: 'stewardship-park',
-    category: 'stewardship',
-    title: 'Park Conservation',
-    description: 'Environmental stewardship with MOC Badge.',
-    position: { x: 70, y: 65 },
-    sprite: SPRITE.badge,
-    character: 'MOC Badge',
-    reward: 150,
-    difficulty: 'medium',
-    organization: 'Fairmount Park',
-  },
-  {
-    id: 'safe-library',
-    category: 'safe_space',
-    title: 'Library Study Zone',
-    description: 'Quiet, safe learning environment.',
-    position: { x: 55, y: 45 },
-    sprite: SPRITE.badge,
-    character: 'Protected Zone',
-    organization: 'Free Library',
-    participants: 45,
-  },
-  {
-    id: 'event-maker',
-    category: 'event',
-    title: 'Maker Festival',
-    description: 'Hands-on STEM activities.',
-    position: { x: 80, y: 20 },
-    sprite: SPRITE.hootie,
-    character: 'Learning Event',
-    organization: 'Maker Collective',
-    participants: 120,
-  },
-];
 
 interface BubbleTooltipProps {
   bubble: QuestBubble;
