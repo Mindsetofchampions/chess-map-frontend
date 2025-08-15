@@ -8,18 +8,7 @@
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Plus, 
-  FileTemplate, 
-  Edit, 
-  Trash2, 
-  Eye,
-  HelpCircle,
-  FileText,
-  Video,
-  RefreshCw,
-  ArrowLeft
-} from 'lucide-react';
+import { Plus, BookTemplate as FileTemplate, Edit, Trash2, Eye, HelpCircle, FileText, Video, RefreshCw, ArrowLeft } from 'lucide-react';
 import { useQuests } from '../../hooks/useQuests';
 import { useAuth } from '../../contexts/AuthContext';
 import GlassContainer from '../../components/GlassContainer';
