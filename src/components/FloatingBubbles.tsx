@@ -455,7 +455,6 @@ const FloatingBubbles: React.FC = () => {
         )}
       </AnimatePresence>
     </>
-    </>
   );
 };
 
