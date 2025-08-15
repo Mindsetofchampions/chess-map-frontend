@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { CHESS_COLORS } from './FloatingBubbles';
 import type { PersonaDef, PersonaKey as TypesPersonaKey } from '../types';
 import { type PersonaKey } from '../assets/personas';
+import { addPersonaChipsToMap, type PersonaChipMarker, type OrganizationWithPersonas } from '../lib/sprites';
 import { 
   PHILADELPHIA_BUBBLES, 
   QUEST_STYLES, 
@@ -414,7 +415,7 @@ const MapView: React.FC<MapViewProps> = ({
     personaMarkersRef.current.forEach((m) => m.remove());
     personaMarkersRef.current = [];
 
-    const organizationsWithPersonas = [
+    const organizationsWithPersonas: OrganizationWithPersonas[] = [
       {
         id: 'org-1',
         lat: 39.9526,

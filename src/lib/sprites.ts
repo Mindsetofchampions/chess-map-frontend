@@ -7,6 +7,24 @@
 
 import mapboxgl from 'mapbox-gl';
 import { PERSONA_GIF, type PersonaKey } from '../assets/personas';
+import type { PersonaDef } from '../types';
+
+/**
+ * Marker type for persona chips
+ */
+export interface PersonaChipMarker {
+  remove(): void;
+}
+
+/**
+ * Organization with active personas
+ */
+export interface OrganizationWithPersonas {
+  id: string;
+  lat: number;
+  lng: number;
+  activePersonas: PersonaKey[];
+}
 
 /**
  * Load image with error handling
@@ -153,6 +171,21 @@ export function createPersonaMarker(options: {
     .addTo(map);
   
   return marker;
+}
+
+/**
+ * Add persona chips to map for organizations
+ * Placeholder implementation that returns empty markers array
+ */
+export function addPersonaChipsToMap(
+  map: mapboxgl.Map,
+  organizations: OrganizationWithPersonas[],
+  onPersonaClick: (persona: PersonaDef) => void
+): PersonaChipMarker[] {
+  // Placeholder implementation - returns empty array to prevent crashes
+  // In a full implementation, this would create persona chip markers for each organization
+  console.log('addPersonaChipsToMap called with', organizations.length, 'organizations');
+  return [];
 }
 
 /**
