@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { Play, HelpCircle, Award, Search, Filter, RefreshCw } from 'lucide-react';
+import { Play, HelpCircle, Award, Search, Filter, RefreshCw, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../components/ToastProvider';
 import { PERSONA_GIF, getPersonaInfo } from '../../assets/personas';
@@ -238,6 +238,30 @@ const QuestsList: React.FC = () => {
         ) : (
           /* Quests Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Dashboard Navigation Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0 }}
+            >
+              <Link
+                to="/dashboard"
+                className="h-full block"
+              >
+                <GlassContainer variant="card" className="h-full flex flex-col items-center justify-center text-center p-8 hover:bg-glass-dark transition-all duration-300 hover:scale-105 hover:-translate-y-2 cursor-pointer">
+                  <div className="w-16 h-16 bg-gradient-to-br from-electric-blue-400 to-electric-blue-600 rounded-full flex items-center justify-center mb-4">
+                    <ArrowLeft className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">Back to Dashboard</h3>
+                  <p className="text-gray-300 text-sm">Return to your learning hub</p>
+                  <div className="mt-4 flex items-center gap-2 text-electric-blue-400 text-sm font-medium">
+                    <span>Go Back</span>
+                    <ArrowLeft className="w-4 h-4" />
+                  </div>
+                </GlassContainer>
+              </Link>
+            </motion.div>
+
             <AnimatePresence>
               {filteredQuests.map((quest, index) => {
                 const personaKey = getPersonaForAttribute(quest.attribute_id);
