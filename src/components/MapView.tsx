@@ -435,20 +435,7 @@ const MapView: React.FC<MapViewProps> = ({
   onQuestComplete,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null);
   
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [containerRect, setContainerRect] = useState<DOMRect | null>(null);
-  const [tooltip, setTooltip] = useState<{
-    bubble: QuestBubble;
-    position: { x: number; y: number };
-  } | null>(null);
-  const [showLegend, setShowLegend] = useState(false);
-  const [personaMarkers, setPersonaMarkers] = useState<(PersonaChipMarker | PersonaChipCluster)[]>([]);
-  
-  const { user } = useAuth();
   const { mapQuests } = useQuests();
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
@@ -660,6 +647,7 @@ const MapView: React.FC<MapViewProps> = ({
       {/* Map Container */}
       <div
         ref={mapContainer}
+        id={mapContainerId.current}
         className="w-full h-full bg-gradient-to-br from-dark-secondary to-dark-tertiary rounded-xl overflow-hidden"
         style={{ height: '100%', minHeight: '400px' }}
       />
