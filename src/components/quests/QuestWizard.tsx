@@ -7,16 +7,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  MapPin, 
-  Coins, 
-  CheckCircle,
-  FileTemplate,
-  Settings,
-  Send
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, MapPin, Coins, CheckCircle, BookTemplate as FileTemplate, Settings, Send } from 'lucide-react';
 import { useQuests } from '../../hooks/useQuests';
 import GlassContainer from '../GlassContainer';
 import type { QuestTemplate, CreateQuestData } from '../../types/quest';
