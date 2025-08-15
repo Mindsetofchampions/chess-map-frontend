@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import MapboxMap, { MapPoint } from '../components/Map/MapboxMap';
+import MapView from '../components/MapView';
 import GlassContainer from '../components/GlassContainer';
 import { PersonaType } from '../components/Map/sprites';
 import { usePhiladelphiaData } from '../hooks/usePhiladelphiaData';
@@ -350,16 +350,10 @@ const MapPage: React.FC = () => {
         >
           <GlassContainer variant="card" className="p-0 overflow-hidden">
             <div className="relative h-[600px] w-full">
-              <MapboxMap
+              <MapView
                 center={[-75.1652, 39.9526]} // Philadelphia coordinates
                 zoom={12}
-                points={[]} // Using bubble system instead
-                onMarkerClick={handleMarkerClick}
-                className="w-full h-full"
-                showBubbles={true}
-                bubbleData={bubbles}
-                onBubblePop={handleBubblePop}
-                onStartQuest={handleStartQuest}
+                onQuestComplete={handleStartQuest}
               />
             </div>
           </GlassContainer>

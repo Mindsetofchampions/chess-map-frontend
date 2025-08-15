@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Target, MapPin, Sparkles, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { CHESS_COLORS } from './FloatingBubbles';
-import { PersonaChipMarker, addPersonaChipsToMap } from './PersonaChips';
 import type { PersonaDef, PersonaKey } from '../types';
 import QuestMapOverlay from '../pages/student/QuestMapOverlay';
 
