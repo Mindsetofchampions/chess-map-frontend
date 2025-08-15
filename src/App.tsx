@@ -11,6 +11,7 @@ import Signup from './pages/auth/Signup';
 import Dashboard from './pages/Dashboard';
 import QuestsList from './pages/quests/QuestsList';
 import QuestPlay from './pages/quests/QuestPlay';
+import MasterDashboard from './pages/master/MasterDashboard';
 import Approvals from './pages/master/Approvals';
 import MapView from './components/MapView';
 import GlassContainer from './components/GlassContainer';
@@ -30,11 +31,11 @@ const LandingPage: React.FC = () => {
 
   // Redirect authenticated users to their appropriate dashboard
   if (user) {
-    const userRole = user.user_metadata?.role;
+    const { role } = useAuth();
     
     // Master admin users go to quest approvals
-    if (userRole === 'master_admin') {
-      return <Navigate to="/master/quests/approvals" replace />;
+    if (role === 'master_admin') {
+      return <Navigate to="/master/dashboard" replace />;
     }
     
     // All other users go to student dashboard
@@ -581,6 +582,19 @@ const LandingPage: React.FC = () => {
  * @returns {JSX.Element} Complete application with authentication and routing
  */
 const AppRouter: React.FC = () => {
+  const { user, role, loading, roleLoading } = useAuth();
+  
+  // Auto-redirect authenticated users who land on auth pages
+  useEffect(() => {
+    if (!loading && user && !roleLoading) {
+      const currentPath = window.location.pathname;
+      if (currentPath === '/login' || currentPath === '/signup') {
+        const next = role === 'master_admin' ? '/master/dashboard' : '/dashboard';
+        window.location.replace(next);
+      }
+    }
+  }, [user, role, loading, roleLoading]);
+
   return (
     <ErrorBoundary>
       <BrowserRouter>
@@ -632,6 +646,17 @@ const AppRouter: React.FC = () => {
               <ErrorBoundary>
                 <ProtectedRoute requireMaster>
                   <Approvals />
+                </ProtectedRoute>
+              </ErrorBoundary>
+            }
+          />
+          
+          <Route
+            path="/master/dashboard"
+            element={
+              <ErrorBoundary>
+                <ProtectedRoute requireMaster>
+                  <MasterDashboard />
                 </ProtectedRoute>
               </ErrorBoundary>
             }

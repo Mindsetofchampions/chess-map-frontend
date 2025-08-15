@@ -12,11 +12,13 @@ import { useToast } from './ToastProvider';
 interface LogoutButtonProps {
   className?: string;
   variant?: 'button' | 'link';
+  [key: string]: any; // Allow additional props
 }
 
 const LogoutButton: React.FC<LogoutButtonProps> = ({ 
   className = '',
-  variant = 'button'
+  variant = 'button',
+  ...props
 }) => {
   const { signOut } = useAuth();
   const { showSuccess } = useToast();
@@ -46,7 +48,7 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
     <button
       onClick={handleLogout}
       className={`flex items-center gap-2 bg-glass border-glass hover:bg-glass-dark text-gray-300 hover:text-white rounded-lg px-4 py-2 transition-all duration-200 ${className}`}
-      data-testid="btn-logout"
+      {...props}
     >
       <LogOut className="w-4 h-4" />
       <span>Logout</span>

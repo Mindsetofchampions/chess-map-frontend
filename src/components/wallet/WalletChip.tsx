@@ -19,6 +19,7 @@ interface WalletChipProps {
   className?: string;
   showRefresh?: boolean;
   autoRefresh?: boolean;
+  [key: string]: any; // Allow additional props like data-testid
 }
 
 /**
@@ -34,7 +35,8 @@ interface WalletChipProps {
 const WalletChip: React.FC<WalletChipProps> = ({
   className = '',
   showRefresh = false,
-  autoRefresh = true
+  autoRefresh = true,
+  ...props
 }) => {
   const { showError } = useToast();
   
@@ -107,7 +109,7 @@ const WalletChip: React.FC<WalletChipProps> = ({
   return (
     <motion.div
       className={`bg-glass border-glass rounded-full px-4 py-2 flex items-center gap-2 ${className}`}
-      data-testid="chip-wallet"
+      {...props}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}

@@ -171,8 +171,7 @@ const LedgerTable: React.FC<LedgerTableProps> = ({
   }
 
   return (
-    <div className={`bg-glass border-glass rounded-xl overflow-hidden ${className}`}>
-      <div data-testid="table-ledger">
+    <div className={`bg-glass border-glass rounded-xl overflow-hidden ${className}`} data-testid="table-ledger">
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-glass">
         <h3 className="text-lg font-semibold text-white">Transaction History</h3>
