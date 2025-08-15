@@ -53,6 +53,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Client-side role check for master admin routes
+  if (requireMaster) {
+    const userRole = user.user_metadata?.role;
+    if (userRole !== 'master_admin') {
+      // Non-master users are redirected to regular dashboard
+      return <Navigate to="/dashboard" replace />;
+    }
+  }
+
   // Render children - server will enforce master_admin permissions via RLS/RPCs
   return <>{children}</>;
 };

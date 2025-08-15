@@ -30,6 +30,14 @@ const LandingPage: React.FC = () => {
 
   // Redirect authenticated users to their appropriate dashboard
   if (user) {
+    const userRole = user.user_metadata?.role;
+    
+    // Master admin users go to quest approvals
+    if (userRole === 'master_admin') {
+      return <Navigate to="/master/quests/approvals" replace />;
+    }
+    
+    // All other users go to student dashboard
     return <Navigate to="/dashboard" replace />;
   }
 
