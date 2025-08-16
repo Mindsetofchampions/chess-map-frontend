@@ -97,6 +97,11 @@ const WalletChip: React.FC<WalletChipProps> = ({
    * Format balance for display
    */
   const formatBalance = (balance: number): string => {
+    // Handle undefined, null, or non-numeric values
+    if (typeof balance !== 'number' || balance == null || isNaN(balance)) {
+      return '0';
+    }
+
     if (balance >= 1000000) {
       return `${(balance / 1000000).toFixed(1)}M`;
     }
@@ -124,7 +129,7 @@ const WalletChip: React.FC<WalletChipProps> = ({
           </div>
         ) : (
           <span className="text-yellow-400 font-semibold text-sm whitespace-nowrap">
-            {wallet ? formatBalance(wallet.balance) : '0'} coins
+            {formatBalance(wallet?.balance || 0)} coins
           </span>
         )}
 
