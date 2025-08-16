@@ -14,11 +14,13 @@
     "lint:check": "eslint 'src/**/*.{js,jsx,ts,tsx}' --max-warnings 0",
     "format": "prettier --write 'src/**/*.{js,jsx,ts,tsx,json,css,md}' && prettier --write '*.{js,ts,json,md}'",
     "format:check": "prettier --check 'src/**/*.{js,jsx,ts,tsx,json,css,md}' && prettier --check '*.{js,ts,json,md}'",
-    "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch",
     "clean": "rm -rf dist",
     "quality": "npm run type-check && npm run lint:check && npm run format:check",
     "quality:fix": "npm run type-check && npm run lint && npm run format",
+    "mig:fix": "ts-node scripts/fix-migrations.ts",
+    "mig:check": "ts-node scripts/check-migrations-static.ts",
+    "mig:dryrun": "ts-node scripts/mig-dryrun.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -81,7 +83,8 @@
     "storybook": "^7.6.0",
     "tailwindcss": "^3.4.1",
     "ts-jest": "^29.4.0",
-    "typescript": "^5.5.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2",
     "vite": "^5.4.2"
   }
 }
