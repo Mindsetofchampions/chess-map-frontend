@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { Play, HelpCircle, Award, Search, Filter, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Play, HelpCircle, Award, Search, Filter, RefreshCw, ArrowLeft, MapPin } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ToastProvider';
 import { PERSONA_GIF, getPersonaInfo } from '@/assets/personas';
