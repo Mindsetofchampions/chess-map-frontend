@@ -18,9 +18,9 @@
     "clean": "rm -rf dist",
     "quality": "npm run type-check && npm run lint:check && npm run format:check",
     "quality:fix": "npm run type-check && npm run lint && npm run format",
-    "mig:fix": "ts-node scripts/fix-migrations.ts",
-    "mig:check": "ts-node scripts/check-migrations-static.ts",
-    "mig:dryrun": "ts-node scripts/mig-dryrun.ts",
+    "mig:fix": "node --loader ts-node/esm scripts/fix-migrations.ts",
+    "mig:check": "node --loader ts-node/esm scripts/check-migrations-static.ts",
+    "mig:dryrun": "node --loader ts-node/esm scripts/mig-dryrun.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -29,9 +29,6 @@
     "chromatic": "npx chromatic --project-token=$CHROMATIC_PROJECT_TOKEN --exit-zero-on-changes",
     "pre-commit": "npm run quality:fix && npm run test",
     "pre-push": "npm run quality && npm run test:coverage",
-    "mig:fix": "node --loader ts-node/esm scripts/fix-migrations.ts",
-    "mig:check": "node --loader ts-node/esm scripts/check-migrations-static.ts",
-    "mig:dryrun": "node --loader ts-node/esm scripts/mig-dryrun.ts",
     "@supabase/supabase-js": "^2.39.0",
     "framer-motion": "^12.23.11",
     "lucide-react": "^0.292.0",
@@ -86,5 +83,13 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2",
     "vite": "^5.4.2"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.55.0",
+    "@types/react-router-dom": "^5.3.3",
+    "framer-motion": "^12.23.12",
+    "lucide-react": "^0.539.0",
+    "mapbox-gl": "^3.14.0",
+    "react-router-dom": "^7.8.1"
   }
 }

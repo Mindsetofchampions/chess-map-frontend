@@ -77,6 +77,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Tries to query public.profiles, falls back to 'student' if denied
    */
   const refreshRole = useCallback(async () => {
+    // Prevent concurrent role fetches
+    if (roleLoading) return;
     setRoleLoading(true);
     
     try {
@@ -93,13 +95,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .single();
 
       if (error) {
-        // If 401/permission error or no profile found, default to student
+        // Handle HTTP 500 and other errors
         if (error.code === 'PGRST301' || error.message.includes('permission') || error.message.includes('denied')) {
           console.log('Profile access denied or not found, defaulting to student role');
           setRole('student');
+        } else if (error.status === 500 || error.code === '500') {
+          console.error('Role fetch error (500):', error);
+          setRole('unknown');
         } else {
           console.error('Role fetch error:', error);
-          setRole('student'); // Fallback
+          setRole('student');
         }
       } else if (data?.role) {
         // Cast database role to AppRole
@@ -111,11 +116,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('Failed to refresh role:', error);
-      setRole('student'); // Safe fallback
+      setRole('unknown');
     } finally {
       setRoleLoading(false);
     }
-  }, [user]);
+  }, [user, roleLoading]);
 
   /**
    * Sign in with email and password
@@ -196,10 +201,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (mounted) {
           setUser(session?.user || null);
           setLoading(false);
-          
-          // Refresh role when auth state changes
+          // Only refresh role if user changes and not already loading
           if (session?.user) {
-            // Small delay to ensure user state is set
             setTimeout(() => {
               refreshRole();
             }, 100);
@@ -217,7 +220,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [refreshRole]);
+  }, []); // Remove refreshRole from dependency array
 
   // Refresh role when user changes
   useEffect(() => {
@@ -227,7 +230,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setRole('unknown');
       setRoleLoading(false);
     }
-  }, [user, refreshRole]);
+  }, [user]); // Only depend on user
 
   const contextValue: AuthContextType = {
     user,
