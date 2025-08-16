@@ -20,14 +20,14 @@ import {
   Calendar,
   Coins
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../../components/ToastProvider';
-import { supabase, rpcApproveQuest } from '../../lib/supabase';
-import GlassContainer from '../../components/GlassContainer';
-import WalletChip from '../../components/wallet/WalletChip';
-import LedgerTable from '../../components/wallet/LedgerTable';
-import LogoutButton from '../../components/LogoutButton';
-import type { Quest } from '../../types/backend';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ToastProvider';
+import { supabase, rpcApproveQuest } from '@/lib/supabase';
+import GlassContainer from '@/components/GlassContainer';
+import WalletChip from '@/components/wallet/WalletChip';
+import LedgerTable from '@/components/wallet/LedgerTable';
+import LogoutButton from '@/components/LogoutButton';
+import type { Quest } from '@/types/backend';
 
 /**
  * Dashboard Stats Card Props

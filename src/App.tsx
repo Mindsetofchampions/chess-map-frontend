@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom';
-import { MapPin, Shield, Compass, Users, Award, Zap, X, Star, Trophy, Heart, Sparkles } from 'lucide-react';
+import { MapPin, Shield, Compass, Users, Award, Zap, X, Star, Trophy, Heart, Sparkles, Link } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './components/ToastProvider';
@@ -27,7 +27,7 @@ import SystemDiagnostics from './pages/admin/SystemDiagnostics';
 const LandingPage: React.FC = () => {
   const { user } = useAuth();
   const currentYear = new Date().getFullYear();
-  const [activeModal, setActiveModal] = React.useState<string | null>(null);
+  const [activeModal, setActiveModal] = useState<string | null>(null);
 
   // Redirect authenticated users to their appropriate dashboard
   if (user) {
@@ -371,7 +371,7 @@ const LandingPage: React.FC = () => {
                   <div className="text-center">
                     <Link
                       to="/student-auth"
-                      className="inline-flex items-center gap-2 btn-esports text-lg px-8 py-4"
+                      className="inline-flex items-center gap-2 bg-gradient-to-r from-electric-blue-500 to-electric-blue-600 hover:from-electric-blue-400 hover:to-electric-blue-500 text-white rounded-full px-8 py-4 shadow-2xl transition-all duration-300 font-semibold text-lg min-h-[44px] touch-manipulation hover:shadow-electric-blue-500/50 hover:scale-105 hover:-translate-y-1 border border-electric-blue-400/30"
                       onClick={() => setActiveModal(null)}
                     >
                       <Sparkles className="w-6 h-6" />

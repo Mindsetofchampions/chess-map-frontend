@@ -17,12 +17,12 @@ import {
   RefreshCw,
   Crown
 } from 'lucide-react';
-import { supabase, rpcApproveQuest } from '../../lib/supabase';
-import { useToast } from '../../components/ToastProvider';
-import { useWallet } from '../../components/wallet/WalletChip';
-import GlassContainer from '../../components/GlassContainer';
-import WalletChip from '../../components/wallet/WalletChip';
-import type { Quest } from '../../types/backend';
+import { supabase, rpcApproveQuest } from '@/lib/supabase';
+import { useToast } from '@/components/ToastProvider';
+import { useWallet } from '@/components/wallet/WalletChip';
+import GlassContainer from '@/components/GlassContainer';
+import WalletChip from '@/components/wallet/WalletChip';
+import type { Quest } from '@/types/backend';
 
 /**
  * Not Authorized Banner Component

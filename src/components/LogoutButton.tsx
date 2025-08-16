@@ -6,8 +6,8 @@
 
 import React from 'react';
 import { LogOut } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useToast } from './ToastProvider';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ToastProvider';
 
 interface LogoutButtonProps {
   className?: string;

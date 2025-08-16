@@ -8,9 +8,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Coins, RefreshCw } from 'lucide-react';
-import { getMyWallet } from '../../lib/supabase';
-import { useToast } from '../ToastProvider';
-import type { Wallet } from '../../types/backend';
+import { getMyWallet } from '@/lib/supabase';
+import { useToast } from '@/components/ToastProvider';
+import type { Wallet } from '@/types/backend';
 
 /**
  * Wallet Chip Props
@@ -55,8 +55,8 @@ const WalletChip: React.FC<WalletChipProps> = ({
     }
 
     try {
-      const data = await getMyWallet();
-      setWallet(data);
+      const walletData = await getMyWallet();
+      setWallet(walletData);
     } catch (error: any) {
       console.error('Failed to fetch wallet:', error);
       
@@ -156,8 +156,8 @@ export const useWallet = () => {
   const refreshWallet = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getMyWallet();
-      setWallet(data);
+      const walletData = await getMyWallet();
+      setWallet(walletData);
     } catch (error) {
       console.error('Failed to refresh wallet:', error);
     } finally {

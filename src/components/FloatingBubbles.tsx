@@ -1,8 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, X } from 'lucide-react';
-import { PERSONA_GIF, type PersonaKey } from '../assets/personas';
-import { CHESS_COLORS } from '../hooks/usePhiladelphiaData';
+import { PERSONA_GIF, type PersonaKey } from '@/assets/personas';
+import { CHESS_COLORS } from '@/hooks/usePhiladelphiaData';
 
 /**
  * CHESS attribute data interface

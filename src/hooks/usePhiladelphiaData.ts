@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { PERSONA_GIF, type PersonaKey } from '../assets/personas';
+import { PERSONA_GIF, type PersonaKey } from '@/assets/personas';
 
 /**
  * CHESS Quest Categories

@@ -2,18 +2,18 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, MapPin, Sparkles, X } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { CHESS_COLORS } from './FloatingBubbles';
-import type { PersonaDef, PersonaKey as TypesPersonaKey } from '../types';
-import { type PersonaKey } from '../assets/personas';
-import { addPersonaChipsToMap, type PersonaChipMarker, type OrganizationWithPersonas } from '../lib/sprites';
+import { useAuth } from '@/contexts/AuthContext';
+import { CHESS_COLORS } from '@/components/FloatingBubbles';
+import type { PersonaDef, PersonaKey as TypesPersonaKey } from '@/types';
+import { type PersonaKey } from '@/assets/personas';
+import { addPersonaChipsToMap, type PersonaChipMarker, type OrganizationWithPersonas } from '@/lib/sprites';
 import { 
   PHILADELPHIA_BUBBLES, 
   QUEST_STYLES, 
   type QuestCategory,
   type QuestBubble 
-} from '../hooks/usePhiladelphiaData';
-import QuestMapOverlay from '../pages/student/QuestMapOverlay';
+} from '@/hooks/usePhiladelphiaData';
+import QuestMapOverlay from '@/pages/student/QuestMapOverlay';
 
 interface MapViewProps {
   center?: [number, number];

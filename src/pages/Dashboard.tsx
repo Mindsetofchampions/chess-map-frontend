@@ -9,11 +9,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { MapPin, Award, TrendingUp, Play } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import GlassContainer from '../components/GlassContainer';
-import WalletChip from '../components/wallet/WalletChip';
-import LedgerTable from '../components/wallet/LedgerTable';
-import LogoutButton from '../components/LogoutButton';
+import { useAuth } from '@/contexts/AuthContext';
+import GlassContainer from '@/components/GlassContainer';
+import WalletChip from '@/components/wallet/WalletChip';
+import LedgerTable from '@/components/wallet/LedgerTable';
+import LogoutButton from '@/components/LogoutButton';
 
 /**
  * Dashboard Stats Card Props

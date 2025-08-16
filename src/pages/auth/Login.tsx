@@ -9,9 +9,9 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, LogIn, ArrowLeft } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../../components/ToastProvider';
-import GlassContainer from '../../components/GlassContainer';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ToastProvider';
+import GlassContainer from '@/components/GlassContainer';
 
 /**
  * Login form data interface

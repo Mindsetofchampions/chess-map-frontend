@@ -6,9 +6,9 @@
 
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { AlertTriangle, Crown } from 'lucide-react';
-import GlassContainer from './GlassContainer';
+import GlassContainer from '@/components/GlassContainer';
 
 /**
  * Protected Route Props

@@ -12,7 +12,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import MapView from '../components/MapView';
 import GlassContainer from '../components/GlassContainer';
-import { type PersonaKey } from '../types';
+import type { PersonaKey } from '../types';
 import { usePhiladelphiaData, type QuestBubble } from '../hooks/usePhiladelphiaData';
 import { 
   Home, 
@@ -26,9 +26,22 @@ import {
 } from 'lucide-react';
 
 /**
+ * Map point interface for compatibility
+ */
+interface MapPoint {
+  id: string;
+  name: string;
+  description?: string;
+  coordinates: [number, number];
+  persona: string;
+  type: string;
+  metadata?: any;
+}
+
+/**
  * Organization data from Supabase
  */
-interface Organization {
+export interface Organization {
   id: string;
   name: string;
   description?: string;
@@ -36,13 +49,13 @@ interface Organization {
     lat: number;
     lng: number;
   };
-  persona?: PersonaType;
+  persona?: string;
 }
 
 /**
  * Event data from Supabase
  */
-interface Event {
+export interface Event {
   id: string;
   title: string;
   description?: string;

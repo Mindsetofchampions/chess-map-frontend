@@ -43,6 +43,8 @@ export interface Quest {
   approved_at?: string;
   created_by?: string;
   approved_by?: string;
+  lng?: number | null;
+  lat?: number | null;
 }
 
 /**

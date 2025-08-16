@@ -29,12 +29,17 @@ A modern React-based frontend plugin for the CHESS Map application, featuring gl
    npm install
    ```
 
-2. **Configure environment variables**:
+2. **Configure environment variables** (REQUIRED):
    ```bash
    cp .env.example .env
    ```
+   
+   **IMPORTANT:** You must fill in the actual values in `.env` before running the development server:
+   - `VITE_SUPABASE_URL`: Your Supabase project URL
+   - `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous key
+   - `VITE_MAPBOX_TOKEN`: Optional - your Mapbox token (map will show bubbles only without this)
 
-3. **Update environment variables** in `.env`:
+3. **Get your credentials and update** `.env`:
    - Get your Mapbox token from [Mapbox Studio](https://studio.mapbox.com/)
    - Configure your Supabase project at [Supabase Console](https://app.supabase.com/)
    - Update the `.env` file with your actual values

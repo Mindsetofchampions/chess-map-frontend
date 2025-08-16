@@ -6,9 +6,9 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
-import { useToast } from '../components/ToastProvider';
-import type { Quest, Submission } from '../types/backend';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/ToastProvider';
+import type { Quest, Submission } from '@/types/backend';
 
 /**
  * Hook return interface

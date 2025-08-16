@@ -7,8 +7,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useQuests } from '../../hooks/useQuests';
-import { useAuth } from '../../contexts/AuthContext';
+import { useQuests } from '@/hooks/useQuests';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * Quest Map Overlay Props

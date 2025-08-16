@@ -27,12 +27,12 @@ import {
   Eye
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../../components/ToastProvider';
-import { supabase, rpcSubmitMcq, rpcApproveQuest, getMyWallet, getMyLedger } from '../../lib/supabase';
-import GlassContainer from '../../components/GlassContainer';
-import type { Quest, Submission } from '../../types/backend';
-import { PERSONA_GIF } from '../../assets/personas';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ToastProvider';
+import { supabase, rpcSubmitMcq, rpcApproveQuest, getMyWallet, getMyLedger } from '@/lib/supabase';
+import GlassContainer from '@/components/GlassContainer';
+import type { Quest, Submission } from '@/types/backend';
+import { PERSONA_GIF } from '@/assets/personas';
 
 /**
  * Diagnostic check result interface

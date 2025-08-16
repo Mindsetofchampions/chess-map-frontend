@@ -5,7 +5,8 @@
  * for calling the specific RPCs required by the quest system.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type PostgrestError } from '@supabase/supabase-js';
+import type { Quest, Submission, Wallet, Ledger } from '@/types/backend';
 
 // Environment validation
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -37,7 +38,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
  * Submit MCQ answer via RPC
  * Calls public.submit_mcq_answer which handles auto-grading and coin awards
  */
-export async function rpcSubmitMcq(questId: string, choiceId: string) {
+export async function rpcSubmitMcq(questId: string, choiceId: string): Promise<Submission> {
   const { data, error } = await supabase.rpc('submit_mcq_answer', {
     p_quest_id: questId,
     p_choice: choiceId
@@ -47,14 +48,14 @@ export async function rpcSubmitMcq(questId: string, choiceId: string) {
     throw new Error(`Failed to submit MCQ: ${error.message}`);
   }
   
-  return data;
+  return data as Submission;
 }
 
 /**
  * Approve quest via RPC (master_admin only)
  * Calls public.approve_quest which handles budget deduction and status update
  */
-export async function rpcApproveQuest(questId: string) {
+export async function rpcApproveQuest(questId: string): Promise<Quest> {
   const { data, error } = await supabase.rpc('approve_quest', {
     p_quest_id: questId
   });
@@ -63,26 +64,26 @@ export async function rpcApproveQuest(questId: string) {
     throw new Error(`Failed to approve quest: ${error.message}`);
   }
   
-  return data;
+  return data as Quest;
 }
 
 /**
  * Get current user's wallet balance via RPC
  */
-export async function getMyWallet() {
+export async function getMyWallet(): Promise<Wallet> {
   const { data, error } = await supabase.rpc('get_my_wallet');
   
   if (error) {
     throw new Error(`Failed to get wallet: ${error.message}`);
   }
   
-  return data;
+  return data as Wallet;
 }
 
 /**
  * Get current user's transaction ledger via RPC
  */
-export async function getMyLedger(limit: number = 50, offset: number = 0) {
+export async function getMyLedger(limit: number = 50, offset: number = 0): Promise<Ledger[]> {
   const { data, error } = await supabase.rpc('get_my_ledger', {
     p_limit: limit,
     p_offset: offset
@@ -92,7 +93,7 @@ export async function getMyLedger(limit: number = 50, offset: number = 0) {
     throw new Error(`Failed to get ledger: ${error.message}`);
   }
   
-  return data;
+  return data as Ledger[];
 }
 
 export default supabase;

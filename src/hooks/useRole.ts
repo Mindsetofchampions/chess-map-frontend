@@ -5,7 +5,7 @@
  */
 
 import { useContext } from 'react';
-import { AuthContext, type AppRole } from '../contexts/AuthContext';
+import { AuthContext, type AppRole } from '@/contexts/AuthContext';
 
 /**
  * Hook return interface

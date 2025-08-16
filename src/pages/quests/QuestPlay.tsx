@@ -18,11 +18,11 @@ import {
   Send,
   RefreshCw
 } from 'lucide-react';
-import { supabase, rpcSubmitMcq } from '../../lib/supabase';
-import { useToast } from '../../components/ToastProvider';
-import { useWallet } from '../../components/wallet/WalletChip';
-import GlassContainer from '../../components/GlassContainer';
-import type { Quest, MCQConfig, MCQOption } from '../../types/backend';
+import { supabase, rpcSubmitMcq } from '@/lib/supabase';
+import { useToast } from '@/components/ToastProvider';
+import { useWallet } from '@/components/wallet/WalletChip';
+import GlassContainer from '@/components/GlassContainer';
+import type { Quest, MCQConfig, MCQOption } from '@/types/backend';
 
 /**
  * Quest Play Component

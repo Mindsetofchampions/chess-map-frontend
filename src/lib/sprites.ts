@@ -6,8 +6,8 @@
  */
 
 import mapboxgl from 'mapbox-gl';
-import { PERSONA_GIF, type PersonaKey } from '../assets/personas';
-import type { PersonaDef } from '../types';
+import { PERSONA_GIF, type PersonaKey } from '@/assets/personas';
+import type { PersonaDef } from '@/types';
 
 /**
  * Marker type for persona chips

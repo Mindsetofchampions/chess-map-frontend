@@ -1,41 +1,37 @@
 // filepath: src/components/wallet/LedgerTable.tsx
 import React, { useEffect, useState } from 'react';
-import { getMyLedger } from '../../lib/supabase';
+import { getMyLedger } from '@/lib/supabase';
+import type { Ledger } from '@/types/backend';
 
-type LedgerRow = {
-  id: number;
-  user_id: string;
-  delta: number;
-  kind: 'quest_award' | 'quest_budget' | 'manual_adjust';
-  quest_id?: string | null;
-  created_by?: string | null;
-  created_at: string;
-};
+interface LedgerTableProps {
+  pageSize?: number;
+  [key: string]: any; // Allow additional props like data-testid
+}
 
 function formatDelta(n: number) {
   const sign = n > 0 ? '+' : '';
   return `${sign}${n}`;
 }
 
-export default function LedgerTable(): JSX.Element {
-  const [rows, setRows] = useState<LedgerRow[]>([]);
+const LedgerTable: React.FC<LedgerTableProps> = ({ pageSize = 20, ...props }) => {
+  const [rows, setRows] = useState<Ledger[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const pageSize = 20;
 
   useEffect(() => {
     let alive = true;
     (async () => {
       setLoading(true);
       setErr(null);
-      const { data, error } = await getMyLedger(pageSize, page * pageSize);
-      if (!alive) return;
-      if (error) {
+      try {
+        const data = await getMyLedger(pageSize, page * pageSize);
+        if (!alive) return;
+        setRows(data || []);
+      } catch (error: any) {
+        if (!alive) return;
         setErr(error.message ?? 'Failed to load ledger');
         setRows([]);
-      } else {
-        setRows(data ?? []);
       }
       setLoading(false);
     })();
@@ -45,7 +41,7 @@ export default function LedgerTable(): JSX.Element {
   }, [page]);
 
   return (
-    <div data-testid="table-ledger" className="w-full rounded-xl bg-white/5 p-4 border border-white/10">
+    <div {...props} className="w-full rounded-xl bg-white/5 p-4 border border-white/10">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-white/90">Recent Transactions</h3>
         <div className="flex items-center gap-2">
@@ -108,4 +104,6 @@ export default function LedgerTable(): JSX.Element {
       )}
     </div>
   );
-}
+};
+
+export default LedgerTable;
