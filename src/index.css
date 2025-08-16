@@ -1,10 +1,10 @@
+/* Mapbox GL CSS - Critical for map rendering */
+@import 'mapbox-gl/dist/mapbox-gl.css';
+
 /* Tailwind CSS base styles */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Mapbox GL CSS - Critical for map rendering */
-@import 'mapbox-gl/dist/mapbox-gl.css';
 
 /* Custom base styles for better typography and layout */
 @layer base {
