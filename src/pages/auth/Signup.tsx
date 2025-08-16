@@ -117,7 +117,9 @@ const Signup: React.FC = () => {
         showSuccess('Account created!', 'Welcome to CHESS Quest. Please check your email to verify your account.');
         
         // Role-aware redirect
-        const next = role === 'master_admin' ? '/master/dashboard' : '/dashboard';
+       const next = (role === 'master_admin' || role === 'org_admin' || role === 'staff') 
+         ? '/master/dashboard' 
+         : '/dashboard';
         navigate(next, { replace: true });
       } else {
         showError('Sign up failed', result.error);

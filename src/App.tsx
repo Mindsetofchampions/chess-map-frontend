@@ -36,6 +36,11 @@ const LandingPage: React.FC = () => {
     if (role === 'master_admin') {
       return <Navigate to="/master/dashboard" replace />;
     }
+   
+   // Admin-level users (org_admin, staff) go to master dashboard
+   if (role === 'org_admin' || role === 'staff') {
+     return <Navigate to="/master/dashboard" replace />;
+   }
     
     // All other users go to student dashboard
     return <Navigate to="/dashboard" replace />;

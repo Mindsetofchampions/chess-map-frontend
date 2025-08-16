@@ -106,7 +106,9 @@ const Login: React.FC = () => {
         showSuccess('Welcome back!', 'Successfully signed in to CHESS Quest');
         
         // Role-aware redirect
-        const next = role === 'master_admin' ? '/master/dashboard' : '/dashboard';
+       const next = (role === 'master_admin' || role === 'org_admin' || role === 'staff') 
+         ? '/master/dashboard' 
+         : '/dashboard';
         const from = (location.state as any)?.from?.pathname || next;
         navigate(from, { replace: true });
       } else {
