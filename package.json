@@ -28,10 +28,10 @@
     "build-storybook": "storybook build",
     "chromatic": "npx chromatic --project-token=$CHROMATIC_PROJECT_TOKEN --exit-zero-on-changes",
     "pre-commit": "npm run quality:fix && npm run test",
-    "pre-push": "npm run quality && npm run test:coverage"
+    "pre-push": "npm run quality && npm run test:coverage",
     "mig:fix": "node --loader ts-node/esm scripts/fix-migrations.ts",
     "mig:check": "node --loader ts-node/esm scripts/check-migrations-static.ts",
-    "mig:dryrun": "node --loader ts-node/esm scripts/mig-dryrun.ts"
+    "mig:dryrun": "node --loader ts-node/esm scripts/mig-dryrun.ts",
     "@supabase/supabase-js": "^2.39.0",
     "framer-motion": "^12.23.11",
     "lucide-react": "^0.292.0",
