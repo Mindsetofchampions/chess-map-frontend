@@ -72,7 +72,7 @@ const Approvals: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('quests')
-        .select('id, title, description, reward_coins, status, attribute_id, created_at, created_by')
+        .select('id, title, description, reward_coins, status, attribute_id, created_at')
         .eq('status', 'submitted')
         .order('created_at', { ascending: true });
       
