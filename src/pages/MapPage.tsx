@@ -227,7 +227,7 @@ const MapPage: React.FC = () => {
    * Navigation handlers
    */
   const handleGoHome = () => {
-    navigate('/', { replace: true });
+    navigate('/dashboard', { replace: true });
   };
 
   const handleGoBack = () => {
@@ -235,7 +235,7 @@ const MapPage: React.FC = () => {
   };
 
   const handleSettings = () => {
-    console.log('Navigate to settings');
+    navigate('/admin/diagnostics');
   };
 
   return (
