@@ -235,7 +235,7 @@ const MapPage: React.FC = () => {
   };
 
   const handleSettings = () => {
-    console.log('Navigate to settings');
+    navigate('/admin/diagnostics');
   };
 
   return (
