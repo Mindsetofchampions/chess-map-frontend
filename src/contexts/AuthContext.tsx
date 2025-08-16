@@ -98,21 +98,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Handle HTTP 500 and other errors
         if (error.code === 'PGRST301' || error.message.includes('permission') || error.message.includes('denied')) {
           console.log('Profile access denied or not found, defaulting to student role');
-          setRole('student');
+          // Check user metadata as fallback before defaulting to student
+          const metadataRole = user.user_metadata?.role as AppRole;
+          if (metadataRole && ['master_admin', 'org_admin', 'staff', 'student'].includes(metadataRole)) {
+            console.log(`Using role from user metadata: ${metadataRole}`);
+            setRole(metadataRole);
+          } else {
+            setRole('student');
+          }
         } else if (error.status === 500 || error.code === '500') {
           console.error('Role fetch error (500):', error);
           setRole('unknown');
         } else {
           console.error('Role fetch error:', error);
-          setRole('student');
+          // Check user metadata as fallback
+          const metadataRole = user.user_metadata?.role as AppRole;
+          if (metadataRole && ['master_admin', 'org_admin', 'staff', 'student'].includes(metadataRole)) {
+            console.log(`Using role from user metadata: ${metadataRole}`);
+            setRole(metadataRole);
+          } else {
+            setRole('student');
+          }
         }
       } else if (data && data.role) {
         // Cast database role to AppRole
         const dbRole = data.role as AppRole;
         setRole(dbRole);
       } else {
-        // No profile found or no role, default to student
-        setRole('student');
+        // No profile found, check user metadata before defaulting to student
+        const metadataRole = user.user_metadata?.role as AppRole;
+        if (metadataRole && ['master_admin', 'org_admin', 'staff', 'student'].includes(metadataRole)) {
+          console.log(`No profile found, using role from user metadata: ${metadataRole}`);
+          setRole(metadataRole);
+        } else {
+          console.log('No profile and no valid metadata role, defaulting to student');
+          setRole('student');
+        }
       }
     } catch (error) {
       console.error('Failed to refresh role:', error);
