@@ -36,7 +36,7 @@ A modern React-based frontend plugin for the CHESS Map application, featuring gl
    
    **IMPORTANT:** You must fill in the actual values in `.env` before running the development server:
    - `VITE_SUPABASE_URL`: Your Supabase project URL
-   - `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous key
+   - `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous key  
    - `VITE_MAPBOX_TOKEN`: Optional - your Mapbox token (map will show bubbles only without this)
 
 3. **Get your credentials and update** `.env`:
@@ -57,10 +57,9 @@ Copy `.env.example` to `.env` and configure the following variables:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `NEXT_PUBLIC_MAPBOX_TOKEN` | Your Mapbox public access token | `pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjbGV...` |
-| `NEXT_PUBLIC_MAP_STYLE_URL` | Custom Mapbox style URL | `mapbox://styles/username/style_id` |
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | `https://yourproject.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous/public key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
+| `VITE_MAPBOX_TOKEN` | Your Mapbox public access token | `pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjbGV...` |
+| `VITE_SUPABASE_URL` | Your Supabase project URL | `https://yourproject.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous/public key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
 
 ### Getting Your Tokens
 

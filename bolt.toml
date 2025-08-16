@@ -5,7 +5,6 @@ description = "CHESS Map front-end plugin with glass-morphic UI and Mapbox integ
 entrypoint = "src/main.tsx"
 
 [env]
-NEXT_PUBLIC_SUPABASE_URL = ""
-NEXT_PUBLIC_SUPABASE_ANON_KEY = ""
-NEXT_PUBLIC_MAPBOX_TOKEN = ""
-NEXT_PUBLIC_MAP_STYLE_URL = ""
+VITE_SUPABASE_URL = ""
+VITE_SUPABASE_ANON_KEY = ""
+VITE_MAPBOX_TOKEN = ""
