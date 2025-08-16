@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { MapPin, Award, TrendingUp, Play } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import GlassContainer from '@/components/GlassContainer';
@@ -56,7 +56,12 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, delay 
  * - Real-time data updates
  */
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, role, roleLoading } = useAuth();
+
+  // Redirect master admins to their proper dashboard
+  if (!roleLoading && (role === 'master_admin' || role === 'org_admin' || role === 'staff')) {
+    return <Navigate to="/master/dashboard" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary">
