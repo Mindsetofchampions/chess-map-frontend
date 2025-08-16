@@ -92,7 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .from('profiles')
         .select('role')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         // Handle HTTP 500 and other errors
@@ -106,12 +106,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.error('Role fetch error:', error);
           setRole('student');
         }
-      } else if (data?.role) {
+      } else if (data && data.role) {
         // Cast database role to AppRole
         const dbRole = data.role as AppRole;
         setRole(dbRole);
       } else {
-        // No role found, default to student
+        // No profile found or no role, default to student
         setRole('student');
       }
     } catch (error) {
