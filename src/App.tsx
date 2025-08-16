@@ -26,13 +26,12 @@ import SystemDiagnostics from './pages/admin/SystemDiagnostics';
  */
 const LandingPage: React.FC = () => {
   const { user } = useAuth();
+  const { role } = useAuth();
   const currentYear = new Date().getFullYear();
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
   // Redirect authenticated users to their appropriate dashboard
   if (user) {
-    const { role } = useAuth();
-    
     // Master admin users go to quest approvals
     if (role === 'master_admin') {
       return <Navigate to="/master/dashboard" replace />;
