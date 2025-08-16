@@ -164,14 +164,18 @@ const QuestsList: React.FC = () => {
                 <select
                   value={filterPersona}
                   onChange={(e) => setFilterPersona(e.target.value)}
-                  className="bg-glass border-glass rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-electric-blue-400"
+                  className="bg-dark-secondary border-glass rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-electric-blue-400"
+                  style={{
+                    backgroundColor: '#161622',
+                    color: 'white'
+                  }}
                 >
-                  <option value="all">All Personas</option>
-                  <option value="hootie">Hootie the Owl</option>
-                  <option value="kittykat">Kitty Kat</option>
-                  <option value="gino">Gino the Dog</option>
-                  <option value="hammer">Hammer the Robot</option>
-                  <option value="badge">MOC Badge</option>
+                  <option value="all" style={{ backgroundColor: '#161622', color: 'white' }}>All Personas</option>
+                  <option value="hootie" style={{ backgroundColor: '#161622', color: 'white' }}>Hootie the Owl</option>
+                  <option value="kittykat" style={{ backgroundColor: '#161622', color: 'white' }}>Kitty Kat</option>
+                  <option value="gino" style={{ backgroundColor: '#161622', color: 'white' }}>Gino the Dog</option>
+                  <option value="hammer" style={{ backgroundColor: '#161622', color: 'white' }}>Hammer the Robot</option>
+                  <option value="badge" style={{ backgroundColor: '#161622', color: 'white' }}>MOC Badge</option>
                 </select>
               </div>
 
