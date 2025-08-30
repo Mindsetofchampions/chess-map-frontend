@@ -39,6 +39,7 @@ const BubbleTooltip: React.FC<BubbleTooltipProps> = ({
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   const handleStart = () => {
+    console.log('Starting quest from bubble:', bubble.id);
     onStartQuest(bubble);
     onClose();
   };
@@ -298,7 +299,12 @@ const MapView: React.FC<MapViewProps> = ({
 
   const handleStartQuest = useCallback(
     (bubble: QuestBubble) => {
-      if (onQuestComplete) onQuestComplete(bubble.id);
+      console.log('handleStartQuest called with bubble:', bubble.id);
+      if (onQuestComplete) {
+        onQuestComplete(bubble.id);
+      } else {
+        console.warn('onQuestComplete not provided to MapView');
+      }
     },
     [onQuestComplete]
   );

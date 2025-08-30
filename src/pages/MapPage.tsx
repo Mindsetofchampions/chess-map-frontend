@@ -213,7 +213,16 @@ const MapPage: React.FC = () => {
    * Handle quest start from bubble
    */
   const handleStartQuest = useCallback((questId: string) => {
-    console.log('Quest started from bubble:', questId);
+    // Check if this is a demo bubble ID or real quest ID
+    if (questId.includes('-')) {
+      // Demo bubble IDs like 'character-liberty-bell' - navigate to quests list
+      console.log('Demo quest clicked, navigating to quests list:', questId);
+      navigate('/quests');
+    } else {
+      // Real quest ID - navigate directly to quest
+      console.log('Real quest clicked, navigating to quest:', questId);
+      navigate(`/quests/${questId}`);
+    }
   }, []);
 
   /**
