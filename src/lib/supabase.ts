@@ -145,6 +145,46 @@ export async function getMyLedger(limit: number = 50, offset: number = 0): Promi
 }
 
 /**
+ * Set user role via RPC (master_admin only)
+ */
+export async function setUserRole(email: string, role: string): Promise<any> {
+  try {
+    const { data, error } = await supabase.rpc('set_user_role', {
+      p_email: email,
+      p_role: role
+    });
+    
+    if (error) {
+      throw new Error(mapPgError(error).message);
+    }
+    
+    return data;
+  } catch (error) {
+    throw new Error(mapPgError(error).message);
+  }
+}
+
+/**
+ * Top up platform balance via RPC (master_admin only)
+ */
+export async function topUpPlatformBalance(amount: number, reason: string): Promise<any> {
+  try {
+    const { data, error } = await supabase.rpc('top_up_platform_balance', {
+      p_amount: amount,
+      p_reason: reason
+    });
+    
+    if (error) {
+      throw new Error(mapPgError(error).message);
+    }
+    
+    return data;
+  } catch (error) {
+    throw new Error(mapPgError(error).message);
+  }
+}
+
+/**
  * Get platform balance (master_admin only)
  */
 export async function getPlatformBalance(): Promise<{ id: number; coins: number; updated_at: string }> {

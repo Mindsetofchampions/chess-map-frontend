@@ -173,8 +173,7 @@ const Approvals: React.FC = () => {
       
     } catch (error: any) {
       console.error('Failed to reject quest:', error);
-      const mappedError = mapPgError(error);
-      showError('Rejection Failed', mappedError.message);
+      showError('Rejection Failed', mapPgError(error).message);
     } finally {
       setRejecting(null);
     }
