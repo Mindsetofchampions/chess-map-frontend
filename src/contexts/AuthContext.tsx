@@ -87,7 +87,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      // Try to get role from public.profiles table
+      // Try to get role from public.user_roles table first (new system)
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!roleError && roleData) {
+        const userRole = roleData.role as AppRole;
+        setRole(userRole);
+        return;
+      }
+
+      // Fallback to public.profiles table (backward compatibility)
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
@@ -95,37 +108,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .maybeSingle();
 
       if (error) {
-        // Handle HTTP 500 and other errors
-        if (error.code === 'PGRST301' || error.message.includes('permission') || error.message.includes('denied')) {
-          console.log('Profile access denied or not found, defaulting to student role');
-          // Check user metadata as fallback before defaulting to student
-          const metadataRole = user.user_metadata?.role as AppRole;
-          if (metadataRole && ['master_admin', 'org_admin', 'staff', 'student'].includes(metadataRole)) {
-            console.log(`Using role from user metadata: ${metadataRole}`);
-            setRole(metadataRole);
-          } else {
-            setRole('student');
-          }
-        } else if (error.status === 500 || error.code === '500') {
-          console.error('Role fetch error (500):', error);
-          setRole('unknown');
+        console.log('Role access denied or not found, checking user metadata...');
+        // Check user metadata as fallback before defaulting to student
+        const metadataRole = user.user_metadata?.role as AppRole;
+        if (metadataRole && ['master_admin', 'org_admin', 'staff', 'student'].includes(metadataRole)) {
+          console.log(`Using role from user metadata: ${metadataRole}`);
+          setRole(metadataRole);
         } else {
-          console.error('Role fetch error:', error);
-          // Check user metadata as fallback
-          const metadataRole = user.user_metadata?.role as AppRole;
-          if (metadataRole && ['master_admin', 'org_admin', 'staff', 'student'].includes(metadataRole)) {
-            console.log(`Using role from user metadata: ${metadataRole}`);
-            setRole(metadataRole);
-          } else {
-            setRole('student');
-          }
+          setRole('student');
         }
       } else if (data && data.role) {
         // Cast database role to AppRole
         const dbRole = data.role as AppRole;
         setRole(dbRole);
       } else {
-        // No profile found, check user metadata before defaulting to student
+        // No profile or user_roles entry found, check user metadata before defaulting to student
         const metadataRole = user.user_metadata?.role as AppRole;
         if (metadataRole && ['master_admin', 'org_admin', 'staff', 'student'].includes(metadataRole)) {
           console.log(`No profile found, using role from user metadata: ${metadataRole}`);

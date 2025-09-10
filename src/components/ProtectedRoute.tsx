@@ -1,7 +1,7 @@
 /**
  * Protected Route Component
  * 
- * Provides authentication and role-based route protection with proper loading states.
+ * Enhanced authentication and role-based route protection with server-side enforcement.
  */
 
 import React from 'react';
@@ -9,6 +9,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AlertTriangle, Crown } from 'lucide-react';
 import GlassContainer from '@/components/GlassContainer';
+import { hasRoleLevel, type AppRole } from '@/lib/server/roles';
 
 /**
  * Protected Route Props
@@ -16,6 +17,8 @@ import GlassContainer from '@/components/GlassContainer';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireMaster?: boolean;
+  requiredRole?: AppRole;
+  fallbackPath?: string;
 }
 
 /**
@@ -66,15 +69,19 @@ const NotAuthorizedPanel: React.FC = () => (
 /**
  * Protected Route Component
  * 
- * Handles authentication and role-based access control with proper loading states.
+ * Enhanced authentication and role-based access control with hierarchical role support.
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireMaster = false
+  requiredRole,
+  fallbackPath = '/login'
 }) => {
   const { user, role, loading, roleLoading } = useAuth();
   const location = useLocation();
 
+  // Determine the actual required role
+  const actualRequiredRole: AppRole = requiredRole || (requireMaster ? 'master_admin' : 'student');
   // Show loading while determining auth state
   if (loading) {
     return <AuthLoadingScreen message="Checking Authentication" />;
@@ -82,16 +89,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Redirect to login if not authenticated
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to={fallbackPath} state={{ from: location }} replace />;
   }
 
-  // Show loading while determining role for master-required routes
-  if (requireMaster && roleLoading) {
+  // Show loading while determining role for role-required routes
+  if (roleLoading) {
     return <AuthLoadingScreen message="Verifying Permissions" />;
   }
 
-  // Show not authorized panel for master routes without proper role
-  if (requireMaster && role !== 'master_admin') {
+  // Check role hierarchy for access control
+  const hasAccess = hasRoleLevel(role, actualRequiredRole);
+  
+  if (!hasAccess) {
     return <NotAuthorizedPanel />;
   }
 

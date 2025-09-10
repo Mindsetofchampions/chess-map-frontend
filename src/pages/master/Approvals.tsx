@@ -15,11 +15,14 @@ import {
   User,
   AlertTriangle,
   RefreshCw,
-  Crown
+  Crown,
+  Shield
 } from 'lucide-react';
-import { supabase, rpcApproveQuest } from '@/lib/supabase';
+import { supabase, rpcApproveQuest, rpcRejectQuest, getPlatformBalance } from '@/lib/supabase';
+import { subscribeToApprovals } from '@/lib/realtime/quests';
+import { formatDateTime } from '@/utils/format';
+import { mapPgError } from '@/utils/mapPgError';
 import { useToast } from '@/components/ToastProvider';
-import { useWallet } from '@/components/wallet/WalletChip';
 import GlassContainer from '@/components/GlassContainer';
 import WalletChip from '@/components/wallet/WalletChip';
 import type { Quest } from '@/types/backend';
@@ -56,12 +59,14 @@ const NotAuthorizedBanner: React.FC = () => (
  */
 const Approvals: React.FC = () => {
   const { showSuccess, showError, showWarning } = useToast();
-  const { wallet, refreshWallet } = useWallet();
   
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState<string | null>(null);
-  const [showUnauthorized, setShowUnauthorized] = useState(false);
+  const [rejecting, setRejecting] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
+  const [platformBalance, setPlatformBalance] = useState<number>(0);
 
   /**
    * Fetch submitted quests awaiting approval
@@ -72,32 +77,47 @@ const Approvals: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('quests')
-        .select('id, title, description, reward_coins, status, attribute_id, created_at')
+        .select('id, title, description, reward_coins, status, attribute_id, created_at, created_by, rejection_reason')
         .eq('status', 'submitted')
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
       
       if (error) {
-        throw new Error(error.message);
+        const mappedError = mapPgError(error);
+        throw new Error(mappedError.message);
       }
       
       setQuests(data || []);
     } catch (error: any) {
       console.error('Failed to fetch submitted quests:', error);
-      showError('Failed to load quests', error.message);
+      const mappedError = mapPgError(error);
+      showError('Failed to load quests', mappedError.message);
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, []);
+
+  /**
+   * Fetch platform balance
+   */
+  const fetchPlatformBalance = useCallback(async () => {
+    try {
+      const balance = await getPlatformBalance();
+      setPlatformBalance(balance.coins);
+    } catch (error: any) {
+      console.error('Failed to fetch platform balance:', error);
+      setPlatformBalance(0);
+    }
+  }, []);
 
   /**
    * Handle quest approval
    */
   const handleApprove = useCallback(async (questId: string, rewardCoins: number) => {
-    // Check wallet balance before attempting approval
-    if (wallet && wallet.balance < rewardCoins) {
+    // Check platform balance before attempting approval
+    if (platformBalance < rewardCoins) {
       showWarning(
         'Insufficient Balance',
-        `You need ${rewardCoins} coins but only have ${wallet.balance}. Quest approval requires funding the reward.`
+        `Platform needs ${rewardCoins} coins but only has ${platformBalance}. Quest approval requires funding the reward.`
       );
       return;
     }
@@ -109,29 +129,56 @@ const Approvals: React.FC = () => {
       
       showSuccess(
         'Quest Approved!',
-        `Quest has been approved and ${rewardCoins} coins deducted from your wallet.`
+        `Quest has been approved and ${rewardCoins} coins deducted from platform balance.`
       );
       
       // Refresh data
       await Promise.all([
         fetchSubmittedQuests(),
-        refreshWallet()
+        fetchPlatformBalance()
       ]);
       
     } catch (error: any) {
       console.error('Failed to approve quest:', error);
-      
-      // Check for permission errors
-      if (error.message.includes('permission') || error.message.includes('master_admin')) {
-        setShowUnauthorized(true);
-        showError('Permission Denied', 'Only master_admin can approve quests.');
-      } else {
-        showError('Approval Failed', error.message);
-      }
+      const mappedError = mapPgError(error);
+      showError('Approval Failed', mappedError.message);
     } finally {
       setApproving(null);
     }
-  }, [wallet, showSuccess, showError, showWarning, fetchSubmittedQuests, refreshWallet]);
+  }, [platformBalance, showSuccess, showError, showWarning, fetchSubmittedQuests, fetchPlatformBalance]);
+
+  /**
+   * Handle quest rejection
+   */
+  const handleReject = useCallback(async (questId: string, reason: string) => {
+    if (!reason.trim()) {
+      showWarning('Rejection Reason Required', 'Please provide a reason for rejecting this quest.');
+      return;
+    }
+
+    setRejecting(questId);
+    
+    try {
+      await rpcRejectQuest(questId, reason);
+      
+      showSuccess(
+        'Quest Rejected',
+        'Quest has been rejected and the creator will be notified.'
+      );
+      
+      // Refresh data and close modal
+      await fetchSubmittedQuests();
+      setShowRejectModal(null);
+      setRejectReason('');
+      
+    } catch (error: any) {
+      console.error('Failed to reject quest:', error);
+      const mappedError = mapPgError(error);
+      showError('Rejection Failed', mappedError.message);
+    } finally {
+      setRejecting(null);
+    }
+  }, [showSuccess, showError, showWarning, fetchSubmittedQuests]);
 
   /**
    * Get persona display info
@@ -161,28 +208,42 @@ const Approvals: React.FC = () => {
    * Check if user can afford quest approval
    */
   const canAfford = (cost: number): boolean => {
-    return wallet ? wallet.balance >= cost : false;
+    return platformBalance >= cost;
   };
 
   /**
-   * Format date for display
+   * Open reject modal
    */
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const openRejectModal = useCallback((questId: string) => {
+    setShowRejectModal(questId);
+    setRejectReason('');
+  }, []);
 
   /**
-   * Initialize data
+   * Close reject modal
+   */
+  const closeRejectModal = useCallback(() => {
+    setShowRejectModal(null);
+    setRejectReason('');
+  }, []);
+
+  /**
+   * Initialize data and realtime subscriptions
    */
   useEffect(() => {
     fetchSubmittedQuests();
-    refreshWallet();
-  }, [fetchSubmittedQuests, refreshWallet]);
+    fetchPlatformBalance();
+
+    // Set up realtime subscription
+    const subscription = subscribeToApprovals(() => {
+      console.log('Realtime update: refreshing submitted quests...');
+      fetchSubmittedQuests();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [fetchSubmittedQuests, fetchPlatformBalance]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary">
@@ -202,14 +263,17 @@ const Approvals: React.FC = () => {
           
           <div className="flex items-center justify-center gap-4 mt-4">
             <WalletChip showRefresh />
+            <div className="bg-glass border-glass rounded-full px-4 py-2 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-electric-blue-400" />
+              <span className="text-white text-sm font-medium">
+                Platform: {platformBalance.toLocaleString()} coins
+              </span>
+            </div>
             <div className="text-gray-300 text-sm">
               {quests.length} quest{quests.length !== 1 ? 's' : ''} awaiting approval
             </div>
           </div>
         </motion.div>
-
-        {/* Not Authorized Banner */}
-        {showUnauthorized && <NotAuthorizedBanner />}
 
         {/* Loading State */}
         {loading ? (
@@ -284,7 +348,7 @@ const Approvals: React.FC = () => {
                           <div className="flex items-center gap-4 text-xs text-gray-300">
                             <div className="flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
-                              <span>{formatDate(quest.created_at!)}</span>
+                              <span>{formatDateTime(quest.created_at)}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <User className="w-3 h-3" />
@@ -297,21 +361,19 @@ const Approvals: React.FC = () => {
                       {/* Reward and Actions */}
                       <div className="flex items-center gap-4 flex-shrink-0">
                         <div className="text-right">
-                          <div className={`flex items-center gap-1 font-semibold ${
-                            affordable ? 'text-yellow-400' : 'text-red-400'
-                          }`}>
+                          <div className="flex items-center gap-1 font-semibold text-yellow-400">
                             <Coins className="w-4 h-4" />
                             <span>{quest.reward_coins} coins</span>
                           </div>
-                          {!affordable && (
-                            <p className="text-red-400 text-xs mt-1">Insufficient balance</p>
+                          {platformBalance < quest.reward_coins && (
+                            <p className="text-red-400 text-xs mt-1">Insufficient platform balance</p>
                           )}
                         </div>
                         
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleApprove(quest.id, quest.reward_coins)}
-                            disabled={!affordable || approving === quest.id}
+                            disabled={platformBalance < quest.reward_coins || approving === quest.id || rejecting === quest.id}
                             data-testid={`btn-approve-${quest.id}`}
                             className="bg-cyber-green-500/20 border border-cyber-green-500/30 text-cyber-green-300 hover:bg-cyber-green-500/30 rounded-lg px-4 py-2 font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[80px]"
                           >
@@ -326,17 +388,18 @@ const Approvals: React.FC = () => {
                           </button>
                           
                           <button
-                            onClick={() => {
-                              // For now, just show that reject would work here
-                              showWarning('Reject Quest', 'Reject functionality would be implemented here');
-                            }}
-                            disabled={approving === quest.id}
+                            onClick={() => openRejectModal(quest.id)}
+                            disabled={rejecting === quest.id || approving === quest.id}
                             className="bg-red-500/20 border border-red-500/30 text-red-300 hover:bg-red-500/30 rounded-lg px-4 py-2 font-medium transition-all duration-200 disabled:opacity-50 min-h-[44px] min-w-[80px]"
                           >
-                            <div className="flex items-center gap-1">
-                              <XCircle className="w-4 h-4" />
-                              <span>Reject</span>
-                            </div>
+                            {rejecting === quest.id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400 mx-auto"></div>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <XCircle className="w-4 h-4" />
+                                <span>Reject</span>
+                              </div>
+                            )}
                           </button>
                         </div>
                       </div>
@@ -345,6 +408,56 @@ const Approvals: React.FC = () => {
                 );
               })}
             </AnimatePresence>
+          </div>
+        )}
+
+        {/* Reject Modal */}
+        {showRejectModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              className="bg-glass backdrop-blur-2xl border-glass rounded-2xl shadow-2xl p-6 max-w-md w-full"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+            >
+              <h3 className="text-xl font-bold text-white mb-4">Reject Quest</h3>
+              <p className="text-gray-200 mb-4">
+                Please provide a reason for rejecting this quest. This will be visible to the creator.
+              </p>
+              
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Enter rejection reason..."
+                className="w-full bg-glass border-glass rounded-xl px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400 min-h-[100px] resize-none"
+                autoFocus
+              />
+              
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={closeRejectModal}
+                  className="flex-1 bg-glass border-glass hover:bg-glass-dark text-gray-300 hover:text-white rounded-xl px-4 py-2 font-medium transition-all duration-200"
+                  disabled={rejecting === showRejectModal}
+                >
+                  Cancel
+                </button>
+                
+                <button
+                  onClick={() => handleReject(showRejectModal, rejectReason)}
+                  disabled={!rejectReason.trim() || rejecting === showRejectModal}
+                  className="flex-1 bg-red-500/20 border border-red-500/30 text-red-300 hover:bg-red-500/30 rounded-xl px-4 py-2 font-medium transition-all duration-200 disabled:opacity-50"
+                >
+                  {rejecting === showRejectModal ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400"></div>
+                      <span>Rejecting...</span>
+                    </div>
+                  ) : (
+                    'Reject Quest'
+                  )}
+                </button>
+              </div>
+            </motion.div>
           </div>
         )}
       </div>
