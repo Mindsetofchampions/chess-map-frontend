@@ -19,6 +19,7 @@ import FloatingBubbles from './components/FloatingBubbles';
 import DraggableBubbles from './components/DraggableBubbles';
 import MapPage from './pages/MapPage';
 import SystemDiagnostics from './pages/admin/SystemDiagnostics';
+import UserManagement from './pages/master/UserManagement';
 
 /**
  * Landing Page Component
@@ -661,6 +662,17 @@ const AppRouter: React.FC = () => {
               <ErrorBoundary>
                 <ProtectedRoute requireMaster>
                   <MasterDashboard />
+                </ProtectedRoute>
+              </ErrorBoundary>
+            }
+          />
+          
+          <Route
+            path="/master/users"
+            element={
+              <ErrorBoundary>
+                <ProtectedRoute requireMaster>
+                  <UserManagement />
                 </ProtectedRoute>
               </ErrorBoundary>
             }

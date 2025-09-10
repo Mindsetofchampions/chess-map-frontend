@@ -31,6 +31,9 @@ import GlassContainer from '@/components/GlassContainer';
 import WalletChip from '@/components/wallet/WalletChip';
 import LedgerTable from '@/components/wallet/LedgerTable';
 import LogoutButton from '@/components/LogoutButton';
+import DiagnosticsWidget from '@/components/DiagnosticsWidget';
+import { formatDateTime } from '@/utils/format';
+import { mapPgError } from '@/utils/mapPgError';
 import type { Quest } from '@/types/backend';
 
 /**
@@ -103,11 +106,10 @@ const MasterDashboard: React.FC = () => {
     
     try {
       const { data, error } = await supabase
-        .from('quests')
-        .select('id, title, reward_coins, status, created_at, created_by, description')
-        .eq('status', 'submitted')
+        .from('admin_approval_queue_vw')
+        .select('*')
         .order('created_at', { ascending: false })
-        .limit(5); // Show only recent 5 for dashboard overview
+        .limit(5);
 
       if (error) {
         const mappedError = mapPgError(error);
@@ -117,7 +119,7 @@ const MasterDashboard: React.FC = () => {
       setPendingQuests(data || []);
     } catch (error: any) {
       console.error('Failed to fetch pending quests:', error);
-      // Don't show error toast for dashboard - just log it
+      showError('Failed to load pending quests', mapPgError(error).message);
     } finally {
       setLoadingQuests(false);
     }
@@ -266,6 +268,7 @@ const MasterDashboard: React.FC = () => {
           
           <div className="flex items-center gap-3">
             <WalletChip showRefresh autoRefresh data-testid="chip-wallet" />
+            <DiagnosticsWidget />
             <div className="bg-glass border-glass rounded-full px-4 py-2 flex items-center gap-2">
               <Shield className="w-4 h-4 text-electric-blue-400" />
               <span className="text-white text-sm font-medium">
