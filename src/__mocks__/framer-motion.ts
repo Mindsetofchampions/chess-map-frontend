@@ -43,7 +43,7 @@ export const useMotionValue = (initial: any) => ({
 export const useSpring = (value: any) => value;
 
 // Mock useTransform hook
-export const useTransform = (value: any, input: any, output: any) => output[0];
+export const useTransform = (_value: any, _input: any, output: any) => output[0];
 
 export default {
   motion,

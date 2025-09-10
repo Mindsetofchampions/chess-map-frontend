@@ -31,9 +31,6 @@ import GlassContainer from '@/components/GlassContainer';
 import WalletChip from '@/components/wallet/WalletChip';
 import LedgerTable from '@/components/wallet/LedgerTable';
 import LogoutButton from '@/components/LogoutButton';
-import DiagnosticsWidget from '@/components/DiagnosticsWidget';
-import { formatDateTime } from '@/utils/format';
-import { mapPgError } from '@/utils/mapPgError';
 import type { Quest } from '@/types/backend';
 
 /**
