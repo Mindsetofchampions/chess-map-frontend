@@ -63,6 +63,30 @@ Copy `.env.example` to `.env` and configure the following variables:
 
 ### Getting Your Tokens
 
+### Initial Master Admin Setup
+
+After deploying your Supabase migrations, you'll need to assign the first master admin role:
+
+1. **Find your user ID** in Supabase Dashboard:
+   - Go to **Authentication** → **Users**
+   - Copy the UUID of your user account
+
+2. **Assign master admin role** via Supabase SQL Editor:
+   ```sql
+   INSERT INTO public.user_roles(user_id, role) 
+   VALUES ('{your_user_id}', 'master_admin')
+   ON CONFLICT(user_id) DO UPDATE SET role = 'master_admin';
+   ```
+   Replace `{your_user_id}` with your actual user UUID.
+
+3. **Verify the assignment** worked:
+   ```sql
+   SELECT u.email, ur.role 
+   FROM auth.users u 
+   JOIN public.user_roles ur ON ur.user_id = u.id 
+   WHERE ur.role = 'master_admin';
+   ```
+
 #### Mapbox Setup
 1. Visit [Mapbox Studio](https://studio.mapbox.com/)
 2. Create an account or sign in
@@ -76,6 +100,45 @@ Copy `.env.example` to `.env` and configure the following variables:
 3. Go to **Settings** → **API**
 4. Copy your **Project URL** and **Anon/Public Key**
 
+### Database Migration Instructions
+
+1. **Apply the master admin migration**:
+   ```bash
+   # If using Supabase CLI
+   supabase db push
+   
+   # Or copy the migration content to Supabase Dashboard SQL Editor
+   ```
+
+2. **Enable Realtime** for quest updates:
+   - Go to **Database** → **Realtime** in Supabase Dashboard
+   - Enable Realtime for the `public.quests` table
+   - Configure row-level security if needed
+
+3. **Verify the migration** applied correctly:
+   ```sql
+   -- Check if new tables exist
+   SELECT table_name FROM information_schema.tables 
+   WHERE table_schema = 'public' 
+   AND table_name IN ('user_roles', 'platform_balance', 'platform_ledger');
+   
+   -- Check if functions exist
+   SELECT routine_name FROM information_schema.routines 
+   WHERE routine_schema = 'public' 
+   AND routine_name IN ('approve_quest', 'reject_quest', 'is_master_admin');
+   ```
+
+### Service Role Configuration
+
+The admin user creation system requires additional setup:
+
+1. **Edge Function Deployment**:
+   ```bash
+   supabase functions deploy admin_create_user
+   ```
+
+2. **Service Role Access**: The Edge function automatically has access to the service role key via environment variables.
+
 ## 📦 Available Scripts
 
 | Script | Description |
@@ -87,6 +150,25 @@ Copy `.env.example` to `.env` and configure the following variables:
 | `npm run preview` | Preview the production build |
 | `npm run lint` | Run ESLint for code quality checks |
 
+## 🔐 Role-Based Access Control
+
+The application implements a hierarchical role system:
+
+| **Role** | **Access Level** | **Permissions** |
+|----------|------------------|-----------------|
+| `master_admin` | Full system access | All operations, user creation, quest approval, platform management |
+| `org_admin` | Organization management | Quest creation, user management within organization |
+| `staff` | Limited administrative | Quest creation, basic user assistance |
+| `student` | Standard user | Quest completion, wallet management, map exploration |
+
+### Master Admin Features
+
+- **Quest Approval System**: Review and approve/reject submitted quests
+- **Platform Balance Management**: Monitor and manage system coin reserves
+- **User Role Management**: Assign roles to other users
+- **System Diagnostics**: Comprehensive health checks and testing
+- **Real-time Updates**: Instant notifications for new quest submissions
+
 ## 🏗️ Project Structure
 
 ```
@@ -95,9 +177,29 @@ Copy `.env.example` to `.env` and configure the following variables:
 │   │   ├── ui/
 │   │   │   └── GlassmorphismCard.tsx    # Reusable glassmorphic UI component
 │   │   └── MapView.tsx                   # Main Mapbox integration component
+│   │   ├── auth/
+│   │   │   └── ProtectedRoute.tsx        # Enhanced role-based route protection
+│   ├── lib/
+│   │   ├── server/
+│   │   │   └── roles.ts                  # Server-side role management utilities
+│   │   ├── realtime/
+│   │   │   └── quests.ts                 # Realtime subscription management
+│   ├── utils/
+│   │   ├── mapPgError.ts                 # PostgreSQL error mapping utility
+│   │   ├── format.ts                     # Safe formatting functions
+│   │   └── __tests__/                    # Unit tests for utilities
+│   ├── pages/
+│   │   ├── master/                       # Master admin interface pages
+│   │   │   ├── MasterDashboard.tsx       # Enhanced admin dashboard
+│   │   │   └── Approvals.tsx             # Quest approval interface
+│   │   └── admin/
+│   │       └── SystemDiagnostics.tsx     # Comprehensive system testing
 │   ├── App.tsx                           # Root application component
 │   ├── main.tsx                          # Application entry point
 │   └── index.css                         # Global styles with Tailwind
+├── supabase/
+│   └── migrations/
+│       └── master_admin_system_setup.sql # Complete database schema setup
 ├── public/
 │   └── index.html                        # HTML template
 ├── bolt.toml                             # Bolt plugin configuration
@@ -213,6 +315,39 @@ To check for outdated packages:
 ```bash
 npm outdated
 ```
+
+## 🚀 Deployment Checklist
+
+Before deploying to production:
+
+### Database Setup
+- [ ] Apply master admin migration (`supabase db push`)
+- [ ] Enable Realtime for `public.quests` table
+- [ ] Assign initial master admin role using SQL snippet above
+- [ ] Verify platform balance is seeded (should have 10,000 coins)
+
+### Security Verification
+- [ ] Confirm RLS policies are active on all tables
+- [ ] Test that non-admin users cannot access admin functions
+- [ ] Verify SQL functions have proper `SECURITY DEFINER` settings
+- [ ] Ensure service role key is properly configured for Edge functions
+
+### System Testing
+- [ ] Run System Diagnostics (`/admin/diagnostics`) and verify all checks pass
+- [ ] Test quest approval/rejection workflow end-to-end
+- [ ] Verify realtime updates work for approval queue
+- [ ] Confirm error handling displays user-friendly messages
+
+### Environment Configuration
+- [ ] Set production Supabase URL and keys
+- [ ] Configure Mapbox token (if using maps)
+- [ ] Set up auth redirect URLs in Supabase dashboard
+- [ ] Enable RLS enforcement in Supabase settings
+
+### Performance
+- [ ] Verify database indexes are applied (`idx_quests_status_created_at`)
+- [ ] Test quest list performance with large datasets
+- [ ] Confirm realtime subscriptions don't cause memory leaks
 
 ## 🧪 Testing Infrastructure
 
