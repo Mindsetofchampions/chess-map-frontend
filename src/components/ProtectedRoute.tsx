@@ -73,7 +73,7 @@ const NotAuthorizedPanel: React.FC = () => (
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
-  requireMaster = false
+  requireMaster = false,
   requiredRole,
   fallbackPath = '/login'
 }) => {
