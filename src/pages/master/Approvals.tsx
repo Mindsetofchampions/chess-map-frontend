@@ -13,7 +13,6 @@ import {
   Coins, 
   Calendar,
   User,
-  AlertTriangle,
   RefreshCw,
   Crown,
   Shield
@@ -25,27 +24,19 @@ import { mapPgError } from '@/utils/mapPgError';
 import { useToast } from '@/components/ToastProvider';
 import GlassContainer from '@/components/GlassContainer';
 import WalletChip from '@/components/wallet/WalletChip';
-import type { Quest } from '@/types/backend';
+// Remove strict Quest import and define a minimal type for approvals list
+// import type { Quest } from '@/types/backend'
 
-/**
- * Not Authorized Banner Component
- * Shown when user lacks master_admin privileges
- */
-const NotAuthorizedBanner: React.FC = () => (
-  <motion.div
-    className="bg-red-500/20 border border-red-500/30 rounded-xl p-4 mb-6"
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-  >
-    <div className="flex items-center gap-2 text-red-200">
-      <AlertTriangle className="w-5 h-5" />
-      <h4 className="font-medium">Not Authorized</h4>
-    </div>
-    <p className="text-red-100 text-sm mt-2">
-      You need master_admin privileges to approve quests. The server will enforce this permission.
-    </p>
-  </motion.div>
-);
+type ApprovalQuest = {
+  id: string;
+  title: string;
+  description?: string; // not provided by view; left optional for UI fallback
+  reward_coins: number;
+  status: string;
+  created_at?: string;
+  created_by?: string;
+  creator_email?: string;
+};
 
 /**
  * Master Admin Approvals Component
@@ -60,7 +51,7 @@ const NotAuthorizedBanner: React.FC = () => (
 const Approvals: React.FC = () => {
   const { showSuccess, showError, showWarning } = useToast();
   
-  const [quests, setQuests] = useState<Quest[]>([]);
+  const [quests, setQuests] = useState<ApprovalQuest[]>([]);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
@@ -76,9 +67,8 @@ const Approvals: React.FC = () => {
     
     try {
       const { data, error } = await supabase
-        .from('quests')
-        .select('id, title, description, reward_coins, status, attribute_id, created_at, created_by, rejection_reason')
-        .eq('status', 'submitted')
+        .from('admin_approval_queue_vw')
+        .select('id, title, reward_coins, status, created_at, created_by, creator_email')
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -86,7 +76,7 @@ const Approvals: React.FC = () => {
         throw new Error(mappedError.message);
       }
       
-      setQuests(data || []);
+      setQuests((data as unknown as ApprovalQuest[]) || []);
     } catch (error: any) {
       console.error('Failed to fetch submitted quests:', error);
       const mappedError = mapPgError(error);
@@ -182,32 +172,12 @@ const Approvals: React.FC = () => {
   /**
    * Get persona display info
    */
-  const getPersonaInfo = (attributeId: string | null) => {
+  const getPersonaInfo = (attributeId?: string | null) => {
     // Default persona info when no attribute is linked
     const defaultPersona = { name: 'General Quest', emoji: '📝' };
-    
-    if (!attributeId) {
-      return defaultPersona;
-    }
-    
-    // For now, return default since we don't have direct persona mapping
-    // This would need to be enhanced with proper attribute->persona mapping
-    const personaMap = {
-      hootie: { name: 'Hootie the Owl', emoji: '🦉' },
-      kittykat: { name: 'Kitty Kat', emoji: '🐱' },
-      gino: { name: 'Gino the Dog', emoji: '🐕' },
-      hammer: { name: 'Hammer the Robot', emoji: '🤖' },
-      badge: { name: 'MOC Badge', emoji: '🏛️' }
-    };
-    
+    if (!attributeId) return defaultPersona;
+    // Placeholder mapping until attribute->persona mapping is implemented
     return defaultPersona;
-  };
-
-  /**
-   * Check if user can afford quest approval
-   */
-  const canAfford = (cost: number): boolean => {
-    return platformBalance >= cost;
   };
 
   /**
@@ -320,8 +290,7 @@ const Approvals: React.FC = () => {
           <div className="space-y-4">
             <AnimatePresence>
               {quests.map((quest, index) => {
-                const personaInfo = getPersonaInfo(quest.attribute_id);
-                const affordable = canAfford(quest.reward_coins);
+                const personaInfo = getPersonaInfo(undefined);
                 
                 return (
                   <motion.div

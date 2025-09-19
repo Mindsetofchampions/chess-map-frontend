@@ -1,4 +1,10 @@
+-- Ensure platform_ledger has metadata column before any inserts
+ALTER TABLE IF EXISTS public.platform_ledger
+  ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}'::jsonb;
 /*
+-- Ensure platform_ledger has metadata column before any inserts
+ALTER TABLE IF EXISTS public.platform_ledger
+  ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}'::jsonb;
   # Master Admin System Implementation
 
   This migration implements a comprehensive master admin system with:
@@ -243,6 +249,8 @@ on public.platform_ledger(quest_id);
 -- QUEST APPROVAL SQL FUNCTION
 -- ============================================================================
 
+drop function if exists public.approve_quest(uuid);
+drop function if exists public.approve_quest(uuid);
 create or replace function public.approve_quest(p_quest_id uuid)
 returns json
 language plpgsql
@@ -343,6 +351,8 @@ $$;
 -- QUEST REJECTION SQL FUNCTION
 -- ============================================================================
 
+drop function if exists public.reject_quest(uuid, text);
+drop function if exists public.reject_quest(uuid, text);
 create or replace function public.reject_quest(p_quest_id uuid, p_reason text)
 returns json
 language plpgsql

@@ -5,7 +5,7 @@
  * for calling the specific RPCs required by the quest system.
  */
 
-import { createClient, type PostgrestError } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import type { Quest, Submission, Wallet, Ledger } from '@/types/backend';
 import { mapPgError } from '@/utils/mapPgError';
 
@@ -227,6 +227,54 @@ export async function getPlatformLedger(limit: number = 50, offset: number = 0):
   } catch (error) {
     const mappedError = mapPgError(error);
     throw new Error(mappedError.message);
+  }
+}
+
+export interface OrgBalance {
+  org_id: string;
+  slug: string;
+  name: string;
+  balance: number;
+}
+
+/**
+ * Allocate coins to an organization (master_admin only)
+ */
+export async function allocateOrgCoins(orgId: string, amount: number, reason: string): Promise<any> {
+  try {
+    const { data, error } = await supabase.rpc('allocate_org_coins', {
+      p_org_id: orgId,
+      p_amount: amount,
+      p_reason: reason
+    });
+
+    if (error) {
+      throw new Error(mapPgError(error).message);
+    }
+
+    return data;
+  } catch (error) {
+    throw new Error(mapPgError(error).message);
+  }
+}
+
+/**
+ * Get balances for all organizations (master_admin only)
+ */
+export async function getOrgBalances(): Promise<OrgBalance[]> {
+  try {
+    const { data, error } = await supabase
+      .from('v_org_coin_balance')
+      .select('org_id, slug, name, balance')
+      .order('name', { ascending: true });
+
+    if (error) {
+      throw new Error(mapPgError(error).message);
+    }
+
+    return (data as OrgBalance[]) || [];
+  } catch (error) {
+    throw new Error(mapPgError(error).message);
   }
 }
 

@@ -13,17 +13,17 @@ import {
   Award, 
   CheckCircle, 
   Settings, 
-  TrendingUp,
   MapPin,
   Shield,
   RefreshCw,
   Calendar,
   Coins,
-  XCircle
+  XCircle,
+  PlusCircle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ToastProvider';
-import { supabase, rpcApproveQuest, rpcRejectQuest, getPlatformBalance } from '@/lib/supabase';
+import { supabase, rpcApproveQuest, rpcRejectQuest, getPlatformBalance, getOrgBalances, allocateOrgCoins, type OrgBalance } from '@/lib/supabase';
 import { subscribeToApprovals } from '@/lib/realtime/quests';
 import { formatDateTime } from '@/utils/format';
 import { mapPgError } from '@/utils/mapPgError';
@@ -32,6 +32,7 @@ import WalletChip from '@/components/wallet/WalletChip';
 import LedgerTable from '@/components/wallet/LedgerTable';
 import LogoutButton from '@/components/LogoutButton';
 import type { Quest } from '@/types/backend';
+import DiagnosticsWidget from '@/components/DiagnosticsWidget';
 
 /**
  * Dashboard Stats Card Props
@@ -83,7 +84,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, delay 
  * - Real-time data updates
  */
 const MasterDashboard: React.FC = () => {
-  const { user, role } = useAuth();
+  const { role } = useAuth();
   const { showSuccess, showError, showWarning } = useToast();
   
   const [pendingQuests, setPendingQuests] = useState<Quest[]>([]);
@@ -94,6 +95,13 @@ const MasterDashboard: React.FC = () => {
   const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
   const [platformBalance, setPlatformBalance] = useState<number>(0);
   const [balanceLoading, setBalanceLoading] = useState(true);
+  const [orgBalances, setOrgBalances] = useState<OrgBalance[]>([]);
+  const [orgsLoading, setOrgsLoading] = useState(true);
+  const [showAllocateModal, setShowAllocateModal] = useState(false);
+  const [selectedOrg, setSelectedOrg] = useState<string>('');
+  const [allocateAmount, setAllocateAmount] = useState<string>('');
+  const [allocateReason, setAllocateReason] = useState<string>('Master allocation');
+  const [allocating, setAllocating] = useState(false);
 
   /**
    * Fetch pending quests for approval
@@ -137,6 +145,19 @@ const MasterDashboard: React.FC = () => {
       setPlatformBalance(0);
     } finally {
       setBalanceLoading(false);
+    }
+  }, []);
+
+  const fetchOrgBalances = useCallback(async () => {
+    setOrgsLoading(true);
+    try {
+      const rows = await getOrgBalances();
+      setOrgBalances(rows);
+    } catch (error: any) {
+      console.error('Failed to fetch org balances:', error);
+      setOrgBalances([]);
+    } finally {
+      setOrgsLoading(false);
     }
   }, []);
 
@@ -232,6 +253,7 @@ const MasterDashboard: React.FC = () => {
   useEffect(() => {
     fetchPendingQuests();
     fetchPlatformBalance();
+    fetchOrgBalances();
 
     // Set up realtime subscription for pending quests
     const subscription = subscribeToApprovals(() => {
@@ -242,7 +264,33 @@ const MasterDashboard: React.FC = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchPendingQuests, fetchPlatformBalance]);
+  }, [fetchPendingQuests, fetchPlatformBalance, fetchOrgBalances]);
+
+  const openAllocate = () => {
+    setSelectedOrg(orgBalances[0]?.org_id || '');
+    setAllocateAmount('');
+    setShowAllocateModal(true);
+  };
+  const closeAllocate = () => setShowAllocateModal(false);
+
+  const handleAllocate = async () => {
+    const amount = parseInt(allocateAmount || '0', 10);
+    if (!selectedOrg) return showWarning('Select Organization', 'Please choose an organization.');
+    if (!amount || amount <= 0) return showWarning('Invalid Amount', 'Enter a positive amount.');
+    if (amount > platformBalance) return showWarning('Insufficient Balance', 'Amount exceeds platform balance.');
+
+    setAllocating(true);
+    try {
+      await allocateOrgCoins(selectedOrg, amount, allocateReason || 'Master allocation');
+      showSuccess('Coins Allocated', 'Organization wallet has been funded.');
+      await Promise.all([fetchPlatformBalance(), fetchOrgBalances()]);
+      setShowAllocateModal(false);
+    } catch (error: any) {
+      showError('Allocation Failed', error.message || 'Unable to allocate');
+    } finally {
+      setAllocating(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary">
@@ -271,6 +319,12 @@ const MasterDashboard: React.FC = () => {
                 Platform: {balanceLoading ? '...' : `${platformBalance.toLocaleString()} coins`}
               </span>
             </div>
+            <button
+              onClick={openAllocate}
+              className="btn-esports flex items-center gap-2"
+            >
+              <PlusCircle className="w-4 h-4" /> Allocate to Org
+            </button>
             <LogoutButton />
           </div>
         </motion.div>
@@ -333,7 +387,7 @@ const MasterDashboard: React.FC = () => {
                     className="p-2 bg-glass-dark border-glass hover:bg-glass-light rounded-lg transition-colors disabled:opacity-50"
                     aria-label="Refresh pending quests"
                   >
-                    <RefreshCw className={`w-4 h-4 text-gray-300 ${loadingQuests ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`w-4 h-4 text-gray-300 ${orgsLoading ? 'animate-spin' : ''}`} />
                   </button>
                   
                   <Link
@@ -549,9 +603,60 @@ const MasterDashboard: React.FC = () => {
           </motion.div>
         </div>
       )}
+
+      {/* Allocation Modal */}
+      {showAllocateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <motion.div
+            className="bg-glass backdrop-blur-2xl border-glass rounded-2xl shadow-2xl p-6 max-w-md w-full"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <h3 className="text-xl font-bold text-white mb-2">Allocate Coins to Organization</h3>
+            <p className="text-gray-300 mb-4">Distribute coins from platform balance to an organization wallet.</p>
+
+            <label className="block text-sm text-gray-300 mb-1">Organization</label>
+            <select
+              value={selectedOrg}
+              onChange={(e) => setSelectedOrg(e.target.value)}
+              className="w-full bg-glass border-glass rounded-xl px-3 py-2 text-white mb-3"
+            >
+              {orgBalances.map((o) => (
+                <option key={o.org_id} value={o.org_id}>{o.name}</option>
+              ))}
+            </select>
+
+            <label className="block text-sm text-gray-300 mb-1">Amount</label>
+            <input
+              type="number"
+              min={1}
+              placeholder="e.g. 1000"
+              value={allocateAmount}
+              onChange={(e) => setAllocateAmount(e.target.value)}
+              className="w-full bg-glass border-glass rounded-xl px-3 py-2 text-white mb-3"
+            />
+
+            <label className="block text-sm text-gray-300 mb-1">Reason</label>
+            <input
+              type="text"
+              value={allocateReason}
+              onChange={(e) => setAllocateReason(e.target.value)}
+              className="w-full bg-glass border-glass rounded-xl px-3 py-2 text-white mb-4"
+            />
+
+            <div className="flex gap-3">
+              <button onClick={closeAllocate} className="flex-1 bg-glass border-glass hover:bg-glass-dark text-gray-300 hover:text-white rounded-xl px-4 py-2 font-medium transition-all duration-200" disabled={allocating}>Cancel</button>
+              <button onClick={handleAllocate} disabled={allocating || !selectedOrg} className="flex-1 bg-electric-blue-500/20 border border-electric-blue-500/30 text-electric-blue-300 hover:bg-electric-blue-500/30 rounded-xl px-4 py-2 font-medium transition-all duration-200">
+                {allocating ? 'Allocating...' : 'Allocate Coins'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       </div>
     </div>
   );
-};
+}
 
 export default MasterDashboard;

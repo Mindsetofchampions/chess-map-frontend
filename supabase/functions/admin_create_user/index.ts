@@ -18,6 +18,8 @@ interface CreateUserRequest {
   role: 'student' | 'admin' | 'org_admin' | 'staff';
   display_name?: string;
   password?: string; // Optional - if not provided, will generate temporary password
+  org_id?: string; // Optional organization to attach the user to
+  org_role?: 'org_admin' | 'staff' | 'student'; // Membership role within org
 }
 
 interface CreateUserResponse {
@@ -100,7 +102,7 @@ serve(async (req) => {
 
     // Parse request body
     const body: CreateUserRequest = await req.json()
-    const { email, role, display_name, password } = body
+    const { email, role, display_name, password, org_id, org_role } = body
 
     // Validate required fields
     if (!email || !role) {
@@ -196,16 +198,38 @@ serve(async (req) => {
       )
     }
 
-    // Optionally create profile entry for backward compatibility
-    if (display_name) {
+    // Optionally create profile entry for legacy and set org_id
+    if (display_name || org_id) {
       await supabaseAdmin
         .from('profiles')
         .upsert({
           user_id: newUser.user.id,
-          display_name,
-          role: role === 'admin' ? 'admin' : 'student' // Map new roles to legacy system
+          display_name: display_name || email.split('@')[0],
+          role: role === 'admin' ? 'admin' : 'student',
+          org_id: org_id || null
         })
         .select()
+    }
+
+    // Optionally add org membership
+    if (org_id) {
+      const membershipRole = org_role || (role === 'org_admin' ? 'org_admin' : 'staff')
+      const { error: membershipError } = await supabaseAdmin
+        .from('memberships')
+        .upsert({
+          user_id: newUser.user.id,
+          org_id,
+          role: membershipRole as any
+        })
+
+      if (membershipError) {
+        // Clean up created user if membership fails
+        await supabaseAdmin.auth.admin.deleteUser(newUser.user.id)
+        return new Response(
+          JSON.stringify({ success: false, error: `Failed to add membership: ${membershipError.message}` }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        )
+      }
     }
 
     const response: CreateUserResponse = {
@@ -215,7 +239,8 @@ serve(async (req) => {
         email: newUser.user.email,
         role,
         display_name,
-        created_at: newUser.user.created_at
+        created_at: newUser.user.created_at,
+        ...(org_id ? { org_id, org_role: org_role || null } : {})
       },
       ...(password ? {} : { temporaryPassword: userPassword })
     }

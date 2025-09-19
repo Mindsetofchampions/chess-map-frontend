@@ -94,7 +94,7 @@ const LandingPage: React.FC = () => {
                 
                 <a
                   href="/signup"
-                  className="bg-gradient-to-r from-cyber-green-500 to-cyber-green-600 hover:from-cyber-green-400 hover:to-cyber-green-500 text-white rounded-full px-8 py-4 shadow-2xl transition-all duration-300 font-semibold text-center min-h-[44px] touch-manipulation hover:shadow-cyber-green-500/50 hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-2 border border-cyber-green-400/30"
+                  className="bg-gradient-to-r from-cyber-green-500 to-cyber-green-600 hover:from-cyber-green-400 hover:to-cyber-green-500 text-white rounded-full px-8 py-4 shadow-2xl transition-all duration-300 font-semibold text-center min-h-[44px] touch-manipulation hover:shadow-cyber-green-500/50 hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-2 border border-cyber-green-400/30 shadow-[0_0_16px_rgba(16,185,129,0.55)] hover:shadow-[0_0_28px_rgba(16,185,129,0.8)] relative overflow-visible before:content-[''] before:absolute before:inset-0 before:rounded-full before:-z-10 before:bg-cyber-green-400/30 before:blur-xl before:opacity-60 before:animate-pulse hover:before:opacity-90"
                   aria-label="Create account"
                 >
                   <Users className="w-5 h-5" />
