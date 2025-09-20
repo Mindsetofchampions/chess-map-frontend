@@ -1,19 +1,24 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, adminCreateUser, adminGenerateLink, adminSetPassword } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Award, Shield, Link as LinkIcon, KeyRound, Plus } from 'lucide-react';
+import GlassContainer from '@/components/GlassContainer';
 
 type Row = { id: string; email: string; role?: string };
 
 export default function MasterUsersPage() {
-  const { user, session, resolvedRole } = useAuth() as any;
+  const { user, resolvedRole } = useAuth() as any;
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'admin'|'student'>('student');
   const [users, setUsers] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
   const [linkUrl, setLinkUrl] = useState<string | null>(null);
   const [tempPass, setTempPass] = useState('');
-  const accessToken = session?.access_token;
+  const [orgs, setOrgs] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
+  const [showCredsModal, setShowCredsModal] = useState(false);
+  const [createdCreds, setCreatedCreds] = useState<{ email?: string; password?: string; link?: string } | null>(null);
+  // accessToken not needed because admin helper functions handle auth tokens
 
   const isMaster = useMemo(() => (resolvedRole ?? user?.user_metadata?.role) === 'master_admin', [resolvedRole, user]);
 
@@ -27,6 +32,13 @@ export default function MasterUsersPage() {
       } else {
         setUsers((roles ?? []).map((r: any) => ({ id: r.user_id, email: r.user_id, role: r.role })));
       }
+      // load organizations for optional association
+      try {
+        const { data: orgData } = await supabase.from('organizations').select('id,name').order('name', { ascending: true });
+        if (Array.isArray(orgData)) setOrgs(orgData as any);
+      } catch (e) {
+        // ignore
+      }
     })();
   }, [isMaster]);
 
@@ -37,19 +49,16 @@ export default function MasterUsersPage() {
   async function createUser() {
     try {
       setLoading(true);
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin_create_user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ email, role }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data?.error || 'Create failed');
-      alert(`Created: ${data.email} (${data.role})`);
+      // generate a reasonably strong temporary password if not provided in the temp field
+      const generatedPassword = tempPass && tempPass.length >= 10 ? tempPass : `tmp_${Math.random().toString(36).slice(2, 12)}`;
+      const data = await adminCreateUser({ email, role, password: generatedPassword, org_id: selectedOrg || undefined });
+      // If function returned a temporaryPassword, show it in a modal plus magic link when requested
+      const temp = data?.temporaryPassword || (generatedPassword && generatedPassword);
+      setCreatedCreds({ email: data?.user?.email || email, password: temp });
+      setShowCredsModal(true);
       setEmail('');
       setRole('student');
+      setTempPass('');
     } catch (e: any) {
       alert(`Create error: ${e.message}`);
     } finally {
@@ -60,16 +69,7 @@ export default function MasterUsersPage() {
   async function genLink(targetEmail: string) {
     try {
       setLoading(true);
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin_generate_link`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ email: targetEmail, type: 'magiclink', redirectTo: window.location.origin }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data?.error || 'Failed to generate link');
+      const data = await adminGenerateLink(targetEmail, window.location.origin);
       setLinkUrl(data.url);
     } catch (e: any) {
       alert(`Link error: ${e.message}`);
@@ -85,17 +85,8 @@ export default function MasterUsersPage() {
     }
     try {
       setLoading(true);
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin_set_password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ email: targetEmail, password: tempPass }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data?.error || 'Failed to set password');
-      alert(`Password set for ${data.email}. Ask user to log in and rotate immediately.`);
+      const data = await adminSetPassword(targetEmail, tempPass);
+      alert(`Password set for ${data.id || targetEmail}. Ask user to log in and rotate immediately.`);
       setTempPass('');
     } catch (e: any) {
       alert(`Password error: ${e.message}`);
@@ -134,6 +125,27 @@ export default function MasterUsersPage() {
             <option value="student">student</option>
             <option value="admin">admin</option>
           </select>
+        </div>
+        <div className="flex gap-2 items-center">
+          <select
+            className="bg-glass border-glass rounded-lg px-3 py-2 text-white"
+            value={selectedOrg ?? ''}
+            onChange={e => setSelectedOrg(e.target.value || null)}
+          >
+            <option value="">No organization</option>
+            {orgs.map(o => (
+              <option value={o.id} key={o.id}>{o.name}</option>
+            ))}
+          </select>
+          <input
+            type="password"
+            placeholder="temp password (optional, >=10)"
+            className="bg-glass border-glass rounded px-2 py-1 text-white"
+            value={tempPass}
+            onChange={e => setTempPass(e.target.value)}
+            style={{ width: 220 }}
+            title="Provide a temporary password to assign directly (will be shown once only)"
+          />
           <button
             onClick={createUser}
             disabled={loading || !email}
@@ -228,6 +240,59 @@ export default function MasterUsersPage() {
           </div>
         )}
       </div>
+      {/* Credentials modal */}
+      {showCredsModal && createdCreds && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowCredsModal(false)} />
+          <GlassContainer className="z-10 max-w-lg w-full p-6">
+            <h3 className="text-lg font-semibold text-white mb-3">User created</h3>
+            <p className="text-gray-300 text-sm mb-4">Copy credentials and send them to the user. They should rotate the password on first login.</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between bg-glass rounded px-3 py-2">
+                <div>
+                  <div className="text-xs text-gray-400">Email</div>
+                  <div className="text-sm text-white">{createdCreds.email}</div>
+                </div>
+                <button className="text-electric-blue-300" onClick={() => navigator.clipboard.writeText(createdCreds.email || '')}>Copy</button>
+              </div>
+              <div className="flex items-center justify-between bg-glass rounded px-3 py-2">
+                <div>
+                  <div className="text-xs text-gray-400">Temporary password</div>
+                  <div className="text-sm text-white break-all">{createdCreds.password}</div>
+                </div>
+                <button className="text-electric-blue-300" onClick={() => navigator.clipboard.writeText(createdCreds.password || '')}>Copy</button>
+              </div>
+              <div className="flex items-center justify-between bg-glass rounded px-3 py-2">
+                <div>
+                  <div className="text-xs text-gray-400">Magic link (optional)</div>
+                  <div className="text-sm text-white break-all">{createdCreds.link ?? 'Not generated'}</div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="text-electric-blue-300"
+                    onClick={async () => {
+                      try {
+                                            const body = await adminGenerateLink(createdCreds.email || '', window.location.origin);
+                                            const url = body.url;
+                        setCreatedCreds(prev => ({ ...(prev || {}), link: url }));
+                        // auto-copy
+                        if (url) await navigator.clipboard.writeText(url);
+                        alert('Magic link generated and copied to clipboard');
+                      } catch (e: any) {
+                        alert(`Link error: ${e.message}`);
+                      }
+                    }}
+                  >Generate</button>
+                  <button className="text-electric-blue-300" onClick={() => createdCreds?.link && navigator.clipboard.writeText(createdCreds.link)}>Copy</button>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 flex gap-2 justify-end">
+              <button className="bg-glass border-glass rounded px-3 py-1 text-gray-300" onClick={() => setShowCredsModal(false)}>Close</button>
+            </div>
+          </GlassContainer>
+        </div>
+      )}
     </div>
   );
 }

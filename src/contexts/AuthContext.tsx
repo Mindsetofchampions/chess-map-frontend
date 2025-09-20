@@ -25,7 +25,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUp: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
-  refreshRole: () => Promise<void>;
+  refreshRole: () => Promise<AppRole>;
 }
 
 /**
@@ -39,7 +39,7 @@ export const AuthContext = createContext<AuthContextType>({
   signIn: async () => ({ success: false }),
   signUp: async () => ({ success: false }),
   signOut: async () => {},
-  refreshRole: async () => {},
+  refreshRole: async () => 'unknown',
 });
 
 /**
@@ -76,7 +76,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Refresh user role from database
    * Tries to query public.profiles, falls back to 'student' if denied
    */
-  const refreshRole = useCallback(async () => {
+  const refreshRole = useCallback(async (): Promise<AppRole> => {
     // Start role fetch
     setRoleLoading(true);
     
@@ -96,7 +96,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!roleError && roleData) {
         const userRole = roleData.role as AppRole;
         setRole(userRole);
-        return;
+        setRoleLoading(false);
+        return userRole;
       }
 
       // Fallback to public.profiles table (backward compatibility)
@@ -113,29 +114,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (metadataRole && ['master_admin', 'org_admin', 'staff', 'student'].includes(metadataRole)) {
           console.log(`Using role from user metadata: ${metadataRole}`);
           setRole(metadataRole);
+          setRoleLoading(false);
+          return metadataRole;
         } else {
           setRole('student');
+          setRoleLoading(false);
+          return 'student';
         }
       } else if (data && data.role) {
         // Cast database role to AppRole
         const dbRole = data.role as AppRole;
         setRole(dbRole);
+        setRoleLoading(false);
+        return dbRole;
       } else {
         // No profile or user_roles entry found, check user metadata before defaulting to student
         const metadataRole = user.user_metadata?.role as AppRole;
         if (metadataRole && ['master_admin', 'org_admin', 'staff', 'student'].includes(metadataRole)) {
           console.log(`No profile found, using role from user metadata: ${metadataRole}`);
           setRole(metadataRole);
+          setRoleLoading(false);
+          return metadataRole;
         } else {
           console.log('No profile and no valid metadata role, defaulting to student');
           setRole('student');
+          setRoleLoading(false);
+          return 'student';
         }
       }
     } catch (error) {
       console.error('Failed to refresh role:', error);
       setRole('unknown');
-    } finally {
       setRoleLoading(false);
+      return 'unknown';
     }
   }, [user, roleLoading]);
 
@@ -144,7 +155,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const signIn = useCallback(async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
@@ -164,7 +175,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const signUp = useCallback(async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password
       });
@@ -220,7 +231,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         if (mounted) {
           setUser(session?.user || null);
           setLoading(false);

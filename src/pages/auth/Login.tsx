@@ -42,7 +42,7 @@ interface FormErrors {
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, loading, refreshRole, role } = useAuth();
+  const { signIn, loading, refreshRole } = useAuth();
   const { showSuccess, showError } = useToast();
 
   const [formData, setFormData] = useState<LoginForm>({
@@ -100,15 +100,15 @@ const Login: React.FC = () => {
       const result = await signIn(formData.email, formData.password);
       
       if (result.success) {
-        // Refresh role to determine redirect destination
-        await refreshRole();
-        
+        // Refresh role to determine redirect destination and use returned value immediately
+        const resolvedRole = await refreshRole();
+
         showSuccess('Welcome back!', 'Successfully signed in to CHESS Quest');
-        
-        // Role-aware redirect
-       const next = (role === 'master_admin' || role === 'org_admin' || role === 'staff') 
-         ? '/master/dashboard' 
-         : '/dashboard';
+
+        // Role-aware redirect using the freshly resolved role
+        const next = (resolvedRole === 'master_admin' || resolvedRole === 'org_admin' || resolvedRole === 'staff')
+          ? '/master/dashboard'
+          : '/dashboard';
         const from = (location.state as any)?.from?.pathname || next;
         navigate(from, { replace: true });
       } else {

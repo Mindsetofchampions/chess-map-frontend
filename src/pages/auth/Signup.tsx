@@ -43,7 +43,7 @@ interface FormErrors {
  */
 const Signup: React.FC = () => {
   const navigate = useNavigate();
-  const { signUp, loading, refreshRole, role } = useAuth();
+  const { signUp, loading, refreshRole } = useAuth();
   const { showSuccess, showError } = useToast();
 
   const [formData, setFormData] = useState<SignupForm>({
@@ -111,15 +111,15 @@ const Signup: React.FC = () => {
       const result = await signUp(formData.email, formData.password);
       
       if (result.success) {
-        // Refresh role to determine redirect destination
-        await refreshRole();
-        
+        // Refresh role to determine redirect destination and use returned role immediately
+        const resolvedRole = await refreshRole();
+
         showSuccess('Account created!', 'Welcome to CHESS Quest. Please check your email to verify your account.');
-        
-        // Role-aware redirect
-       const next = (role === 'master_admin' || role === 'org_admin' || role === 'staff') 
-         ? '/master/dashboard' 
-         : '/dashboard';
+
+        // Role-aware redirect using the freshly resolved role
+        const next = (resolvedRole === 'master_admin' || resolvedRole === 'org_admin' || resolvedRole === 'staff')
+          ? '/master/dashboard'
+          : '/dashboard';
         navigate(next, { replace: true });
       } else {
         showError('Sign up failed', result.error);

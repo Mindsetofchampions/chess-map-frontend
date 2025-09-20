@@ -289,3 +289,79 @@ export async function getOrgBalances(): Promise<OrgBalance[]> {
 }
 
 export default supabase;
+
+/**
+ * Admin edge function: create user with service role.
+ * Returns parsed JSON from the function (may include temporaryPassword)
+ */
+export async function adminCreateUser(payload: { email: string; role: string; password?: string; org_id?: string }) {
+  try {
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
+    const resp = await fetch(`${supabaseUrl}/functions/v1/admin_create_user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const body = await resp.json();
+    if (!resp.ok) {
+      throw new Error(body?.error || 'admin_create_user failed');
+    }
+
+    return body;
+  } catch (error: any) {
+    throw new Error(error?.message || String(error));
+  }
+}
+
+/**
+ * Admin edge function: generate magic/login link
+ */
+export async function adminGenerateLink(email: string, redirectTo?: string) {
+  try {
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
+    const resp = await fetch(`${supabaseUrl}/functions/v1/admin_generate_link`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ email, type: 'magiclink', redirectTo }),
+    });
+
+    const body = await resp.json();
+    if (!resp.ok) throw new Error(body?.error || 'admin_generate_link failed');
+    return body;
+  } catch (error: any) {
+    throw new Error(error?.message || String(error));
+  }
+}
+
+/**
+ * Admin edge function: set password for a user
+ */
+export async function adminSetPassword(email: string, password: string) {
+  try {
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
+    const resp = await fetch(`${supabaseUrl}/functions/v1/admin_set_password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const body = await resp.json();
+    if (!resp.ok) throw new Error(body?.error || 'admin_set_password failed');
+    return body;
+  } catch (error: any) {
+    throw new Error(error?.message || String(error));
+  }
+}
