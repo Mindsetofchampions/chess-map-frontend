@@ -97,6 +97,7 @@ const MasterDashboard: React.FC = () => {
   const [balanceLoading, setBalanceLoading] = useState(true);
   const [orgBalances, setOrgBalances] = useState<OrgBalance[]>([]);
   const [orgsLoading, setOrgsLoading] = useState(true);
+  const [serverConfirmed, setServerConfirmed] = useState<boolean>(false);
   const [showAllocateModal, setShowAllocateModal] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<string>('');
   const [allocateAmount, setAllocateAmount] = useState<string>('');
@@ -148,6 +149,7 @@ const MasterDashboard: React.FC = () => {
           await topUpPlatformBalance(toAdd, 'Auto top-up for master_admin testing');
           const refreshed = await getPlatformBalance();
           coins = refreshed.coins ?? coins + toAdd;
+          setServerConfirmed(true);
         } catch (topUpErr) {
           console.error('Auto top-up failed:', topUpErr);
           // If auto top-up fails, fall back to a client-side minimum so master_admin can test allocations
@@ -158,18 +160,22 @@ const MasterDashboard: React.FC = () => {
       // Ensure UI/state shows at least 100k for master_admin to allow testing allocations
       if ((role as any) === 'master_admin' && coins < 100000) coins = 100000;
       setPlatformBalance(coins);
+      // If DB returned a value or top-up succeeded, mark serverConfirmed
+      if (coins > 0) setServerConfirmed(true);
     } catch (error: any) {
       console.error('Failed to fetch platform balance:', error);
       // If master_admin and DB read failed, fall back to 100k for testing (client-side only)
       if ((role as any) === 'master_admin') {
         setPlatformBalance(100000);
+        setServerConfirmed(false);
       } else {
         setPlatformBalance(0);
+        setServerConfirmed(false);
       }
     } finally {
       setBalanceLoading(false);
     }
-  }, []);
+  }, [role]);
 
   const fetchOrgBalances = useCallback(async () => {
     setOrgsLoading(true);
@@ -188,6 +194,12 @@ const MasterDashboard: React.FC = () => {
    * Handle quest approval from dashboard
    */
   const handleQuickApprove = useCallback(async (questId: string, rewardCoins: number) => {
+    // Require server-confirmed balance for approvals
+    if (!serverConfirmed) {
+      showWarning('Unconfirmed Balance', 'Platform balance is not server-confirmed. Please top up via the dashboard before approving quests.');
+      return;
+    }
+
     // Check platform balance before attempting approval
     if (platformBalance < rewardCoins) {
       showWarning(
@@ -300,6 +312,7 @@ const MasterDashboard: React.FC = () => {
     const amount = parseInt(allocateAmount || '0', 10);
     if (!selectedOrg) return showWarning('Select Organization', 'Please choose an organization.');
     if (!amount || amount <= 0) return showWarning('Invalid Amount', 'Enter a positive amount.');
+    if (!serverConfirmed) return showWarning('Unconfirmed Balance', 'Platform balance is not confirmed by server. Please top up first.');
     if (amount > platformBalance) return showWarning('Insufficient Balance', 'Amount exceeds platform balance.');
 
     setAllocating(true);
@@ -492,9 +505,9 @@ const MasterDashboard: React.FC = () => {
                         </div>
                         
                         <div className="flex items-center gap-1">
-                          <button
+                            <button
                             onClick={() => handleQuickApprove(quest.id, quest.reward_coins)}
-                            disabled={platformBalance < quest.reward_coins || approving === quest.id || rejecting === quest.id}
+                            disabled={!serverConfirmed || platformBalance < quest.reward_coins || approving === quest.id || rejecting === quest.id}
                             data-testid={`btn-approve-${quest.id}`}
                             className="bg-cyber-green-500/20 border border-cyber-green-500/30 text-cyber-green-300 hover:bg-cyber-green-500/30 rounded-lg px-3 py-2 font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px] min-w-[70px] text-sm"
                           >
