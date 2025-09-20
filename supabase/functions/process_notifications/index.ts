@@ -1,6 +1,5 @@
-// @ts-nocheck
-// The following import is for Deno runtime. TypeScript in the editor may not resolve
-// Deno std modules; ignore type checks for this file to avoid false positives.
+// The following import is for Deno runtime. Editors may not resolve
+// Deno std modules; provide minimal types to avoid false positives.
 // deno-lint-ignore-file no-explicit-any
 // @ts-ignore - Deno std import
 import { serve } from "https://deno.land/std@0.201.0/http/server.ts";
@@ -12,40 +11,47 @@ import { serve } from "https://deno.land/std@0.201.0/http/server.ts";
 // - RESEND_API_KEY or SENDGRID_API_KEY
 // - FROM_EMAIL
 
-// Deno global in runtime; declare for editors that don't know Deno.
-declare const Deno: any;
-
-const SUPABASE_URL = Deno?.env?.get('SUPABASE_URL') as string;
-const SUPABASE_KEY = Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY') as string;
-const RESEND_API_KEY = Deno?.env?.get('RESEND_API_KEY');
-const SENDGRID_API_KEY = Deno?.env?.get('SENDGRID_API_KEY');
-const FROM_EMAIL = Deno?.env?.get('FROM_EMAIL') || 'no-reply@example.com';
+// Use globalThis.Deno to be editor-safe when Deno types are not available
+const _Deno: any = (globalThis as any).Deno;
+const SUPABASE_URL = _Deno?.env?.get('SUPABASE_URL') as string | undefined;
+const SUPABASE_KEY = _Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY') as string | undefined;
+const RESEND_API_KEY = _Deno?.env?.get('RESEND_API_KEY') as string | undefined;
+const SENDGRID_API_KEY = _Deno?.env?.get('SENDGRID_API_KEY') as string | undefined;
+const FROM_EMAIL = _Deno?.env?.get('FROM_EMAIL') || 'no-reply@example.com';
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
 }
 
-async function fetchUnprocessed() {
+async function fetchUnprocessed(): Promise<any[]> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Supabase URL or key not configured');
   const url = `${SUPABASE_URL}/rest/v1/system_notifications?processed=eq.false&select=*`;
   const res = await fetch(url, {
     headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
   });
-  if (!res.ok) throw new Error('Failed to fetch notifications: ' + await res.text());
+  if (!res.ok) {
+    const body = await res.text().catch(() => '<no body>');
+    throw new Error('Failed to fetch notifications: ' + body);
+  }
   return res.json();
 }
 
-async function markProcessed(id: string) {
+async function markProcessed(id: string): Promise<any> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Supabase URL or key not configured');
   const url = `${SUPABASE_URL}/rest/v1/system_notifications?id=eq.${id}`;
   const res = await fetch(url, {
     method: 'PATCH',
     headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ processed: true, processed_at: new Date().toISOString() })
   });
-  if (!res.ok) throw new Error('Failed to mark processed: ' + await res.text());
+  if (!res.ok) {
+    const body = await res.text().catch(() => '<no body>');
+    throw new Error('Failed to mark processed: ' + body);
+  }
   return res.json();
 }
 
-async function sendEmail(to: string, subject: string, text: string) {
+async function sendEmail(to: string, subject: string, text: string): Promise<void> {
   // Prefer delegating to the project's send_onboarding_notification Edge Function
   if (SUPABASE_URL && SUPABASE_KEY) {
     try {
@@ -73,7 +79,10 @@ async function sendEmail(to: string, subject: string, text: string) {
       headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error('Resend send failed: ' + await res.text());
+    if (!res.ok) {
+      const body = await res.text().catch(() => '<no body>');
+      throw new Error('Resend send failed: ' + body);
+    }
     return;
   }
   if (SENDGRID_API_KEY) {
@@ -89,7 +98,7 @@ async function sendEmail(to: string, subject: string, text: string) {
   throw new Error('No mail provider configured');
 }
 
-serve(async (req: Request) => {
+serve(async (_req: Request) => {
   try {
     const rows = await fetchUnprocessed();
     for (const r of rows) {
