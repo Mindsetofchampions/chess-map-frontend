@@ -52,12 +52,8 @@ const DiagnosticsWidget: React.FC = () => {
     }
 
     try {
-      // Fetch platform balance
-      const { data: balanceData, error: balanceError } = await supabase
-        .from('platform_balance')
-        .select('coins')
-        .eq('id', 1)
-        .single();
+      // Fetch platform balance via RPC to avoid RLS restrictions
+      const { data: balanceData, error: balanceError } = await supabase.rpc('get_platform_balance');
 
       // Fetch pending quest count
       const { count: pendingCount, error: countError } = await supabase
@@ -66,7 +62,7 @@ const DiagnosticsWidget: React.FC = () => {
 
       const newData: DiagnosticsData = {
         role: role || 'unknown',
-        platformBalance: balanceData?.coins || 0,
+  platformBalance: balanceData?.coins || 0,
         pendingCount: pendingCount || 0,
         lastUpdated: new Date()
       };

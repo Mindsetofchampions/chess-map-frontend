@@ -189,18 +189,16 @@ export async function topUpPlatformBalance(amount: number, reason: string): Prom
  */
 export async function getPlatformBalance(): Promise<{ id: number; coins: number; updated_at: string }> {
   try {
-    const { data, error } = await supabase
-      .from('platform_balance')
-      .select('*')
-      .eq('id', 1)
-      .single();
-    
+    // Use the SECURITY DEFINER RPC to fetch platform balance so RLS doesn't block master checks
+    const { data, error } = await supabase.rpc('get_platform_balance');
+
     if (error) {
       const mappedError = mapPgError(error);
       throw new Error(mappedError.message);
     }
-    
-    return data;
+
+    // RPC returns a record with id, coins, updated_at
+    return data as { id: number; coins: number; updated_at: string };
   } catch (error) {
     const mappedError = mapPgError(error);
     throw new Error(mappedError.message);
