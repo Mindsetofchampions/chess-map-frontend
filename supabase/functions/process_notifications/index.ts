@@ -46,6 +46,26 @@ async function markProcessed(id: string) {
 }
 
 async function sendEmail(to: string, subject: string, text: string) {
+  // Prefer delegating to the project's send_onboarding_notification Edge Function
+  if (SUPABASE_URL && SUPABASE_KEY) {
+    try {
+      const fnUrl = `${SUPABASE_URL}/functions/v1/send_onboarding_notification`;
+      const payload = { event: 'system_notification', parent_email: to, subject, text };
+      const res = await fetch(fnUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) return;
+      // fall through to direct send on failure
+      const errText = await res.text();
+      console.warn('send via function failed, falling back to direct send:', errText);
+    } catch (err) {
+      console.warn('send via function failed, falling back to direct send:', String(err));
+    }
+  }
+
+  // Fallback: send directly using configured provider
   if (RESEND_API_KEY) {
     const payload = { from: FROM_EMAIL, to: [to], subject, text };
     const res = await fetch('https://api.resend.com/emails', {
@@ -60,7 +80,7 @@ async function sendEmail(to: string, subject: string, text: string) {
     const payload = { personalizations: [{ to: [{ email: to }] }], from: { email: FROM_EMAIL }, subject, content: [{ type: 'text/plain', value: text }] };
     const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${SENDGRID_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: { 'Authorization': `Bearer ${SENDGRID_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error('SendGrid send failed: ' + await res.text());
