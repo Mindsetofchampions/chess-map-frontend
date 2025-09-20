@@ -30,7 +30,9 @@
     "pre-commit": "npm run quality:fix && npm run test",
     "pre-push": "npm run quality && npm run test:coverage",
     "seed:test": "node --loader ts-node/esm scripts/seed-test-data.ts"
+    ,"create:bucket:parent_ids": "node --loader ts-node/esm scripts/create-parent-ids-bucket.ts"
   },
+  "bin": {},
   "devDependencies": {
     "@babel/preset-env": "^7.28.0",
     "@babel/preset-react": "^7.27.1",
@@ -87,6 +89,8 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.62.0",
     "react-router-dom": "^7.8.1",
+    "signature_pad": "^4.0.0",
     "zod": "^4.0.17"
   }
 }
+

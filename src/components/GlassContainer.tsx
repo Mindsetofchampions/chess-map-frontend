@@ -95,7 +95,8 @@ const GlassContainer: React.FC<GlassContainerProps> = ({
     transition: {
       duration: 0.6,
       delay,
-      type: "spring",
+      // cast type to any to satisfy framer-motion's Transition type in our conservative pass
+      type: 'spring' as any,
       stiffness: 100,
       damping: 20
     }

@@ -5,8 +5,7 @@
  * Used for route protection and server-side authorization.
  */
 
-import { createServerClient } from '@supabase/ssr';
-import type { Database } from '@/types/database';
+// Server-side role utilities — createServerClient can be used by callers when needed.
 
 /**
  * Application role types

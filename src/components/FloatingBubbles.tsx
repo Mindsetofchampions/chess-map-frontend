@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, X } from 'lucide-react';
 import { PERSONA_GIF, type PersonaKey } from '@/assets/personas';
@@ -126,7 +126,7 @@ const FloatingBubbles: React.FC = () => {
     badge: { loaded: false, failed: false, attempts: 0 }
   });
 
-  const [spriteStatesUpdate, setSpriteStatesUpdate] = useState(0);
+  const [_spriteStatesUpdate, setSpriteStatesUpdate] = useState(0);
 
   /**
    * Handle sprite loading success

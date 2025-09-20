@@ -9,7 +9,7 @@
  * User role type definition
  * Restricts roles to specific allowed values
  */
-type UserRole = 'student' | 'admin';
+type UserRole = 'student' | 'org_admin' | 'staff' | 'master_admin';
 
 /**
  * Master admin role type for enhanced permissions
@@ -59,7 +59,7 @@ export interface Quest {
  * User coins balance interface
  * Tracks student coin accumulation
  */
-interface UserCoins {
+export interface UserCoins {
   user_id: string;
   balance: number;
   updated_at: string;
@@ -69,7 +69,7 @@ interface UserCoins {
  * Quest completion record interface
  * Tracks when students complete quests
  */
-interface QuestCompletion {
+export interface QuestCompletion {
   id: string;
   user_id: string;
   quest_id: string;
@@ -82,7 +82,7 @@ interface QuestCompletion {
  * Analytics log entry interface
  * Tracks user interactions for insights
  */
-interface AnalyticsLog {
+export interface AnalyticsLog {
   id: string;
   user_id: string;
   action: string;
@@ -126,7 +126,7 @@ interface CompleteQuestResponse {
  * Supabase RPC function types
  * Type definitions for custom database functions
  */
-interface SupabaseRPC {
+export interface SupabaseRPC {
   complete_quest: {
     args: CompleteQuestRequest;
     returns: CompleteQuestResponse;
@@ -145,7 +145,7 @@ interface SupabaseRPC {
  * API response wrapper interface
  * Standardizes all API responses
  */
-interface ApiResponse<T = any> {
+export interface ApiResponse<T = any> {
   data: T | null;
   error: string | null;
   loading: boolean;
@@ -155,7 +155,7 @@ interface ApiResponse<T = any> {
  * Map marker interface
  * Represents interactive elements on the map
  */
-interface MapMarker {
+export interface MapMarker {
   id: string;
   type: 'quest' | 'safe_space' | 'community_hub';
   position: {

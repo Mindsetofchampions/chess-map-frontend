@@ -84,13 +84,16 @@ const WalletChip: React.FC<WalletChipProps> = ({
     fetchWallet();
 
     // Set up auto-refresh if enabled
+    let interval: number | undefined;
     if (autoRefresh) {
-      const interval = setInterval(() => {
+      interval = window.setInterval(() => {
         fetchWallet();
       }, 30000); // Refresh every 30 seconds
-
-      return () => clearInterval(interval);
     }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [fetchWallet, autoRefresh]);
 
   /**

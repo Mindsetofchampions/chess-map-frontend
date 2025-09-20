@@ -15,7 +15,7 @@ const corsHeaders = {
 
 interface CreateUserRequest {
   email: string;
-  role: 'student' | 'admin' | 'org_admin' | 'staff';
+  role: 'student' | 'org_admin' | 'staff';
   display_name?: string;
   password?: string; // Optional - if not provided, will generate temporary password
   org_id?: string; // Optional organization to attach the user to
@@ -119,7 +119,7 @@ serve(async (req) => {
     }
 
     // Validate role
-    if (!['student', 'admin', 'org_admin', 'staff'].includes(role)) {
+  if (!['student', 'org_admin', 'staff'].includes(role)) {
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -205,7 +205,7 @@ serve(async (req) => {
         .upsert({
           user_id: newUser.user.id,
           display_name: display_name || email.split('@')[0],
-          role: role === 'admin' ? 'admin' : 'student',
+          role: role === 'org_admin' ? 'org_admin' : 'student',
           org_id: org_id || null
         })
         .select()

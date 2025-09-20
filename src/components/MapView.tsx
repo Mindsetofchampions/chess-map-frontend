@@ -1,16 +1,14 @@
 // filepath: src/components/MapView.tsx
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, MapPin, Sparkles, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { CHESS_COLORS } from '@/components/FloatingBubbles';
-import type { PersonaDef, PersonaKey as TypesPersonaKey } from '@/types';
+import type { PersonaDef } from '@/types';
 import { type PersonaKey } from '@/assets/personas';
 import { addPersonaChipsToMap, type PersonaChipMarker, type OrganizationWithPersonas } from '@/lib/sprites';
 import { 
   PHILADELPHIA_BUBBLES, 
   QUEST_STYLES, 
-  type QuestCategory,
   type QuestBubble 
 } from '@/hooks/usePhiladelphiaData';
 import QuestMapOverlay from '@/pages/student/QuestMapOverlay';
@@ -37,6 +35,17 @@ const BubbleTooltip: React.FC<BubbleTooltipProps> = ({
 }) => {
   const style = QUEST_STYLES[bubble.category];
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  const getActionLabel = (cat: string) => {
+    switch (cat) {
+      case 'safe_space':
+        return 'Enter Safe Space';
+      case 'event':
+        return 'Join Event';
+      default:
+        return 'Start Quest';
+    }
+  };
 
   const handleStart = () => {
     console.log('Starting quest from bubble:', bubble.id);
@@ -65,7 +74,6 @@ const BubbleTooltip: React.FC<BubbleTooltipProps> = ({
       style={tooltipStyle}
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.8, y: 20 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
     >
       <div className="bg-white/30 backdrop-blur-2xl border border-white/40 rounded-2xl shadow-2xl p-4 relative max-w-sm">
@@ -124,11 +132,7 @@ const BubbleTooltip: React.FC<BubbleTooltipProps> = ({
             border: `1px solid ${style.color}60`,
           }}
         >
-          {bubble.category === 'safe_space'
-            ? 'Enter Safe Space'
-            : bubble.category === 'event'
-            ? 'Join Event'
-            : 'Start Quest'}
+          {getActionLabel(bubble.category)}
         </button>
       </div>
     </motion.div>

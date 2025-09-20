@@ -146,7 +146,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     window.location.href = '/';
   };
 
-  render() {
+  override render() {
     if (this.state.hasError && this.state.error) {
       // Custom fallback component
       if (this.props.fallback) {

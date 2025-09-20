@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at timestamptz DEFAULT now(),
   
   -- Constraint to ensure only valid roles are allowed
-  CONSTRAINT users_role_check CHECK (role IN ('student', 'admin', 'master_admin'))
+  CONSTRAINT users_role_check CHECK (role IN ('student', 'org_admin', 'master_admin'))
 );
 
 -- Create admins table for role-based access control
@@ -127,7 +127,7 @@ BEGIN
     updated_at = NOW();
   
   -- If user is admin or master_admin, add to admins table
-  IF user_role IN ('admin', 'master_admin') THEN
+  IF user_role IN ('org_admin', 'master_admin') THEN
     INSERT INTO admins (user_id, created_at)
     VALUES (NEW.id, NOW())
     ON CONFLICT (user_id) DO NOTHING;

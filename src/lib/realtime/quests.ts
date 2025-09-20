@@ -5,6 +5,7 @@
  * and provides debounced refresh mechanisms for UI updates.
  */
 
+import React from 'react';
 import { supabase } from '@/lib/supabase';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { Quest } from '@/types/backend';
@@ -38,7 +39,7 @@ export type RefreshCallback = () => void | Promise<void>;
 function createDebounced(callback: RefreshCallback, delay: number = 1000): RefreshCallback {
   let timeoutId: NodeJS.Timeout | null = null;
   
-  return (...args: any[]) => {
+    return (..._args: any[]) => {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
@@ -102,13 +103,13 @@ export function subscribeToApprovals(
 ): QuestSubscription {
   const debouncedRefresh = createDebounced(refreshCallback, debounceMs);
   
-  return subscribeToQuests((event, quest) => {
-    // Refresh on any change to submitted quests or status changes from submitted
-    if (quest.status === 'submitted' || event === 'UPDATE') {
-      console.log('Approval queue update detected, refreshing...');
-      debouncedRefresh();
-    }
-  });
+    return subscribeToQuests((event, quest) => {
+      // Refresh on any change to submitted quests or status changes from submitted
+      if (quest && (quest.status === 'submitted' || event === 'UPDATE')) {
+        console.log('Approval queue update detected, refreshing...');
+        debouncedRefresh();
+      }
+    });
 }
 
 /**
@@ -124,7 +125,7 @@ export function subscribeToQuestStats(
 ): QuestSubscription {
   const debouncedRefresh = createDebounced(refreshCallback, debounceMs);
   
-  return subscribeToQuests((event, quest) => {
+  return subscribeToQuests((_event, _quest) => {
     // Refresh stats on any quest change
     console.log('Quest stats update detected, refreshing...');
     debouncedRefresh();
@@ -169,5 +170,4 @@ export function useQuestSubscription(
   return { isConnected };
 }
 
-// React import for the custom hook
-import React from 'react';
+// React import for the custom hook (already at top)

@@ -6,7 +6,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -83,7 +83,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       if (!user) {
         setRole('unknown');
-        return;
+        setRoleLoading(false);
+        return 'unknown';
       }
 
       // Try to get role from public.user_roles table first (new system)

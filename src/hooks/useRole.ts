@@ -13,7 +13,7 @@ import { AuthContext, type AppRole } from '@/contexts/AuthContext';
 interface UseRoleReturn {
   role: AppRole;
   roleLoading: boolean;
-  refreshRole: () => Promise<void>;
+  refreshRole: () => Promise<AppRole>;
   isMaster: boolean;
   isOrgAdmin: boolean;
   isStaff: boolean;

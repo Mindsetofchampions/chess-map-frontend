@@ -6,16 +6,13 @@
  * and deployment readiness.
  */
 
-import React, { useState, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { 
   CheckCircle, 
   XCircle, 
   AlertTriangle, 
   Play, 
-  RefreshCw,
-  ExternalLink,
-  Shield,
   Coins,
   MapPin,
   Settings,
@@ -23,15 +20,15 @@ import {
   Award,
   Target,
   Link as LinkIcon,
-  Clock,
-  Eye
+  Eye,
+  Shield
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ToastProvider';
 import { supabase, rpcSubmitMcq, rpcApproveQuest, getMyWallet, getMyLedger } from '@/lib/supabase';
 import GlassContainer from '@/components/GlassContainer';
-import type { Quest, Submission } from '@/types/backend';
+import type { Quest } from '@/types/backend';
 import { PERSONA_GIF } from '@/assets/personas';
 
 /**

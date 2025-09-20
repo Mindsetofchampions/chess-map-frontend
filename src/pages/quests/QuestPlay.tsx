@@ -15,8 +15,7 @@ import {
   CheckCircle, 
   XCircle,
   HelpCircle,
-  Send,
-  RefreshCw
+  Send
 } from 'lucide-react';
 import { supabase, rpcSubmitMcq } from '@/lib/supabase';
 import { useToast } from '@/components/ToastProvider';
@@ -194,7 +193,7 @@ const QuestPlay: React.FC = () => {
   }
 
   const mcqConfig = quest.config as MCQConfig;
-  const personaInfo = getPersonaInfo(quest.attribute_id);
+  const personaInfo = getPersonaInfo(quest.attribute_id ?? null);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary">

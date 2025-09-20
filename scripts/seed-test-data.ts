@@ -31,7 +31,7 @@ function getArg(name: string, fallback?: string) {
 
 const email = getArg('email', 'test.user@example.com')!;
 const displayName = getArg('name', 'Test User')!;
-const role = (getArg('role', 'org_admin')! as 'student' | 'admin' | 'org_admin' | 'staff');
+const role = (getArg('role', 'org_admin')! as 'student' | 'org_admin' | 'staff');
 const orgSlug = getArg('org', 'test-org')!;
 const orgRole = (getArg('orgRole', role === 'org_admin' ? 'org_admin' : 'student')! as 'org_admin' | 'staff' | 'student');
 const password = getArg('password');
@@ -106,7 +106,7 @@ async function main() {
     try {
       await admin
         .from('profiles')
-        .upsert({ user_id: userId, display_name: displayName, role: role === 'admin' ? 'admin' : 'student', org_id: orgId })
+  .upsert({ user_id: userId, display_name: displayName, role: role === 'org_admin' ? 'org_admin' : 'student', org_id: orgId })
         .select();
     } catch (_) {}
   }

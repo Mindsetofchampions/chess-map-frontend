@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supabase, adminCreateUser, adminGenerateLink, adminSetPassword } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Award, Shield, Link as LinkIcon, KeyRound, Plus } from 'lucide-react';
@@ -9,7 +9,7 @@ type Row = { id: string; email: string; role?: string };
 export default function MasterUsersPage() {
   const { user, resolvedRole } = useAuth() as any;
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'admin'|'student'>('student');
+  const [role, setRole] = useState<'org_admin'|'student'>('student');
   const [users, setUsers] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
   const [linkUrl, setLinkUrl] = useState<string | null>(null);
@@ -123,7 +123,7 @@ export default function MasterUsersPage() {
             onChange={e => setRole(e.target.value as any)}
           >
             <option value="student">student</option>
-            <option value="admin">admin</option>
+            <option value="org_admin">org_admin</option>
           </select>
         </div>
         <div className="flex gap-2 items-center">

@@ -16,6 +16,7 @@ import LedgerTable from '@/components/wallet/LedgerTable';
 import LogoutButton from '@/components/LogoutButton';
 import SpritesOverlay from '@/components/SpritesOverlay';
 import StudentProfileCard from '@/components/StudentProfileCard';
+import StudentOnboarding from '@/components/StudentOnboarding';
 
 /**
  * Dashboard Stats Card Props
@@ -63,6 +64,11 @@ const Dashboard: React.FC = () => {
   // Redirect master admins to their proper dashboard
   if (!roleLoading && (role === 'master_admin' || role === 'org_admin' || role === 'staff')) {
     return <Navigate to="/master/dashboard" replace />;
+  }
+
+  // If student hasn't completed onboarding, show onboarding flow
+  if (!roleLoading && role === 'student' && !user?.user_metadata?.onboarding_completed) {
+    return <div className="min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary p-6"><StudentOnboarding /></div>;
   }
 
   return (

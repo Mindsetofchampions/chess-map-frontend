@@ -27,8 +27,8 @@ interface UseQuestsReturn {
  * Provides quest data management with Supabase integration.
  * Handles approved quest fetching and submission tracking.
  */
-export const useQuests = (): UseQuestsReturn => {
-  const { showError } = useToast();
+export const useQuests = (gradeFilter?: 'ES' | 'MS' | 'HS'): UseQuestsReturn => {
+  const { showError: _showError } = useToast();
   
   const [mapQuests, setMapQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,12 +43,21 @@ export const useQuests = (): UseQuestsReturn => {
       setLoading(true);
       setError(null);
 
-      const { data, error: queryError } = await supabase
+      let query = supabase
         .from('quests')
-        .select('id, title, description, status, active, reward_coins, qtype, config, attribute_id, created_at')
-        .eq('active', true)
-        .eq('status', 'approved')
-        .order('created_at', { ascending: false });
+        .select('id, title, description, status, active, reward_coins, qtype, config, attribute_id, created_at, grade_level');
+
+      query = query.eq('active', true).eq('status', 'approved');
+
+      // If gradeFilter provided, attempt to filter by explicit grade_level column OR config JSON field
+      if (gradeFilter) {
+        // prefer explicit grade_level
+        query = query.or(`grade_level.eq.${gradeFilter},config->>grade_level.eq.${gradeFilter}`);
+      }
+
+      query = query.order('created_at', { ascending: false });
+
+      const { data, error: queryError } = await query;
 
       if (queryError) {
         throw new Error(queryError.message);

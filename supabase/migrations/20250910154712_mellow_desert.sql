@@ -303,7 +303,7 @@ begin
   end if;
   
   -- Validate role
-  if p_role not in ('student', 'admin', 'org_admin', 'staff', 'master_admin') then
+    if p_role not in ('student', 'org_admin', 'staff', 'master_admin') then
     return json_build_object(
       'success', false,
       'error', 'INVALID_INPUT',

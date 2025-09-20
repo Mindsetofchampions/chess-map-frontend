@@ -4,18 +4,15 @@
  * Master admin interface for user creation and role management
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Users, 
   UserPlus, 
-  Shield, 
   Mail, 
   Crown,
-  RefreshCw,
-  Settings
+  RefreshCw
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ToastProvider';
 import { supabase } from '@/lib/supabase';
 import { mapPgError } from '@/utils/mapPgError';
@@ -39,7 +36,7 @@ interface UserWithRole {
  */
 interface CreateUserForm {
   email: string;
-  role: 'student' | 'admin' | 'org_admin' | 'staff';
+  role: 'student' | 'org_admin' | 'staff';
   displayName: string;
 }
 
@@ -91,13 +88,13 @@ const UserManagement: React.FC = () => {
       }
 
       // Transform data for display
-      const usersWithRoles = (data || []).map(profile => ({
-        id: profile.user_id,
-        email: profile.users?.email || 'Unknown',
-        created_at: profile.users?.created_at || profile.created_at,
-        role: profile.role || 'student',
-        displayName: profile.display_name
-      }));
+          const usersWithRoles = (data || []).map((profile: any) => ({
+            id: profile.user_id,
+            email: Array.isArray(profile.users) ? profile.users[0]?.email || 'Unknown' : profile.users?.email || 'Unknown',
+            created_at: Array.isArray(profile.users) ? profile.users[0]?.created_at || profile.created_at : profile.users?.created_at || profile.created_at,
+            role: profile.role || 'student',
+            displayName: profile.display_name
+          }));
 
       setUsers(usersWithRoles);
     } catch (error: any) {
@@ -176,7 +173,7 @@ const UserManagement: React.FC = () => {
     setUpdatingRole(email);
     
     try {
-      const { data, error } = await supabase.rpc('set_user_role', {
+      const { data: _data, error } = await supabase.rpc('set_user_role', {
         p_email: email,
         p_role: newRole
       });
@@ -404,7 +401,7 @@ const UserManagement: React.FC = () => {
                       
                       <div className="flex items-center gap-2">
                         {/* Role Change Buttons */}
-                        {['student', 'staff', 'org_admin', 'admin'].map((role) => (
+                        {['student', 'staff', 'org_admin'].map((role) => (
                           <button
                             key={role}
                             onClick={() => handleUpdateRole(user.email, role)}

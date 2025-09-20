@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom';
 import { MapPin, Shield, Compass, Users, Award, Zap, X, Star, Trophy, Heart, Sparkles, Link } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +9,10 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import Dashboard from './pages/Dashboard';
+import OnboardingStart from './pages/onboarding/Start';
+import StudentOnboarding from './pages/onboarding/StudentOnboarding';
+import ParentConsent from './pages/onboarding/ParentConsent';
+import OnboardingGate from './components/auth/OnboardingGate';
 import QuestsList from './pages/quests/QuestsList';
 import QuestPlay from './pages/quests/QuestPlay';
 import MasterDashboard from './pages/master/MasterDashboard';
@@ -20,7 +24,8 @@ import DraggableBubbles from './components/DraggableBubbles';
 import MapPage from './pages/MapPage';
 import SystemDiagnostics from './pages/admin/SystemDiagnostics';
 import MasterUsersPage from './pages/master/Users';
-import Store from './pages/student/Store';
+// Store page import removed (unused in landing routing)
+import ParentConsentsPage from './pages/master/ParentConsents';
 
 /**
  * Landing Page Component
@@ -614,15 +619,22 @@ const AppRouter: React.FC = () => {
 
           {/* Protected Routes */}
           <Route
-          path="/dashboard"
+            path="/dashboard"
             element={
               <ErrorBoundary>
                 <ProtectedRoute>
-                  <Dashboard />
+                  <OnboardingGate>
+                    <Dashboard />
+                  </OnboardingGate>
                 </ProtectedRoute>
               </ErrorBoundary>
             }
           />
+
+          {/* Onboarding flow routes */}
+          <Route path="/onboarding/start" element={<OnboardingStart />} />
+          <Route path="/onboarding/student" element={<StudentOnboarding />} />
+          <Route path="/onboarding/parent" element={<ParentConsent />} />
           
               path="/store" 
           <Route
@@ -697,6 +709,17 @@ const AppRouter: React.FC = () => {
               <ErrorBoundary>
                 <ProtectedRoute>
                   <SystemDiagnostics />
+                </ProtectedRoute>
+              </ErrorBoundary>
+            }
+          />
+
+          <Route
+            path="/master/parent-consents"
+            element={
+              <ErrorBoundary>
+                <ProtectedRoute requireMaster>
+                  <ParentConsentsPage />
                 </ProtectedRoute>
               </ErrorBoundary>
             }

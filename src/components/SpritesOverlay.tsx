@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import SpriteModal from './SpriteModal';
 import { PERSONA_GIF, getPersonaInfo, type PersonaKey } from '@/assets/personas';
+import CHESS_COLORS from '@/lib/chessColors';
 
 export type SpriteKey = PersonaKey | 'brenda';
 
-const SPRITES: { key: SpriteKey; src: string; label: string; category: string }[] = Object.keys(PERSONA_GIF).map((k) => {
+const SPRITES: { key: SpriteKey; src: string; label: string; category: string; colorClass: string }[] = Object.keys(PERSONA_GIF).map((k) => {
   const key = k as PersonaKey;
   const info = getPersonaInfo(key);
-  return { key: key as SpriteKey, src: PERSONA_GIF[key], label: info.name, category: info.category };
+  const cat = String(info.category || 'character').toLowerCase();
+  const colorClass = (CHESS_COLORS as any)[cat] ?? CHESS_COLORS.character;
+  return { key: key as SpriteKey, src: PERSONA_GIF[key], label: info.name, category: info.category, colorClass };
 });
 
 interface Props {
@@ -39,7 +42,7 @@ const SpritesOverlay: React.FC<Props> = ({ onSpriteClick }) => {
             onClick={() => handleClick(s.key)}
             aria-label={`${s.label} sprite`}
           >
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-glass border-glass flex items-center justify-center shadow-xl">
+            <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full border-2 flex items-center justify-center shadow-xl ${s.colorClass} bg-black/10`}> 
               <img src={s.src} alt={s.label} className="w-12 h-12 md:w-16 md:h-16 object-contain" draggable={false} />
             </div>
             <div className="sr-only">{s.label}</div>

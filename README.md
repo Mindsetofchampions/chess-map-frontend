@@ -198,6 +198,63 @@ The application implements a hierarchical role system:
 │   ├── main.tsx                          # Application entry point
 │   └── index.css                         # Global styles with Tailwind
 ├── supabase/
+ 
+## Onboarding & Notifications (Parent Consent)
+
+This project includes a student onboarding flow and a parent consent step that requires a parent's e-signature and optional photo ID upload. Notifications (email) are sent when consent is submitted and when an admin approves or rejects a consent.
+
+Key pieces:
+
+- Database tables: `onboarding_responses`, `parent_consents` (migrations in `supabase/migrations/`)
+- Storage bucket: `parent_ids` (private) — holds signature images and optional parent ID images
+- Edge Function: `send_onboarding_notification` — forwards events to SendGrid (deploy with Supabase functions)
+- Frontend helper: `src/lib/notifyOnboarding.ts` — calls the Edge Function
+
+Required environment variables for notifications and Edge Function usage:
+
+- `SENDGRID_API_KEY` (for the Edge Function runtime)
+- `FROM_EMAIL` (the sender address used by SendGrid)
+- `REACT_APP_SUPABASE_FUNCTIONS_URL` (optional) — points `notifyOnboarding` to the deployed Edge Function base URL. If not set, the helper falls back to `/.netlify/functions`.
+
+Provision the `parent_ids` storage bucket (one-time):
+
+1. Using the provided provisioning script (requires service role key):
+
+```bash
+# set these env vars before running
+export SUPABASE_URL="https://yourproject.supabase.co"
+export SUPABASE_SERVICE_ROLE_KEY="<service-role-key>"
+npm run create:bucket:parent_ids
+```
+
+2. Or create manually in Supabase Console → Storage → New bucket:
+   - Bucket name: `parent_ids`
+   - Public: No (private)
+
+Edge Function deployment and secrets:
+
+1. Implement or review `supabase/functions/send_onboarding_notification/index.ts` and ensure it's wired to SendGrid.
+2. Deploy the function with the Supabase CLI:
+
+```bash
+supabase functions deploy send_onboarding_notification
+```
+
+3. Configure the function's environment variables (via Supabase Dashboard or CLI):
+
+```text
+SENDGRID_API_KEY=your_sendgrid_key_here
+FROM_EMAIL=notifications@example.org
+```
+
+Testing notifications locally
+
+- To test the frontend-to-function call locally, set `REACT_APP_SUPABASE_FUNCTIONS_URL` to your function base URL. When developing with Netlify Functions or local proxies, adjust accordingly.
+- Submit a parent consent via the app UI. The frontend will call the `notifyOnboarding('consent_submitted', {...})` helper.
+- Approve or reject the consent via the admin UI at `/master/parent-consents` (or navigate to Admin → Parent Consents). Approve/reject triggers `notifyOnboarding('consent_reviewed', {...})`.
+
+If you want me to deploy the Edge Function and set environment variables (I can't set secrets for you), I can produce the exact `supabase functions` deploy and `supabase secrets` commands to run locally or in CI.
+
 │   └── migrations/
 │       └── master_admin_system_setup.sql # Complete database schema setup
 ├── public/
@@ -293,14 +350,9 @@ This project is part of the CHESS Map ecosystem. Please refer to the main projec
 
 **Build failures:**
 - Run `npm install` to ensure all dependencies are installed
-- Check TypeScript errors with `npm run lint`
-- Verify all environment variables are defined
-
 ### Getting Help
 
 - Check the browser developer console for detailed error messages
-- Review the Mapbox and Supabase documentation for API-specific issues
-- Ensure all environment variables match the required format
 
 ## 🔄 Updates
 

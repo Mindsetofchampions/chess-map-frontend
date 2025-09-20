@@ -42,7 +42,7 @@ interface FormErrors {
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, loading, refreshRole } = useAuth();
+  const { signIn, loading, refreshRole, role, roleLoading } = useAuth();
   const { showSuccess, showError } = useToast();
 
   const [formData, setFormData] = useState<LoginForm>({
@@ -100,17 +100,42 @@ const Login: React.FC = () => {
       const result = await signIn(formData.email, formData.password);
       
       if (result.success) {
-        // Refresh role to determine redirect destination and use returned value immediately
-        const resolvedRole = await refreshRole();
-
         showSuccess('Welcome back!', 'Successfully signed in to CHESS Quest');
 
-        // Role-aware redirect using the freshly resolved role
+        // Ensure auth context has settled and role is resolved before navigating.
+        // Call refreshRole to kick a fetch, then wait for roleLoading to become false.
+        void refreshRole();
+
+        // Wait up to ~3s for roleResolution; this prevents navigating to a protected admin URL
+        // before the user's role is loaded (which caused "Access Restricted" flashes).
+        const start = Date.now();
+        while (roleLoading && Date.now() - start < 3000) {
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((r) => setTimeout(r, 150));
+        }
+
+        const resolvedRole = role;
+
+        // Determine role-aware default next path
         const next = (resolvedRole === 'master_admin' || resolvedRole === 'org_admin' || resolvedRole === 'staff')
           ? '/master/dashboard'
           : '/dashboard';
-        const from = (location.state as any)?.from?.pathname || next;
-        navigate(from, { replace: true });
+
+        // If the user originally attempted to visit a protected admin route, only honor it
+        // when the resolved role is an admin-level role. Otherwise fall back to next.
+        const attempted = (location.state as any)?.from?.pathname;
+
+        // If the resolved role is org_admin, always send them to the main org dashboard
+        // instead of specific admin sub-pages like approvals. Also ignore attempts to
+        // land on approvals (/master/quests/approvals) to avoid surprising routing.
+        if (resolvedRole === 'org_admin') {
+          navigate('/master/dashboard', { replace: true });
+        } else {
+          const from = attempted && attempted.startsWith('/master') && !(resolvedRole === 'master_admin' || resolvedRole === 'staff')
+            ? next
+            : (attempted || next);
+          navigate(from, { replace: true });
+  }
       } else {
         showError('Sign in failed', result.error);
       }
