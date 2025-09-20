@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 /**
  * Individual draggable bubble data interface
@@ -73,7 +73,7 @@ const DraggableBubbleComponent: React.FC<DraggableBubbleProps> = ({ bubble, onDr
   };
 
   // Handle drag end
-  const handleDragEnd = useCallback((event: any, info: PanInfo) => {
+  const handleDragEnd = useCallback((event: any) => {
     const rect = event.target.getBoundingClientRect();
     const parentRect = event.target.offsetParent?.getBoundingClientRect();
     
@@ -123,17 +123,7 @@ const DraggableBubbleComponent: React.FC<DraggableBubbleProps> = ({ bubble, onDr
         opacity: 0,
         rotate: Math.random() * 360
       }}
-      animate={{ 
-        scale: 1, 
-        opacity: 0.8,
-        rotate: 0
-      }}
-      transition={{
-        type: "spring",
-        stiffness: 260,
-        damping: 20,
-        delay: Math.random() * 2
-      }}
+      
       
       // Hover effects
       whileHover={{ 

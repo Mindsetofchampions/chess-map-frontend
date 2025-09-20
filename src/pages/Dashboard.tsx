@@ -14,6 +14,8 @@ import GlassContainer from '@/components/GlassContainer';
 import WalletChip from '@/components/wallet/WalletChip';
 import LedgerTable from '@/components/wallet/LedgerTable';
 import LogoutButton from '@/components/LogoutButton';
+import SpritesOverlay from '@/components/SpritesOverlay';
+import StudentProfileCard from '@/components/StudentProfileCard';
 
 /**
  * Dashboard Stats Card Props
@@ -73,9 +75,12 @@ const Dashboard: React.FC = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div>
+          <div className="flex-1 pr-4">
             <h1 className="text-3xl font-bold text-white">Welcome back!</h1>
             <p className="text-gray-300">Continue your CHESS Quest learning journey</p>
+          </div>
+          <div className="w-96 max-w-full">
+            <StudentProfileCard />
           </div>
           
           <div className="flex items-center gap-3">
@@ -137,22 +142,37 @@ const Dashboard: React.FC = () => {
                     <p className="text-gray-300 text-sm">Find new learning challenges</p>
                   </div>
                 </Link>
-                
-                <Link
-                  to="/map"
-                  className="w-full bg-glass-light border-glass-light hover:bg-glass-dark rounded-xl p-4 flex items-center gap-3 transition-all duration-200 group"
-                >
-                  <div className="p-2 bg-cyber-green-500/20 rounded-lg group-hover:bg-cyber-green-500/30 transition-colors">
-                    <MapPin className="w-5 h-5 text-cyber-green-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-medium">View Map</h3>
-                    <p className="text-gray-300 text-sm">Interactive quest locations</p>
-                  </div>
-                </Link>
+                  <Link
+                    to="/map"
+                    className="w-full bg-glass-light border-glass-light hover:bg-glass-dark rounded-xl p-4 flex items-center gap-3 transition-all duration-200 group"
+                  >
+                    <div className="p-2 bg-cyber-green-500/20 rounded-lg group-hover:bg-cyber-green-500/30 transition-colors">
+                      <MapPin className="w-5 h-5 text-cyber-green-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">View Map</h3>
+                      <p className="text-gray-300 text-sm">Interactive quest locations</p>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to="/store"
+                    className="w-full bg-glass-light border-glass-light hover:bg-glass-dark rounded-xl p-4 flex items-center gap-3 transition-all duration-200 group"
+                  >
+                    <div className="p-2 bg-neon-purple-500/20 rounded-lg group-hover:bg-neon-purple-500/30 transition-colors">
+                      <svg className="w-5 h-5 text-neon-purple-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14M12 5v14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">CHESS Store</h3>
+                      <p className="text-gray-300 text-sm">Spend coins on fun items</p>
+                    </div>
+                  </Link>
               </div>
             </GlassContainer>
           </motion.div>
+
+          {/* Sprites overlay for clickable sprites on dashboard */}
+          <SpritesOverlay />
 
           {/* Transaction History */}
           <motion.div

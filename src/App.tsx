@@ -20,6 +20,7 @@ import DraggableBubbles from './components/DraggableBubbles';
 import MapPage from './pages/MapPage';
 import SystemDiagnostics from './pages/admin/SystemDiagnostics';
 import MasterUsersPage from './pages/master/Users';
+import Store from './pages/student/Store';
 
 /**
  * Landing Page Component
@@ -613,7 +614,7 @@ const AppRouter: React.FC = () => {
 
           {/* Protected Routes */}
           <Route
-            path="/dashboard"
+          path="/dashboard"
             element={
               <ErrorBoundary>
                 <ProtectedRoute>
@@ -623,6 +624,7 @@ const AppRouter: React.FC = () => {
             }
           />
           
+              path="/store" 
           <Route
             path="/quests"
             element={

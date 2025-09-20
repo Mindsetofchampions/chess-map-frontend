@@ -6,7 +6,7 @@
  */
 
 import mapboxgl from 'mapbox-gl';
-import { PERSONA_GIF, type PersonaKey } from '@/assets/personas';
+import { PERSONA_GIF, getPersonaInfo, type PersonaKey } from '@/assets/personas';
 import type { PersonaDef } from '@/types';
 
 /**
@@ -182,10 +182,59 @@ export function addPersonaChipsToMap(
   organizations: OrganizationWithPersonas[],
   onPersonaClick: (persona: PersonaDef) => void
 ): PersonaChipMarker[] {
-  // Placeholder implementation - returns empty array to prevent crashes
-  // In a full implementation, this would create persona chip markers for each organization
-  console.log('addPersonaChipsToMap called with', organizations.length, 'organizations');
-  return [];
+  const markers: mapboxgl.Marker[] = [];
+
+  organizations.forEach((org, orgIndex) => {
+    const baseLng = org.lng;
+    const baseLat = org.lat;
+
+    org.activePersonas.forEach((personaKey, i) => {
+      try {
+        // small offset to avoid exact overlap
+        const offsetLng = baseLng + (i * 0.00025) * (orgIndex % 2 === 0 ? 1 : -1);
+        const offsetLat = baseLat + (i * 0.00018) * (orgIndex % 3 === 0 ? 1 : -1);
+
+        const personaInfo = getPersonaInfo(personaKey as PersonaKey);
+
+        const marker = createPersonaMarker({
+          map,
+          persona: personaKey as PersonaKey,
+          lngLat: [offsetLng, offsetLat],
+          title: personaInfo.name,
+          size: 44 + (i % 2 ? 6 : 0),
+          onClick: () => {
+            // Build a minimal PersonaDef-like object
+            const pd: PersonaDef = {
+              key: personaKey as any,
+              name: personaInfo.name,
+              category: personaInfo.category,
+              tone: '',
+              backstory: '',
+              introPrompt: '',
+              keywords: [],
+              mcqTags: [],
+              icon: ''
+            };
+
+            try {
+              onPersonaClick(pd);
+            } catch (err) {
+              console.error('onPersonaClick failed', err);
+            }
+          }
+        });
+
+        markers.push(marker);
+      } catch (err) {
+        // keep going even if a single marker fails
+        // eslint-disable-next-line no-console
+        console.error('Failed to create persona marker', err);
+      }
+    });
+  });
+
+  // Return wrappers implementing PersonaChipMarker
+  return markers.map((m) => ({ remove: () => { try { m.remove(); } catch {} } }));
 }
 
 /**
