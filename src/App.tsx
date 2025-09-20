@@ -13,6 +13,8 @@ import OnboardingStart from './pages/onboarding/Start';
 import StudentOnboarding from './pages/onboarding/StudentOnboarding';
 import ParentConsent from './pages/onboarding/ParentConsent';
 import OnboardingGate from './components/auth/OnboardingGate';
+import OrgOnboarding from './pages/onboarding/OrgOnboarding';
+import OrgDashboard from './pages/org/OrgDashboard';
 import QuestsList from './pages/quests/QuestsList';
 import QuestPlay from './pages/quests/QuestPlay';
 import MasterDashboard from './pages/master/MasterDashboard';
@@ -635,6 +637,7 @@ const AppRouter: React.FC = () => {
           <Route path="/onboarding/start" element={<OnboardingStart />} />
           <Route path="/onboarding/student" element={<StudentOnboarding />} />
           <Route path="/onboarding/parent" element={<ParentConsent />} />
+          <Route path="/onboarding/org" element={<OrgOnboarding />} />
           
               path="/store" 
           <Route
@@ -687,6 +690,19 @@ const AppRouter: React.FC = () => {
               <ErrorBoundary>
                 <ProtectedRoute requireMaster>
                   <MasterUsersPage />
+                </ProtectedRoute>
+              </ErrorBoundary>
+            }
+          />
+
+          <Route
+            path="/org/dashboard"
+            element={
+              <ErrorBoundary>
+                <ProtectedRoute>
+                  <OnboardingGate>
+                    <OrgDashboard />
+                  </OnboardingGate>
                 </ProtectedRoute>
               </ErrorBoundary>
             }

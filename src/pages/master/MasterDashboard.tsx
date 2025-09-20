@@ -33,6 +33,7 @@ import LedgerTable from '@/components/wallet/LedgerTable';
 import LogoutButton from '@/components/LogoutButton';
 import type { Quest } from '@/types/backend';
 import DiagnosticsWidget from '@/components/DiagnosticsWidget';
+import { createSystemNotification } from '@/lib/notifications';
 
 /**
  * Dashboard Stats Card Props
@@ -84,7 +85,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, delay 
  * - Real-time data updates
  */
 const MasterDashboard: React.FC = () => {
-  const { role } = useAuth();
+  const { role, user, roleLoading } = useAuth();
   const { showSuccess, showError, showWarning } = useToast();
   
   const [pendingQuests, setPendingQuests] = useState<Quest[]>([]);
@@ -103,6 +104,9 @@ const MasterDashboard: React.FC = () => {
   const [allocateAmount, setAllocateAmount] = useState<string>('');
   const [allocateReason, setAllocateReason] = useState<string>('Master allocation');
   const [allocating, setAllocating] = useState(false);
+  const [notifTitle, setNotifTitle] = useState('');
+  const [notifBody, setNotifBody] = useState('');
+  const [sendingNotif, setSendingNotif] = useState(false);
 
   /**
    * Fetch pending quests for approval
@@ -447,6 +451,14 @@ const MasterDashboard: React.FC = () => {
           </div>
         </motion.div>
 
+        {/* Debug badge (shows resolved role + user id for debugging) */}
+        <div className="flex justify-end mb-4">
+          <div className="text-xs bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 px-2 py-1 rounded-md">
+            {roleLoading ? 'role: loading...' : `role: ${role}`}
+            {user ? ` • id: ${user.id}` : ''}
+          </div>
+        </div>
+
         {/* Quick Stats */}
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
@@ -490,6 +502,33 @@ const MasterDashboard: React.FC = () => {
             delay={0.4}
           />
         </div>
+
+        {/* Quick System Notification composer for master_admin */}
+        {role === 'master_admin' && (
+          <div className="mb-6">
+            <GlassContainer variant="card">
+              <h3 className="text-lg font-semibold text-white mb-2">Send System Notification</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input value={notifTitle} onChange={(e) => setNotifTitle(e.target.value)} placeholder="Title" className="col-span-2 bg-glass border-glass rounded-xl px-3 py-2 text-white" />
+                <input value={notifBody} onChange={(e) => setNotifBody(e.target.value)} placeholder="Message" className="bg-glass border-glass rounded-xl px-3 py-2 text-white" />
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button disabled={sendingNotif || !notifTitle.trim() || !notifBody.trim()} onClick={async () => {
+                  try {
+                    setSendingNotif(true);
+                    await createSystemNotification({ title: notifTitle.trim(), body: notifBody.trim(), created_by: (user?.id ?? undefined) });
+                    setNotifTitle(''); setNotifBody('');
+                    showSuccess('Notification Sent', 'System notification created');
+                  } catch (err: any) {
+                    console.error('Failed to send notification', err);
+                    showError('Failed', err?.message || 'Unable to create notification');
+                  } finally { setSendingNotif(false); }
+                }} className="btn-esports disabled:opacity-50">Send</button>
+                <button onClick={() => { setNotifTitle(''); setNotifBody(''); }} className="bg-glass border-glass rounded-xl px-4 py-2 text-gray-300">Clear</button>
+              </div>
+            </GlassContainer>
+          </div>
+        )}
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

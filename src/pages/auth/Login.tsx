@@ -125,11 +125,21 @@ const Login: React.FC = () => {
         // when the resolved role is an admin-level role. Otherwise fall back to next.
         const attempted = (location.state as any)?.from?.pathname;
 
-        // If the resolved role is org_admin, always send them to the main org dashboard
-        // instead of specific admin sub-pages like approvals. Also ignore attempts to
-        // land on approvals (/master/quests/approvals) to avoid surprising routing.
+        // If the resolved role is org_admin, check whether the org is approved.
+        // If not approved, send them to the org onboarding page. Otherwise
+        // send them to the main org dashboard (not specific sub-pages) to avoid
+        // surprising routing like going directly to approvals.
         if (resolvedRole === 'org_admin') {
-          navigate('/master/dashboard', { replace: true });
+          await refreshRole();
+          // read from user metadata via auth client; if not approved, route to onboarding
+          const session = await (await import('@/lib/supabase')).supabase.auth.getSession();
+          const currentUser = session.data.session?.user;
+          const orgApproved = currentUser?.user_metadata?.org_approved;
+          if (!orgApproved) {
+            navigate('/onboarding/org', { replace: true });
+          } else {
+            navigate('/master/dashboard', { replace: true });
+          }
         } else {
           const from = attempted && attempted.startsWith('/master') && !(resolvedRole === 'master_admin' || resolvedRole === 'staff')
             ? next

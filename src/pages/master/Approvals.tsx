@@ -18,6 +18,7 @@ import {
   Shield
 } from 'lucide-react';
 import { supabase, rpcApproveQuest, rpcRejectQuest, getPlatformBalance } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 import { subscribeToApprovals } from '@/lib/realtime/quests';
 import { formatDateTime } from '@/utils/format';
 import { mapPgError } from '@/utils/mapPgError';
@@ -50,6 +51,7 @@ type ApprovalQuest = {
  */
 const Approvals: React.FC = () => {
   const { showSuccess, showError, showWarning } = useToast();
+  const { role, user, roleLoading } = useAuth();
   
   const [quests, setQuests] = useState<ApprovalQuest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -225,7 +227,7 @@ const Approvals: React.FC = () => {
           Back to Dashboard
         </button>
         
-        {/* Header */}
+  {/* Header */}
         <motion.div
           className="text-center mb-8"
           initial={{ opacity: 0, y: 20 }}
@@ -247,6 +249,13 @@ const Approvals: React.FC = () => {
             </div>
             <div className="text-gray-300 text-sm">
               {quests.length} quest{quests.length !== 1 ? 's' : ''} awaiting approval
+            </div>
+          </div>
+          {/* Debug badge */}
+          <div className="flex justify-center mt-3">
+            <div className="text-xs bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 px-2 py-1 rounded-md">
+              {roleLoading ? 'role: loading...' : `role: ${role}`}
+              {user ? ` • id: ${user.id}` : ''}
             </div>
           </div>
         </motion.div>
