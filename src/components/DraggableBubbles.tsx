@@ -152,14 +152,14 @@ const DraggableBubbleComponent: React.FC<DraggableBubbleProps> = ({ bubble, onDr
       
       // Floating animation
       animate={{
+        scale: 1,
+        opacity: 0.8,
         y: [0, -8, 0],
-        rotate: [0, 2, -2, 0],
+        rotate: [0, 2, -2, 0]
       }}
       transition={{
-        duration: 4 + Math.random() * 2,
-        repeat: Infinity,
-        ease: "easeInOut",
-        delay: Math.random() * 2
+        scale: { type: 'spring', stiffness: 260, damping: 20, delay: Math.random() * 2 },
+        default: { duration: 4 + Math.random() * 2, repeat: Infinity, ease: 'easeInOut', delay: Math.random() * 2 }
       }}
       
       // Accessibility
