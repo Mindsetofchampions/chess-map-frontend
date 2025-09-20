@@ -39,6 +39,12 @@ begin
 
   -- check platform funds
   select coins into current_platform from platform_balance where id = 1;
+  if not found then
+    -- Initialize platform balance record if missing
+    insert into platform_balance(id, coins, updated_at) values (1, 0, now()) on conflict (id) do nothing;
+    current_platform := 0;
+  end if;
+
   if current_platform < p_amount then
     return json_build_object('success', false, 'error', 'INSUFFICIENT_FUNDS', 'message', 'Platform balance too low');
   end if;
@@ -57,7 +63,16 @@ begin
     insert into org_coin_txns(org_id, amount, reason)
     values (p_org_id, p_amount, p_reason);
 
-    return json_build_object('success', true, 'org_id', p_org_id, 'amount', p_amount, 'org_balance', new_balance);
+    -- Read back platform balance after deduction
+    select coins into current_platform from platform_balance where id = 1;
+
+    return json_build_object(
+      'success', true,
+      'org_id', p_org_id,
+      'amount', p_amount,
+      'org_balance', new_balance,
+      'remaining_balance', current_platform
+    );
   exception when others then
     return json_build_object('success', false, 'error', 'UNKNOWN', 'message', 'Unexpected error: ' || sqlerrm);
   end;

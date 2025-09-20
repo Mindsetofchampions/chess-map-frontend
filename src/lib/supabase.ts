@@ -197,8 +197,12 @@ export async function getPlatformBalance(): Promise<{ id: number; coins: number;
       throw new Error(mappedError.message);
     }
 
-    // RPC returns a record with id, coins, updated_at
-    return data as { id: number; coins: number; updated_at: string };
+    // The RPC may return { balance, updated_at } or { coins, updated_at } depending on migration history.
+    // Normalize to a consistent shape: { coins, updated_at }
+    const coins = Number((data as any)?.coins ?? (data as any)?.balance ?? 0);
+    const updated_at = (data as any)?.updated_at ?? null;
+
+    return { id: 1, coins, updated_at } as { id: number; coins: number; updated_at: string };
   } catch (error) {
     const mappedError = mapPgError(error);
     throw new Error(mappedError.message);
@@ -250,7 +254,15 @@ export async function allocateOrgCoins(orgId: string, amount: number, reason: st
       throw new Error(mapPgError(error).message);
     }
 
-    return data;
+    // Normalize to include remaining_balance if present
+    const obj = data as any;
+    return {
+      success: obj?.success ?? true,
+      org_id: obj?.org_id,
+      amount: Number(obj?.amount ?? amount),
+      org_balance: obj?.org_balance ? Number(obj.org_balance) : undefined,
+      remaining_balance: obj?.remaining_balance ? Number(obj.remaining_balance) : undefined
+    };
   } catch (error) {
     throw new Error(mapPgError(error).message);
   }

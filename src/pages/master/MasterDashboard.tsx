@@ -139,29 +139,34 @@ const MasterDashboard: React.FC = () => {
     
     try {
       const balance = await getPlatformBalance();
-      let coins = balance.coins ?? 0;
+      // coerce coins to a number safely
+      const coins = Number(balance?.coins ?? 0);
 
-      // If running as master_admin and balance is unexpectedly low, auto top-up for testing
+      // Mark serverConfirmed when the RPC returned successfully (even if 0). This avoids
+      // blocking actions due to transient RLS/read issues where the RPC itself works.
+      setServerConfirmed(true);
+
+      // If running as master_admin and balance is unexpectedly low, do a manual-capable auto top-up
+      // (we still prefer manual top-up via the button below if auto top-up fails)
       if ((role as any) === 'master_admin' && coins < 100000) {
         try {
           const toAdd = 100000 - coins;
           console.info(`Auto top-up: adding ${toAdd} coins to platform balance`);
           await topUpPlatformBalance(toAdd, 'Auto top-up for master_admin testing');
           const refreshed = await getPlatformBalance();
-          coins = refreshed.coins ?? coins + toAdd;
+          const refreshedCoins = Number(refreshed?.coins ?? coins + toAdd);
+          setPlatformBalance(refreshedCoins);
           setServerConfirmed(true);
+          return;
         } catch (topUpErr) {
           console.error('Auto top-up failed:', topUpErr);
-          // If auto top-up fails, fall back to a client-side minimum so master_admin can test allocations
-          coins = Math.max(coins, 100000);
+          // Fall through and show client-side hint (but keep serverConfirmed true because RPC succeeded)
         }
       }
 
-      // Ensure UI/state shows at least 100k for master_admin to allow testing allocations
-      if ((role as any) === 'master_admin' && coins < 100000) coins = 100000;
-      setPlatformBalance(coins);
-      // If DB returned a value or top-up succeeded, mark serverConfirmed
-      if (coins > 0) setServerConfirmed(true);
+      // Ensure UI/state shows at least 100k for master_admin to allow testing allocations client-side
+      const displayCoins = (role === 'master_admin' && coins < 100000) ? 100000 : coins;
+      setPlatformBalance(displayCoins);
     } catch (error: any) {
       console.error('Failed to fetch platform balance:', error);
       // If master_admin and DB read failed, fall back to 100k for testing (client-side only)
@@ -176,6 +181,36 @@ const MasterDashboard: React.FC = () => {
       setBalanceLoading(false);
     }
   }, [role]);
+
+  /**
+   * Manual top-up handler
+   */
+  const handleTopUp = useCallback(async () => {
+    try {
+      setBalanceLoading(true);
+      const current = await getPlatformBalance();
+      const coins = Number(current?.coins ?? 0);
+      if (coins >= 100000) {
+        showWarning('No Top-up Needed', 'Platform balance already at or above 100,000 coins.');
+        setPlatformBalance(coins);
+        setServerConfirmed(true);
+        return;
+      }
+
+      const toAdd = 100000 - coins;
+      await topUpPlatformBalance(toAdd, 'Manual top-up by master admin');
+      const refreshed = await getPlatformBalance();
+      const refreshedCoins = Number(refreshed?.coins ?? 0);
+      setPlatformBalance(refreshedCoins);
+      setServerConfirmed(true);
+      showSuccess('Top-up Complete', `Added ${toAdd.toLocaleString()} coins to platform balance.`);
+    } catch (error: any) {
+      console.error('Top-up failed:', error);
+      showError('Top-up Failed', mapPgError(error).message || 'Unable to top up platform balance');
+    } finally {
+      setBalanceLoading(false);
+    }
+  }, [showSuccess, showError, showWarning]);
 
   const fetchOrgBalances = useCallback(async () => {
     setOrgsLoading(true);
@@ -212,14 +247,21 @@ const MasterDashboard: React.FC = () => {
     setApproving(questId);
     
     try {
-      await rpcApproveQuest(questId);
-      
+      const resp: any = await rpcApproveQuest(questId);
+
+      // If RPC returned a remaining_balance, use it immediately for UI responsiveness
+      if (resp && (resp.remaining_balance !== undefined || resp.remaining_balance !== null)) {
+        const rem = Number(resp.remaining_balance ?? resp.remainingBalance ?? (platformBalance - rewardCoins));
+        setPlatformBalance(rem);
+        setServerConfirmed(true);
+      }
+
       showSuccess(
         'Quest Approved!',
         `Quest has been approved and ${rewardCoins} coins deducted from platform balance.`
       );
       
-      // Refresh data
+      // Refresh data (fetch authoritative balance)
       await Promise.all([
         fetchPendingQuests(),
         fetchPlatformBalance()
@@ -329,7 +371,13 @@ const MasterDashboard: React.FC = () => {
 
     setAllocating(true);
     try {
-      await allocateOrgCoins(selectedOrg, amount, allocateReason || 'Master allocation');
+      const resp: any = await allocateOrgCoins(selectedOrg, amount, allocateReason || 'Master allocation');
+      // If RPC returned an updated platform balance, use it immediately
+      if (resp && resp.remaining_balance !== undefined) {
+        setPlatformBalance(Number(resp.remaining_balance));
+        setServerConfirmed(true);
+      }
+
       showSuccess('Coins Allocated', 'Organization wallet has been funded.');
       await Promise.all([fetchPlatformBalance(), fetchOrgBalances()]);
       setShowAllocateModal(false);
@@ -367,9 +415,20 @@ const MasterDashboard: React.FC = () => {
               <div className="bg-glass border-glass rounded-full px-4 py-2 flex items-center gap-2">
                 <Shield className="w-4 h-4 text-electric-blue-400" />
                 <span className="text-white text-sm font-medium">
-                  Platform: {balanceLoading ? '...' : `${(role === 'master_admin' && platformBalance === 0) ? '100,000' : platformBalance.toLocaleString()} coins`}
+                  Platform: {balanceLoading ? '...' : `${platformBalance.toLocaleString()} coins`}
                 </span>
               </div>
+              {/* Show manual top-up for master admins when not confirmed or below target */}
+              {role === 'master_admin' && (
+                <button
+                  onClick={handleTopUp}
+                  disabled={balanceLoading}
+                  className="p-2 bg-glass-dark border-glass rounded-lg hover:bg-glass-light transition-colors disabled:opacity-50 text-sm"
+                  aria-label="Top up platform to 100k"
+                >
+                  Top up to 100k
+                </button>
+              )}
               <button
                 onClick={openAllocate}
                 className="btn-esports flex items-center gap-2"

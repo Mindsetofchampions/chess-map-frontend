@@ -8,7 +8,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Coins, Award, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase, getPlatformBalance } from '@/lib/supabase';
 import { formatNumber } from '@/utils/format';
 
 /**
@@ -52,8 +52,8 @@ const DiagnosticsWidget: React.FC = () => {
     }
 
     try {
-      // Fetch platform balance via RPC to avoid RLS restrictions
-      const { data: balanceData, error: balanceError } = await supabase.rpc('get_platform_balance');
+      // Fetch platform balance via canonical helper (normalizes RPC output)
+      const balance = await getPlatformBalance();
 
       // Fetch pending quest count
       const { count: pendingCount, error: countError } = await supabase
@@ -62,16 +62,13 @@ const DiagnosticsWidget: React.FC = () => {
 
       const newData: DiagnosticsData = {
         role: role || 'unknown',
-  platformBalance: balanceData?.coins || 0,
+        platformBalance: Number(balance.coins || 0),
         pendingCount: pendingCount || 0,
         lastUpdated: new Date()
       };
 
       setData(newData);
 
-      if (balanceError) {
-        console.warn('Failed to fetch platform balance:', balanceError);
-      }
       if (countError) {
         console.warn('Failed to fetch pending count:', countError);
       }

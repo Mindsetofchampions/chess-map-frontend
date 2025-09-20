@@ -92,7 +92,7 @@ const Approvals: React.FC = () => {
   const fetchPlatformBalance = useCallback(async () => {
     try {
       const balance = await getPlatformBalance();
-      setPlatformBalance(balance.coins);
+      setPlatformBalance(Number(balance.coins ?? 0));
     } catch (error: any) {
       console.error('Failed to fetch platform balance:', error);
       setPlatformBalance(0);
