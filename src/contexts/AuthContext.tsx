@@ -77,8 +77,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Tries to query public.profiles, falls back to 'student' if denied
    */
   const refreshRole = useCallback(async () => {
-    // Prevent concurrent role fetches
-    if (roleLoading) return;
+    // Start role fetch
     setRoleLoading(true);
     
     try {
@@ -203,7 +202,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (mounted) {
           setUser(session?.user || null);
-          setLoading(false);
+            setLoading(false);
+            // Trigger initial role refresh if there's an active session
+            if (session?.user) {
+              setTimeout(() => {
+                refreshRole();
+              }, 50);
+            }
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
