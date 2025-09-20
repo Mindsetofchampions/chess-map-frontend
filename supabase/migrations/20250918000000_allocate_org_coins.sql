@@ -6,6 +6,8 @@
   Access: master_admin only (checked via is_master_admin_check() or equivalent).
 */
 
+-- Ensure no conflicting existing function with different defaults
+drop function if exists public.allocate_org_coins(uuid, bigint, text);
 create or replace function public.allocate_org_coins(
   p_org_id uuid,
   p_amount bigint,

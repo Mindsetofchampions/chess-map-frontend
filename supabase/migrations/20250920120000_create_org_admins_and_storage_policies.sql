@@ -35,27 +35,23 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- optional public.organization_admins table created above.
 
 -- INSERT: allow the authenticated uploader to create objects in org_admin_ids, or master_admins
-CREATE POLICY IF NOT EXISTS org_admin_ids_insert_uploader_or_master ON storage.objects
+drop policy if exists org_admin_ids_insert_uploader_or_master on storage.objects;
+CREATE POLICY org_admin_ids_insert_uploader_or_master ON storage.objects
   FOR INSERT
-  USING (
-    bucket_id = 'org_admin_ids' AND (
-      (auth.role() = 'authenticated' AND (metadata->>'uploader_id') = auth.uid())
-      OR public.is_user_in_roles(auth.uid()::uuid, ARRAY['master_admin'])
-    )
-  )
   WITH CHECK (
     bucket_id = 'org_admin_ids' AND (
-      (auth.role() = 'authenticated' AND (metadata->>'uploader_id') = auth.uid())
+  (auth.role() = 'authenticated' AND (metadata->>'uploader_id') = auth.uid()::text)
       OR public.is_user_in_roles(auth.uid()::uuid, ARRAY['master_admin'])
     )
   );
 
 -- SELECT: allow uploader, master_admins, and org_admins for the same org
-CREATE POLICY IF NOT EXISTS org_admin_ids_select_owner_master_orgadmin ON storage.objects
+drop policy if exists org_admin_ids_select_owner_master_orgadmin on storage.objects;
+CREATE POLICY org_admin_ids_select_owner_master_orgadmin ON storage.objects
   FOR SELECT
   USING (
     bucket_id = 'org_admin_ids' AND (
-      (metadata->>'uploader_id') = auth.uid()
+  (metadata->>'uploader_id') = auth.uid()::text
       OR public.is_user_in_roles(auth.uid()::uuid, ARRAY['master_admin'])
       OR (
         public.is_user_in_roles(auth.uid()::uuid, ARRAY['org_admin'])
@@ -69,32 +65,22 @@ CREATE POLICY IF NOT EXISTS org_admin_ids_select_owner_master_orgadmin ON storag
   );
 
 -- UPDATE / DELETE: restrict to master_admins by default
-CREATE POLICY IF NOT EXISTS org_admin_ids_modify_master_only ON storage.objects
+drop policy if exists org_admin_ids_modify_master_only on storage.objects;
+CREATE POLICY org_admin_ids_modify_master_only ON storage.objects
   FOR UPDATE
   USING (public.is_user_in_roles(auth.uid()::uuid, ARRAY['master_admin']))
   WITH CHECK (public.is_user_in_roles(auth.uid()::uuid, ARRAY['master_admin']));
 
-CREATE POLICY IF NOT EXISTS org_admin_ids_delete_master_only ON storage.objects
+drop policy if exists org_admin_ids_delete_master_only on storage.objects;
+CREATE POLICY org_admin_ids_delete_master_only ON storage.objects
   FOR DELETE
   USING (public.is_user_in_roles(auth.uid()::uuid, ARRAY['master_admin']));
 
 -- ==============================================================
 -- org_logos policies: allow org_admins (for the org) and master_admins to manage logos
-CREATE POLICY IF NOT EXISTS org_logos_insert_orgadmin_or_master ON storage.objects
+drop policy if exists org_logos_insert_orgadmin_or_master on storage.objects;
+CREATE POLICY org_logos_insert_orgadmin_or_master ON storage.objects
   FOR INSERT
-  USING (
-    bucket_id = 'org_logos' AND (
-      (
-        public.is_user_in_roles(auth.uid()::uuid, ARRAY['org_admin'])
-        AND EXISTS (
-          SELECT 1 FROM public.organization_admins oa
-          WHERE oa.user_id = auth.uid()::uuid
-            AND oa.org_id::text = metadata->>'org_id'
-        )
-      )
-      OR public.is_user_in_roles(auth.uid()::uuid, ARRAY['master_admin'])
-    )
-  )
   WITH CHECK (
     bucket_id = 'org_logos' AND (
       (
@@ -109,7 +95,8 @@ CREATE POLICY IF NOT EXISTS org_logos_insert_orgadmin_or_master ON storage.objec
     )
   );
 
-CREATE POLICY IF NOT EXISTS org_logos_select_orgadmin_or_master ON storage.objects
+drop policy if exists org_logos_select_orgadmin_or_master on storage.objects;
+CREATE POLICY org_logos_select_orgadmin_or_master ON storage.objects
   FOR SELECT
   USING (
     bucket_id = 'org_logos' AND (
@@ -125,7 +112,8 @@ CREATE POLICY IF NOT EXISTS org_logos_select_orgadmin_or_master ON storage.objec
     )
   );
 
-CREATE POLICY IF NOT EXISTS org_logos_modify_orgadmin_or_master ON storage.objects
+drop policy if exists org_logos_modify_orgadmin_or_master on storage.objects;
+CREATE POLICY org_logos_modify_orgadmin_or_master ON storage.objects
   FOR UPDATE
   USING (
     bucket_id = 'org_logos' AND (
@@ -154,7 +142,8 @@ CREATE POLICY IF NOT EXISTS org_logos_modify_orgadmin_or_master ON storage.objec
     )
   );
 
-CREATE POLICY IF NOT EXISTS org_logos_delete_orgadmin_or_master ON storage.objects
+drop policy if exists org_logos_delete_orgadmin_or_master on storage.objects;
+CREATE POLICY org_logos_delete_orgadmin_or_master ON storage.objects
   FOR DELETE
   USING (
     bucket_id = 'org_logos' AND (

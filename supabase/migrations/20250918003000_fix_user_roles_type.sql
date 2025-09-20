@@ -83,10 +83,17 @@ END $$;
 -- Drop legacy check constraint if present
 ALTER TABLE public.user_roles DROP CONSTRAINT IF EXISTS user_roles_role_check;
 
--- Convert role column to enum type (from text)
-ALTER TABLE public.user_roles
-  ALTER COLUMN role TYPE user_role USING role::user_role,
-  ALTER COLUMN role SET DEFAULT 'student'::user_role;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'user_roles' AND column_name = 'role'
+  ) THEN
+    ALTER TABLE public.user_roles
+      ALTER COLUMN role TYPE user_role USING role::user_role,
+      ALTER COLUMN role SET DEFAULT 'student'::user_role;
+  END IF;
+END $$;
 
 -- Recreate policies after type change
 CREATE POLICY "Admin and staff can update any quest"
@@ -94,14 +101,14 @@ CREATE POLICY "Admin and staff can update any quest"
   FOR UPDATE
   TO authenticated
   USING (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() 
-    AND ur.role IN ('master_admin', 'org_admin', 'staff')
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() 
+    AND p.role IN ('master_admin', 'org_admin', 'staff')
   ))
   WITH CHECK (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() 
-    AND ur.role IN ('master_admin', 'org_admin', 'staff')
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() 
+    AND p.role IN ('master_admin', 'org_admin', 'staff')
   ));
 
 CREATE POLICY "Master admin only platform ledger"
@@ -109,12 +116,12 @@ CREATE POLICY "Master admin only platform ledger"
   FOR ALL
   TO authenticated
   USING (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ))
   WITH CHECK (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ));
 
 CREATE POLICY "Master admin only platform balance"
@@ -122,25 +129,25 @@ CREATE POLICY "Master admin only platform balance"
   FOR ALL
   TO authenticated
   USING (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ))
   WITH CHECK (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ));
 
 CREATE POLICY "platform_balance_master_only" ON public.platform_balance
   FOR ALL USING (
     EXISTS (
-      SELECT 1 FROM public.user_roles ur 
-      WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+      SELECT 1 FROM public.profiles p 
+      WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
     )
   )
   WITH CHECK (
     EXISTS (
-      SELECT 1 FROM public.user_roles ur 
-      WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+      SELECT 1 FROM public.profiles p 
+      WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
     )
   );
 
@@ -149,8 +156,8 @@ CREATE POLICY "Master admin can read all roles"
   FOR SELECT
   TO authenticated
   USING (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ));
 
 CREATE POLICY "Master admin can insert/update roles"
@@ -158,10 +165,10 @@ CREATE POLICY "Master admin can insert/update roles"
   FOR ALL
   TO authenticated
   USING (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ))
   WITH CHECK (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ));

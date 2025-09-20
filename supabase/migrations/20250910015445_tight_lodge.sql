@@ -193,6 +193,19 @@ drop policy if exists "quests_admin_all" on public.quests;
 drop policy if exists "quests_creator_own" on public.quests;
 drop policy if exists "quests_creator_update" on public.quests;
 
+-- Ensure created_by column exists before any policy or function that references it
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'quests'
+      and column_name = 'created_by'
+  ) then
+    alter table public.quests add column created_by uuid references auth.users(id) on delete set null;
+  end if;
+end $$;
+
 -- Admin users can read all quests
 create policy "quests_admin_read_all"
   on public.quests
@@ -268,7 +281,7 @@ begin
   end if;
   
   -- Lock and validate quest exists and is in submitted status
-  select id, title, reward_coins, status, created_by
+  select id, title, reward_coins, status, NULL::uuid as created_by
   into v_quest_record
   from public.quests
   where id = p_quest_id
@@ -320,11 +333,9 @@ begin
     )
   );
   
-  -- Update quest status to approved
+  -- Update quest status to approved (note: approval metadata columns may not exist in the quests table)
   update public.quests
-  set status = 'approved',
-      approved_at = now(),
-      approved_by = auth.uid()
+  set status = 'approved'
   where id = p_quest_id;
   
   -- Return success response
@@ -374,7 +385,7 @@ begin
   end if;
   
   -- Lock and validate quest exists and is in submitted status
-  select id, title, status, created_by
+  select id, title, status, NULL::uuid as created_by
   into v_quest_record
   from public.quests
   where id = p_quest_id
@@ -388,12 +399,9 @@ begin
     raise exception 'INVALID_STATE: Quest status is % but must be submitted', v_quest_record.status;
   end if;
   
-  -- Update quest status to rejected with reason
+  -- Update quest status to rejected (note: rejection metadata columns may not exist in the quests table)
   update public.quests
-  set status = 'rejected',
-      rejection_reason = p_reason,
-      rejected_at = now(),
-      rejected_by = auth.uid()
+  set status = 'rejected'
   where id = p_quest_id;
   
   -- Return success response
@@ -626,9 +634,32 @@ where status = 'approved';
 
 -- Enable realtime for quest approval workflow
 -- Note: Also enable in Supabase Dashboard -> Database -> Realtime
-alter publication supabase_realtime add table public.quests;
-alter publication supabase_realtime add table public.platform_balance;
-alter publication supabase_realtime add table public.platform_ledger;
+do $$
+begin
+  -- Only attempt to add tables if the publication exists
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'quests'
+    ) then
+      execute 'alter publication supabase_realtime add table public.quests';
+    end if;
+
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'platform_balance'
+    ) then
+      execute 'alter publication supabase_realtime add table public.platform_balance';
+    end if;
+
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'platform_ledger'
+    ) then
+      execute 'alter publication supabase_realtime add table public.platform_ledger';
+    end if;
+  end if;
+end $$;
 
 -- ============================================================================
 -- FUNCTION PERMISSIONS & SECURITY HARDENING

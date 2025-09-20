@@ -49,33 +49,36 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
 -- Enable RLS on user_roles
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for user_roles
+-- RLS Policies for user_roles (idempotent)
+drop policy if exists "Users can read own role" on public.user_roles;
 CREATE POLICY "Users can read own role"
   ON public.user_roles
   FOR SELECT
   TO authenticated
   USING (auth.uid() = user_id);
 
+drop policy if exists "Master admin can read all roles" on public.user_roles;
 CREATE POLICY "Master admin can read all roles"
   ON public.user_roles
   FOR SELECT
   TO authenticated
   USING (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ));
 
+drop policy if exists "Master admin can insert/update roles" on public.user_roles;
 CREATE POLICY "Master admin can insert/update roles"
   ON public.user_roles
   FOR ALL
   TO authenticated
   USING (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ))
   WITH CHECK (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ));
 
 -- Create platform_balance table (single row for platform coins)
@@ -88,18 +91,19 @@ CREATE TABLE IF NOT EXISTS public.platform_balance (
 -- Enable RLS on platform_balance
 ALTER TABLE public.platform_balance ENABLE ROW LEVEL SECURITY;
 
--- Only master_admin can access platform balance
+-- Only master_admin can access platform_balance
+DROP POLICY IF EXISTS "Master admin only platform balance" ON public.platform_balance;
 CREATE POLICY "Master admin only platform balance"
   ON public.platform_balance
   FOR ALL
   TO authenticated
   USING (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ))
   WITH CHECK (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ));
 
 -- Create platform_ledger table
@@ -120,17 +124,18 @@ CREATE TABLE IF NOT EXISTS public.platform_ledger (
 ALTER TABLE public.platform_ledger ENABLE ROW LEVEL SECURITY;
 
 -- Only master_admin can access platform ledger
+DROP POLICY IF EXISTS "Master admin only platform ledger" ON public.platform_ledger;
 CREATE POLICY "Master admin only platform ledger"
   ON public.platform_ledger
   FOR ALL
   TO authenticated
   USING (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ))
   WITH CHECK (EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ));
 
 -- Ensure quests table has proper status constraint
@@ -190,8 +195,8 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   RETURN EXISTS (
-    SELECT 1 FROM public.user_roles ur 
-    WHERE ur.user_id = auth.uid() AND ur.role = 'master_admin'
+    SELECT 1 FROM public.profiles p 
+    WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   );
 END;
 $$;

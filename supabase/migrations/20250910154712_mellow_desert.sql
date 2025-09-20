@@ -351,6 +351,9 @@ end;
 $$;
 
 -- Helper function to top up platform balance (master_admin only)
+-- Ensure any existing function with this signature is removed to allow recreation
+drop function if exists public.top_up_platform_balance(bigint, text);
+ 
 create or replace function public.top_up_platform_balance(p_amount bigint, p_reason text)
 returns json
 language plpgsql
@@ -397,75 +400,81 @@ $$;
 alter table public.user_roles enable row level security;
 
 -- Users can read their own role
+drop policy if exists "user_roles_select_own" on public.user_roles;
 create policy "user_roles_select_own" on public.user_roles
 for select using (auth.uid() = user_id);
 
 -- Master admins can read all roles
+drop policy if exists "user_roles_select_master" on public.user_roles;
 create policy "user_roles_select_master" on public.user_roles
 for select using (
   exists (
-    select 1 from public.user_roles ur 
-    where ur.user_id = auth.uid() and ur.role = 'master_admin'
+    select 1 from public.profiles p 
+    where p.user_id = auth.uid() and p.role = 'master_admin'
   )
 );
 
 -- Only master admins can INSERT/UPDATE/DELETE roles
+drop policy if exists "user_roles_master_write" on public.user_roles;
 create policy "user_roles_master_write" on public.user_roles
 for all using (
   exists (
-    select 1 from public.user_roles ur 
-    where ur.user_id = auth.uid() and ur.role = 'master_admin'
+    select 1 from public.profiles p 
+    where p.user_id = auth.uid() and p.role = 'master_admin'
   )
 )
 with check (
   exists (
-    select 1 from public.user_roles ur 
-    where ur.user_id = auth.uid() and ur.role = 'master_admin'
+    select 1 from public.profiles p 
+    where p.user_id = auth.uid() and p.role = 'master_admin'
   )
 );
 
 -- RLS Policies for platform_balance
 alter table public.platform_balance enable row level security;
 
+drop policy if exists "platform_balance_master_only" on public.platform_balance;
 create policy "platform_balance_master_only" on public.platform_balance
 for all using (
   exists (
-    select 1 from public.user_roles ur 
-    where ur.user_id = auth.uid() and ur.role = 'master_admin'
+    select 1 from public.profiles p 
+    where p.user_id = auth.uid() and p.role = 'master_admin'
   )
 )
 with check (
   exists (
-    select 1 from public.user_roles ur 
-    where ur.user_id = auth.uid() and ur.role = 'master_admin'
+    select 1 from public.profiles p 
+    where p.user_id = auth.uid() and p.role = 'master_admin'
   )
 );
 
 -- RLS Policies for platform_ledger
 alter table public.platform_ledger enable row level security;
 
+drop policy if exists "platform_ledger_master_only" on public.platform_ledger;
 create policy "platform_ledger_master_only" on public.platform_ledger
 for all using (
   exists (
-    select 1 from public.user_roles ur 
-    where ur.user_id = auth.uid() and ur.role = 'master_admin'
+    select 1 from public.profiles p 
+    where p.user_id = auth.uid() and p.role = 'master_admin'
   )
 )
 with check (
   exists (
-    select 1 from public.user_roles ur 
-    where ur.user_id = auth.uid() and ur.role = 'master_admin'
+    select 1 from public.profiles p 
+    where p.user_id = auth.uid() and p.role = 'master_admin'
   )
 );
 
 -- Enhance existing quests RLS policies
 drop policy if exists "quests_select_approved" on public.quests;
+drop policy if exists "quests_select_approved_or_admin" on public.quests;
 create policy "quests_select_approved_or_admin" on public.quests
 for select using (
   status = 'approved' or 
   exists (
-    select 1 from public.user_roles ur 
-    where ur.user_id = auth.uid() and ur.role in ('master_admin', 'org_admin', 'staff')
+    select 1 from public.profiles p 
+    where p.user_id = auth.uid() and p.role in ('master_admin', 'org_admin', 'staff')
   ) or
   created_by = auth.uid()
 );

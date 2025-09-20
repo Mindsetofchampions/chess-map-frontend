@@ -11,6 +11,6 @@ DO $$ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'sp_parent_ids_admin_read'
   ) THEN
-    EXECUTE 'CREATE POLICY sp_parent_ids_admin_read ON storage.objects FOR SELECT TO authenticated USING (bucket_id = ''parent_ids'' AND exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role in (''org_admin'',''master_admin'')));';
+    EXECUTE 'CREATE POLICY sp_parent_ids_admin_read ON storage.objects FOR SELECT TO authenticated USING (bucket_id = ''parent_ids'' AND exists (select 1 from public.profiles p where p.user_id = auth.uid() and p.role in (''org_admin'',''master_admin'')));';
   END IF;
 END $$;

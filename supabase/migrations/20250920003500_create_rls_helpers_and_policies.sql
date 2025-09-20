@@ -7,8 +7,8 @@ LANGUAGE sql
 SECURITY DEFINER
 AS $$
   SELECT EXISTS (
-    SELECT 1 FROM public.user_roles ur
-    WHERE ur.user_id = p_user AND ur.role::text = ANY(p_roles)
+    SELECT 1 FROM public.profiles p
+    WHERE p.user_id = p_user AND p.role::text = ANY(p_roles)
   );
 $$;
 
