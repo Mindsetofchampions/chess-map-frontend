@@ -19,7 +19,7 @@ import FloatingBubbles from './components/FloatingBubbles';
 import DraggableBubbles from './components/DraggableBubbles';
 import MapPage from './pages/MapPage';
 import SystemDiagnostics from './pages/admin/SystemDiagnostics';
-import UserManagement from './pages/master/UserManagement';
+import MasterUsersPage from './pages/master/Users';
 
 /**
  * Landing Page Component
@@ -672,7 +672,7 @@ const AppRouter: React.FC = () => {
             element={
               <ErrorBoundary>
                 <ProtectedRoute requireMaster>
-                  <UserManagement />
+                  <MasterUsersPage />
                 </ProtectedRoute>
               </ErrorBoundary>
             }

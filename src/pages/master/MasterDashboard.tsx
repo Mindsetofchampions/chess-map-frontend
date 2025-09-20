@@ -295,6 +295,8 @@ const MasterDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary">
       <div className="container mx-auto max-w-7xl p-6">
+        {/* Back button hidden on dashboard, but placeholder for consistency */}
+        <div className="mb-4">{/* No back button on dashboard */}</div>
         
         {/* Header */}
         <motion.div
@@ -310,27 +312,37 @@ const MasterDashboard: React.FC = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
-            <WalletChip showRefresh autoRefresh data-testid="chip-wallet" />
-            <DiagnosticsWidget />
-            <div className="bg-glass border-glass rounded-full px-4 py-2 flex items-center gap-2">
-              <Shield className="w-4 h-4 text-electric-blue-400" />
-              <span className="text-white text-sm font-medium">
-                Platform: {balanceLoading ? '...' : `${platformBalance.toLocaleString()} coins`}
+          <div className="flex flex-col gap-2 items-end">
+            <div className="flex items-center gap-3">
+              <WalletChip showRefresh autoRefresh data-testid="chip-wallet" />
+              <DiagnosticsWidget />
+              <div className="bg-glass border-glass rounded-full px-4 py-2 flex items-center gap-2">
+                <Shield className="w-4 h-4 text-electric-blue-400" />
+                <span className="text-white text-sm font-medium">
+                  Platform: {balanceLoading ? '...' : `${platformBalance.toLocaleString()} coins`}
+                </span>
+              </div>
+              <button
+                onClick={openAllocate}
+                className="btn-esports flex items-center gap-2"
+              >
+                <PlusCircle className="w-4 h-4" /> Allocate to Org
+              </button>
+              <LogoutButton />
+            </div>
+            {/* Show total platform coins for clarity */}
+            <div className="flex items-center gap-2 mt-1">
+              <Coins className="w-4 h-4 text-cyber-green-300" />
+              <span className="text-cyber-green-200 text-xs font-semibold">
+                Total Platform Coins: {balanceLoading ? '...' : `${(platformBalance).toLocaleString()} coins`}
               </span>
             </div>
-            <button
-              onClick={openAllocate}
-              className="btn-esports flex items-center gap-2"
-            >
-              <PlusCircle className="w-4 h-4" /> Allocate to Org
-            </button>
-            <LogoutButton />
           </div>
         </motion.div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <StatsCard
             title="Pending Approvals"
             value={pendingQuests.length.toString()}
@@ -339,7 +351,6 @@ const MasterDashboard: React.FC = () => {
             href="/master/quests/approvals"
             delay={0.1}
           />
-          
           <StatsCard
             title="System Diagnostics"
             value="Check"
@@ -348,7 +359,6 @@ const MasterDashboard: React.FC = () => {
             href="/admin/diagnostics"
             delay={0.2}
           />
-          
           <StatsCard
             title="All Quests"
             value="View"
@@ -357,7 +367,14 @@ const MasterDashboard: React.FC = () => {
             href="/quests"
             delay={0.3}
           />
-          
+          <StatsCard
+            title="User Management"
+            value="Manage"
+            icon={<Shield className="w-6 h-6 text-cyber-green-300" />}
+            color="bg-cyber-green-500/20 border border-cyber-green-500/30"
+            href="/master/users"
+            delay={0.35}
+          />
           <StatsCard
             title="Current Role"
             value={role}

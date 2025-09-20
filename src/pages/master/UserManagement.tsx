@@ -229,6 +229,13 @@ const UserManagement: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary">
       <div className="container mx-auto max-w-7xl p-6">
+        <button
+          className="mb-4 inline-flex items-center gap-2 text-cyber-green-300 hover:text-cyber-green-200 text-sm font-medium"
+          onClick={() => window.history.length > 1 ? window.history.back() : window.location.assign('/master/dashboard')}
+        >
+          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+          Back to Dashboard
+        </button>
         
         {/* Header */}
         <motion.div
