@@ -119,9 +119,23 @@ const DiagnosticsWidget: React.FC = () => {
       )
       .subscribe();
 
+    // Watch platform_balance for realtime updates so diagnostics reflect changes immediately
+    const channel2 = supabase
+      .channel('diagnostics_platform_balance')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'platform_balance' },
+        () => {
+          console.log('Platform balance change detected, refreshing diagnostics...');
+          fetchDiagnostics();
+        }
+      )
+      .subscribe();
+
     return () => {
       clearInterval(interval);
       supabase.removeChannel(channel);
+      supabase.removeChannel(channel2);
     };
   }, [fetchDiagnostics]);
 

@@ -296,8 +296,20 @@ const MasterDashboard: React.FC = () => {
       fetchPendingQuests();
     });
 
+    // Subscribe to platform_balance changes to update balance in realtime
+    const pbChannel = supabase
+      .channel('platform_balance_watch')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'platform_balance' }, (payload) => {
+        console.log('Platform balance realtime event:', payload);
+        // Refresh balance and mark serverConfirmed
+        fetchPlatformBalance();
+        setServerConfirmed(true);
+      })
+      .subscribe();
+
     return () => {
       subscription.unsubscribe();
+      try { supabase.removeChannel(pbChannel); } catch (e) { /* ignore */ }
     };
   }, [fetchPendingQuests, fetchPlatformBalance, fetchOrgBalances]);
 
