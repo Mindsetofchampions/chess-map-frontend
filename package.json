@@ -30,6 +30,7 @@
     "pre-commit": "npm run quality:fix && npm run test",
     "pre-push": "npm run quality && npm run test:coverage",
     "seed:test": "node --loader ts-node/esm scripts/seed-test-data.ts",
+    "seed:cams": "node --loader ts-node/esm scripts/seed-cams-demo.ts",
     "create:bucket:parent_ids": "node --loader ts-node/esm scripts/create-parent-ids-bucket.ts",
     "rpc:test:users": "node scripts/rpc-test-get-admin-user-list.mjs",
     "admin:grant:master": "node --loader ts-node/esm scripts/grant-master-admin.ts",
