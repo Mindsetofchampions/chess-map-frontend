@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
 
-function loadDotEnv(file = '.env.local'): Record<string, string> {
+function loadDotEnv(file = '.env.scripts.local'): Record<string, string> {
   const out: Record<string, string> = {};
   try {
     const txt = fs.readFileSync(file, 'utf8');
@@ -40,7 +40,7 @@ async function main() {
     process.exit(1);
   }
   if (!MASTER_EMAIL || !MASTER_PASSWORD) {
-    console.error('Set MASTER_EMAIL and MASTER_PASSWORD in env/.env.local');
+  console.error('Set MASTER_EMAIL and MASTER_PASSWORD in env/.env.scripts.local');
     process.exit(1);
   }
 

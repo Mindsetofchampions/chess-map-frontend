@@ -2,21 +2,21 @@
 set -euo pipefail
 
 # Create private Supabase storage buckets using the admin REST API.
-# Requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in environment or in .env.local
+# Requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in environment or in .env.scripts.local
 # Usage:
 #   chmod +x supabase/create_buckets.sh
 #   ./supabase/create_buckets.sh
 
-# Load .env.local if present
-if [ -f ".env.local" ]; then
+# Load .env.scripts.local if present
+if [ -f ".env.scripts.local" ]; then
   # shellcheck disable=SC1091
   set -a
-  source .env.local
+  source .env.scripts.local
   set +a
 fi
 
-: "${SUPABASE_URL:?Need SUPABASE_URL in env or .env.local}"
-: "${SUPABASE_SERVICE_ROLE_KEY:?Need SUPABASE_SERVICE_ROLE_KEY in env or .env.local}"
+: "${SUPABASE_URL:?Need SUPABASE_URL in env or .env.scripts.local}"
+: "${SUPABASE_SERVICE_ROLE_KEY:?Need SUPABASE_SERVICE_ROLE_KEY in env or .env.scripts.local}"
 
 create_bucket() {
   local name="$1"

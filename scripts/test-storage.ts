@@ -3,7 +3,7 @@ import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 
-function loadDotEnv(file = '.env.local') {
+function loadDotEnv(file = '.env.scripts.local') {
   const env: Record<string, string> = {};
   try {
     const raw = fs.readFileSync(path.resolve(file), 'utf8');

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
 
-function loadDotEnv(file = '.env.local'): Record<string, string> {
+function loadDotEnv(file = '.env.scripts.local'): Record<string, string> {
   const out: Record<string, string> = {};
   try {
     const txt = fs.readFileSync(file, 'utf8');

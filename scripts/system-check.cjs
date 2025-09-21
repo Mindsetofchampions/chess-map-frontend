@@ -99,7 +99,7 @@ console.log(`Node.js: ${nodeVersion.output}`);
 console.log(`npm: ${npmVersion.output}`);
 
 // Check environment variables
-const envFiles = ['.env', '.env.local', '.env.example'];
+const envFiles = ['.env', '.env.scripts.local', '.env.example'];
 let envVars = {};
 
 envFiles.forEach((file) => {

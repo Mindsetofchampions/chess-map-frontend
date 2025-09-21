@@ -8,7 +8,7 @@ This script helps create two private buckets required by the org onboarding flow
 Prerequisites
 
 - You have a Supabase project and a Service Role key (set in `SUPABASE_SERVICE_ROLE_KEY`).
-- `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are present in `.env.local` or in your environment.
+- `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are present in `.env.scripts.local` or in your environment.
 
 How to run
 

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
 
-function loadDotEnv(file = '.env.local'): Record<string, string> {
+function loadDotEnv(file = '.env.scripts.local'): Record<string, string> {
   const out: Record<string, string> = {};
   try {
     const txt = fs.readFileSync(file, 'utf8');
@@ -50,11 +50,11 @@ async function main() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
   const email = process.env.MASTER_EMAIL || env.MASTER_EMAIL;
   if (!url || !serviceKey) {
-    console.error('Need SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in env/.env.local');
+  console.error('Need SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in env/.env.scripts.local');
     process.exit(1);
   }
   if (!email) {
-    console.error('Set MASTER_EMAIL in env/.env.local to the account to promote');
+  console.error('Set MASTER_EMAIL in env/.env.scripts.local to the account to promote');
     process.exit(1);
   }
   console.log(`Looking up user id for ${email}...`);
