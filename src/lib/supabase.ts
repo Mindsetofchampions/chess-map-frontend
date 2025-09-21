@@ -11,19 +11,19 @@ import type { Quest, Submission, Wallet, Ledger } from '@/types/backend';
 import { mapPgError } from '@/utils/mapPgError';
 
 // Environment validation
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl) {
-  throw new Error('Missing VITE_SUPABASE_URL environment variable');
-}
-
-if (!supabaseAnonKey) {
-  throw new Error('Missing VITE_SUPABASE_ANON_KEY environment variable');
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+export const SUPABASE_ENV_VALID = Boolean(supabaseUrl && supabaseAnonKey);
+if (!SUPABASE_ENV_VALID && typeof window !== 'undefined') {
+  // Avoid crashing dev server; surface UI instead
+  // eslint-disable-next-line no-console
+  console.warn('[Supabase] Missing env: VITE_SUPABASE_URL and/or VITE_SUPABASE_ANON_KEY');
 }
 
 // Single Supabase client instance
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+const clientUrl = supabaseUrl || 'http://127.0.0.1:54321';
+const clientKey = supabaseAnonKey || 'dev-placeholder-key';
+export const supabase = createClient(clientUrl, clientKey, {
   auth: {
     persistSession: true,
     flowType: 'pkce',

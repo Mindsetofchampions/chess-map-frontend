@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react';
+// no direct navigation, handled by MasterBack
+import MasterBack from '@/components/master/MasterBack';
 import GlassContainer from '@/components/GlassContainer';
 import { useToast } from '@/components/ToastProvider';
 import { listOrgOnboardings, approveOrgOnboarding, rejectOrgOnboarding, sendSystemNotification, OrgOnboardingRow } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function OrgOnboardingApprovals() {
+  // navigation handled via MasterBack
   const { role } = useAuth() as any;
   const { showError, showSuccess, showWarning } = useToast();
   const [rows, setRows] = useState<OrgOnboardingRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [note, setNote] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
+
+  // Keyboard shortcut handled by MasterBack
 
   useEffect(() => {
     (async () => {
@@ -73,8 +78,11 @@ export default function OrgOnboardingApprovals() {
 
   return (
     <div className='p-6'>
-      <div className='flex items-center justify-between mb-4'>
-        <h1 className='text-2xl font-bold text-white'>Org Onboarding Approvals</h1>
+      <div className='flex items-center justify-between mb-4 gap-3'>
+        <div className='flex items-center gap-3'>
+          <MasterBack />
+          <h1 className='text-2xl font-bold text-white'>Org Onboarding Approvals</h1>
+        </div>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value as any)}
@@ -141,6 +149,9 @@ export default function OrgOnboardingApprovals() {
           </div>
         )}
       </GlassContainer>
+
+      {/* Sticky mobile footer back button for long lists */}
+      <MasterBack stickyMobile />
     </div>
   );
 }

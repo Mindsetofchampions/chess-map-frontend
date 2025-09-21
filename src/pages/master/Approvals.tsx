@@ -19,6 +19,7 @@ import {
 import React, { useState, useEffect, useCallback } from 'react';
 
 import GlassContainer from '@/components/GlassContainer';
+import MasterBack from '@/components/master/MasterBack';
 import { useToast } from '@/components/ToastProvider';
 import WalletChip from '@/components/wallet/WalletChip';
 import { useAuth } from '@/contexts/AuthContext';
@@ -228,26 +229,13 @@ const Approvals: React.FC = () => {
   return (
     <div className='min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary'>
       <div className='container mx-auto max-w-7xl p-6'>
-        <button
-          className='mb-4 inline-flex items-center gap-2 text-cyber-green-300 hover:text-cyber-green-200 text-sm font-medium'
-          onClick={() =>
-            window.history.length > 1
-              ? window.history.back()
-              : window.location.assign('/master/dashboard')
-          }
-        >
-          <svg
-            width='20'
-            height='20'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='2'
-            viewBox='0 0 24 24'
-          >
-            <path strokeLinecap='round' strokeLinejoin='round' d='M15 19l-7-7 7-7' />
-          </svg>
-          Back to Dashboard
-        </button>
+        <div className='mb-4 flex items-center justify-between'>
+          <div className='flex items-center gap-3'>
+            <MasterBack />
+            <span className='text-gray-400 text-xs hidden md:inline'>Press B to go back</span>
+          </div>
+          <WalletChip showRefresh />
+        </div>
 
         {/* Header */}
         <motion.div

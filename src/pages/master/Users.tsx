@@ -2,6 +2,7 @@ import { Award, Shield, Link as LinkIcon, KeyRound, Plus, Eye, EyeOff } from 'lu
 import { useEffect, useMemo, useState } from 'react';
 
 import GlassContainer from '@/components/GlassContainer';
+import MasterBack from '@/components/master/MasterBack';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase, adminCreateUser, adminGenerateLink, adminSetPassword, adminDeleteUser, setUserRole } from '@/lib/supabase';
 import { useToast } from '@/components/ToastProvider';
@@ -178,26 +179,9 @@ export default function MasterUsersPage() {
 
   return (
     <div className='p-6 space-y-6'>
-      <button
-        className='mb-4 inline-flex items-center gap-2 text-cyber-green-300 hover:text-cyber-green-200 text-sm font-medium'
-        onClick={() =>
-          window.history.length > 1
-            ? window.history.back()
-            : window.location.assign('/master/dashboard')
-        }
-      >
-        <svg
-          width='20'
-          height='20'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          viewBox='0 0 24 24'
-        >
-          <path strokeLinecap='round' strokeLinejoin='round' d='M15 19l-7-7 7-7' />
-        </svg>
-        Back to Dashboard
-      </button>
+      <div className='flex items-center justify-between'>
+        <MasterBack />
+      </div>
       <div className='flex items-center gap-3'>
         <Shield className='w-6 h-6 text-electric-blue-400' />
         <h1 className='text-2xl font-bold text-white'>Master Admin – Create Users</h1>

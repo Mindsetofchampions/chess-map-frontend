@@ -3,7 +3,7 @@
  */
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
-import { supabase } from '@/lib/supabase';
+import { supabase, SUPABASE_ENV_VALID } from '@/lib/supabase';
 
 export interface SafeSpaceRow {
   id: string;
@@ -70,8 +70,8 @@ export async function fetchSafeSpaces(): Promise<SafeSpaceRow[]> {
   const { data, error } = await supabase
     .from('safe_spaces')
     .select('id,name,description,lat,lng,approved');
-  if (error) {
-    console.warn('fetchSafeSpaces error:', error.message);
+  if (error || !SUPABASE_ENV_VALID) {
+    if (error) console.warn('fetchSafeSpaces error:', error.message);
     return [];
   }
   return (data as SafeSpaceRow[]).filter((r) => r.lat != null && r.lng != null && r.approved !== false);
@@ -81,8 +81,8 @@ export async function fetchEvents(): Promise<EventRow[]> {
   const { data, error } = await supabase
     .from('events')
     .select('id,title,description,lat,lng,starts_at,persona_key');
-  if (error) {
-    console.warn('fetchEvents error:', error.message);
+  if (error || !SUPABASE_ENV_VALID) {
+    if (error) console.warn('fetchEvents error:', error.message);
     return [];
   }
   return (data as EventRow[]).filter((r) => r.lat != null && r.lng != null);

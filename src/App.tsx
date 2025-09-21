@@ -22,6 +22,8 @@ import ErrorBoundary from './components/ErrorBoundary';
 import FloatingBubbles from './components/FloatingBubbles';
 import GlassContainer from './components/GlassContainer';
 import MapView from './components/MapView';
+import EnvMissing from './components/EnvMissing';
+import { SUPABASE_ENV_VALID } from '@/lib/supabase';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ToastProvider } from './components/ToastProvider';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -243,7 +245,9 @@ const LandingPage: React.FC = () => {
 
           <GlassContainer variant='card' className='mt-8 p-0 overflow-hidden'>
             <div className='relative h-[350px] md:h-[600px] w-full'>
-              <MapView />
+              {SUPABASE_ENV_VALID ? <MapView /> : (
+                <EnvMissing error='Supabase environment is not configured.' />
+              )}
 
               {/* Map Overlay Info */}
               <div className='absolute top-2 left-2 right-2 md:top-4 md:left-4 md:right-4 z-10'>

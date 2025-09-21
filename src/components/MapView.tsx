@@ -5,7 +5,12 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 import { type PersonaKey } from '@/assets/personas';
 import { useAuth } from '@/contexts/AuthContext';
-import { PHILADELPHIA_BUBBLES, QUEST_STYLES, type QuestBubble } from '@/hooks/usePhiladelphiaData';
+import {
+  PHILADELPHIA_BUBBLES,
+  QUEST_STYLES,
+  type QuestBubble,
+  type QuestCategory,
+} from '@/hooks/usePhiladelphiaData';
 import {
   addPersonaChipsToMap,
   type PersonaChipMarker,
@@ -283,6 +288,34 @@ const MapView: React.FC<MapViewProps> = ({
   const [isClusteredView, setIsClusteredView] = useState(false);
   const safeSpacesSourceId = useRef(`safe-spaces-${Math.random().toString(36).slice(2)}`);
   const eventsSourceId = useRef(`events-${Math.random().toString(36).slice(2)}`);
+  const organizationsRef = useRef<OrganizationWithPersonas[]>([]);
+
+  // Category filters (all on by default)
+  const allCategories: QuestCategory[] = [
+    'character',
+    'health',
+    'exploration',
+    'stem',
+    'stewardship',
+    'safe_space',
+    'community_hub',
+  ];
+  const [enabledCategories, setEnabledCategories] = useState<Record<QuestCategory, boolean>>(
+    () => Object.fromEntries(allCategories.map((c) => [c, true])) as Record<QuestCategory, boolean>,
+  );
+
+  const toggleCategory = useCallback((cat: QuestCategory) => {
+    setEnabledCategories((prev) => ({ ...prev, [cat]: !prev[cat] }));
+  }, []);
+
+  // Map categories to persona keys for org persona filtering
+  const CATEGORY_TO_PERSONA: Partial<Record<QuestCategory, PersonaKey>> = {
+    character: 'hootie',
+    health: 'kittykat',
+    exploration: 'gino',
+    stem: 'hammer',
+    stewardship: 'badge',
+  };
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -474,14 +507,16 @@ const MapView: React.FC<MapViewProps> = ({
       },
     ];
 
+    organizationsRef.current = organizationsWithPersonas;
     // Build a flat GeoJSON of org points for clustering (use the org location once)
-    const features = organizationsWithPersonas.map((o) => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [o.lng, o.lat] },
-      properties: { id: o.id, personas: o.activePersonas },
-    }));
+    const buildFeatures = (orgs: OrganizationWithPersonas[]) =>
+      orgs.map((o) => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [o.lng, o.lat] },
+        properties: { id: o.id, personas: o.activePersonas },
+      }));
 
-    const sourceData = { type: 'FeatureCollection', features } as any;
+    const sourceData = { type: 'FeatureCollection', features: buildFeatures(organizationsWithPersonas) } as any;
 
     // Remove existing source/layers if they exist
     try {
@@ -583,14 +618,22 @@ const MapView: React.FC<MapViewProps> = ({
       personaMarkersRef.current = [];
 
       if (shouldUseDom) {
-        const markers = addPersonaChipsToMap(
-          glNSRef.current,
-          mapInstance.current,
-          organizationsWithPersonas,
-          (persona: PersonaDef) => {
-            console.log('Persona clicked:', persona.name);
-          },
-        );
+        // Filter organizations by enabled persona categories
+        const allowedPersonaKeys = Object.entries(CATEGORY_TO_PERSONA)
+          .filter(([cat, key]) => key && enabledCategories[cat as QuestCategory])
+          .map(([, key]) => key!) as PersonaKey[];
+        const filteredOrgs = organizationsRef.current
+          .map((o) => ({
+            ...o,
+            activePersonas: o.activePersonas.filter((k) => allowedPersonaKeys.includes(k)),
+          }))
+          .filter((o) => o.activePersonas.length > 0);
+
+        const markers = addPersonaChipsToMap(glNSRef.current, mapInstance.current, filteredOrgs, (
+          persona: PersonaDef,
+        ) => {
+          console.log('Persona clicked:', persona.name);
+        });
         personaMarkersRef.current = markers;
       }
 
@@ -604,7 +647,7 @@ const MapView: React.FC<MapViewProps> = ({
       } catch {}
     };
 
-    updateDeclutter();
+  updateDeclutter();
     mapInstance.current.on('zoomend', updateDeclutter);
 
     return () => {
@@ -612,7 +655,83 @@ const MapView: React.FC<MapViewProps> = ({
         mapInstance.current.off('zoomend', updateDeclutter);
       } catch {}
     };
-  }, [isLoading, error]);
+  }, [isLoading, error, enabledCategories]);
+
+  // Apply filters to sources/layers and DOM markers when selection changes
+  useEffect(() => {
+    if (!mapInstance.current || isLoading || error) return;
+
+    const map = mapInstance.current;
+
+    // Toggle visibility for safe spaces and events
+    try {
+      if (map.getLayer(`${safeSpacesSourceId.current}-circles`)) {
+        map.setLayoutProperty(
+          `${safeSpacesSourceId.current}-circles`,
+          'visibility',
+          enabledCategories.safe_space ? 'visible' : 'none',
+        );
+      }
+      if (map.getLayer(`${eventsSourceId.current}-circles`)) {
+        map.setLayoutProperty(
+          `${eventsSourceId.current}-circles`,
+          'visibility',
+          enabledCategories.community_hub ? 'visible' : 'none',
+        );
+      }
+    } catch {}
+
+    // Update persona cluster source data to reflect filters
+    try {
+      const allowedPersonaKeys = Object.entries(CATEGORY_TO_PERSONA)
+        .filter(([cat, key]) => key && enabledCategories[cat as QuestCategory])
+        .map(([, key]) => key!) as PersonaKey[];
+
+      const filtered = organizationsRef.current
+        .filter((o) => o.activePersonas.some((k) => allowedPersonaKeys.includes(k)))
+        .map((o) => ({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [o.lng, o.lat] },
+          properties: { id: o.id, personas: o.activePersonas },
+        }));
+
+      const fc = { type: 'FeatureCollection', features: filtered } as any;
+      const src: any = map.getSource(clusterSourceId.current);
+      if (src?.setData) src.setData(fc);
+    } catch {}
+
+    // Rebuild DOM markers if in detailed view
+    try {
+      const currentZoom = map.getZoom();
+      const shouldUseDom = currentZoom >= 14;
+      // Clear current DOM markers
+      personaMarkersRef.current.forEach((m) => m.remove());
+      personaMarkersRef.current = [];
+      if (shouldUseDom) {
+        const allowedPersonaKeys = Object.entries(CATEGORY_TO_PERSONA)
+          .filter(([cat, key]) => key && enabledCategories[cat as QuestCategory])
+          .map(([, key]) => key!) as PersonaKey[];
+        const filteredOrgs = organizationsRef.current
+          .map((o) => ({
+            ...o,
+            activePersonas: o.activePersonas.filter((k) => allowedPersonaKeys.includes(k)),
+          }))
+          .filter((o) => o.activePersonas.length > 0);
+        const markers = addPersonaChipsToMap(glNSRef.current, map, filteredOrgs, (persona) => {
+          console.log('Persona clicked:', persona.name);
+        });
+        personaMarkersRef.current = markers;
+      }
+      // Unclustered layer visibility (mirror previous logic)
+      try {
+        map.setLayoutProperty(
+          `${clusterSourceId.current}-unclustered`,
+          'visibility',
+          currentZoom >= 14 ? 'none' : 'visible',
+        );
+      } catch {}
+    } catch {}
+  }, [enabledCategories, isLoading, error]);
 
   /** Realtime: safe_spaces and events live updates */
   useEffect(() => {
@@ -738,7 +857,7 @@ const MapView: React.FC<MapViewProps> = ({
 
       {/* Quest Bubbles Overlay */}
       <div className='absolute inset-0 pointer-events-none overflow-hidden z-20'>
-        {PHILADELPHIA_BUBBLES.map((bubble) => (
+        {PHILADELPHIA_BUBBLES.filter((b) => enabledCategories[b.category]).map((bubble) => (
           <QuestBubbleComponent
             key={bubble.id}
             bubble={bubble}
@@ -775,12 +894,19 @@ const MapView: React.FC<MapViewProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1 }}
         >
-          <h4 className='text-white font-bold text-sm mb-3'>CHESS Quest Map</h4>
+          <h4 className='text-white font-bold text-sm mb-3'>CHESS Map Filters</h4>
           <div className='space-y-2'>
-            {Object.entries(QUEST_STYLES)
-              .slice(0, 5)
-              .map(([category, style]) => (
-                <div key={category} className='flex items-center gap-2 text-xs'>
+            {allCategories.map((category) => {
+              const style = QUEST_STYLES[category];
+              const enabled = enabledCategories[category];
+              return (
+                <button
+                  key={category}
+                  className={`w-full flex items-center gap-2 text-xs px-2 py-1 rounded-md transition-colors ${
+                    enabled ? 'bg-white/10' : 'bg-white/5 opacity-70'
+                  }`}
+                  onClick={() => toggleCategory(category)}
+                >
                   <img
                     src={style.sprite}
                     alt={style.character}
@@ -791,13 +917,15 @@ const MapView: React.FC<MapViewProps> = ({
                     className='w-3 h-3 rounded-full border border-white/40'
                     style={{ backgroundColor: style.color }}
                   />
-                  <span className='text-gray-100'>{style.character}</span>
-                </div>
-              ))}
+                  <span className='text-gray-100'>{style.label}</span>
+                  <span className={`ml-auto text-[10px] ${enabled ? 'text-green-300' : 'text-gray-300'}`}>
+                    {enabled ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <div className='mt-3 text-xs text-gray-300'>
-            {PHILADELPHIA_BUBBLES.length} interactive locations
-          </div>
+          <div className='mt-3 text-xs text-gray-300'>Tap to toggle categories</div>
         </motion.div>
       )}
 
@@ -829,26 +957,36 @@ const MapView: React.FC<MapViewProps> = ({
               </div>
 
               <div className='grid grid-cols-2 gap-3'>
-                {Object.entries(QUEST_STYLES).map(([category, style]) => (
-                  <div
-                    key={category}
-                    className='flex items-center gap-2 text-xs bg-glass-light rounded-lg p-2'
-                  >
-                    <img
-                      src={style.sprite}
-                      alt={style.character}
-                      className='w-5 h-5 object-contain'
-                      draggable={false}
-                    />
-                    <div>
-                      <div
-                        className='w-3 h-3 rounded-full border border-white/40 mb-1'
-                        style={{ backgroundColor: style.color }}
+                {allCategories.map((category) => {
+                  const style = QUEST_STYLES[category];
+                  const enabled = enabledCategories[category];
+                  return (
+                    <button
+                      key={category}
+                      className={`flex items-center gap-2 text-xs rounded-lg p-2 transition-colors ${
+                        enabled ? 'bg-glass-light' : 'bg-glass'
+                      }`}
+                      onClick={() => toggleCategory(category)}
+                    >
+                      <img
+                        src={style.sprite}
+                        alt={style.character}
+                        className='w-5 h-5 object-contain'
+                        draggable={false}
                       />
-                      <span className='text-gray-100 text-xs'>{style.character}</span>
-                    </div>
-                  </div>
-                ))}
+                      <div>
+                        <div
+                          className='w-3 h-3 rounded-full border border-white/40 mb-1'
+                          style={{ backgroundColor: style.color }}
+                        />
+                        <span className='text-gray-100 text-xs'>{style.label}</span>
+                      </div>
+                      <span className={`ml-auto text-[10px] ${enabled ? 'text-green-300' : 'text-gray-300'}`}>
+                        {enabled ? 'ON' : 'OFF'}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </motion.div>
           </motion.div>
