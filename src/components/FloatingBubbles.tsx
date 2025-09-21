@@ -261,23 +261,23 @@ const FloatingBubbles: React.FC = () => {
           >
             {/* Bubble Container */}
             <motion.button
-              className='
-                rounded-full
-                shadow-lg
-                p-3
-                cursor-pointer
-                transition-all
-                duration-300
-                hover:shadow-xl
-                min-w-[44px]
-                min-h-[44px]
-                touch-manipulation
-                flex
-                items-center
-                justify-center
-                border-2
-                relative
-              '
+              className={[
+                'rounded-full',
+                'shadow-lg',
+                'p-3',
+                'cursor-pointer',
+                'transition-all',
+                'duration-300',
+                'hover:shadow-xl',
+                'min-w-[44px]',
+                'min-h-[44px]',
+                'touch-manipulation',
+                'flex',
+                'items-center',
+                'justify-center',
+                'border-2',
+                'relative',
+              ].join(' ')}
               role='button'
               tabIndex={0}
               style={{
@@ -291,13 +291,13 @@ const FloatingBubbles: React.FC = () => {
               <motion.img
                 src={attribute.sprite}
                 alt={`${attribute.character} sprite`}
-                className='
-                  w-10 h-10
-                  md:w-12 md:h-12
-                  object-contain
-                  select-none
-                  pointer-events-none
-                '
+                className={[
+                  'w-10 h-10',
+                  'md:w-12 md:h-12',
+                  'object-contain',
+                  'select-none',
+                  'pointer-events-none',
+                ].join(' ')}
                 style={{
                   imageRendering: 'pixelated',
                 }}

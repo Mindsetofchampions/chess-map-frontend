@@ -11,7 +11,7 @@ function loadDotEnv(file = '.env.local'): Record<string, string> {
       const m = line.match(/^([A-Z0-9_]+)\s*=\s*(.*)$/);
       if (!m) continue;
       let v = m[2].trim();
-      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith('\'') && v.endsWith('\''))) {
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
         v = v.slice(1, -1);
       }
       out[m[1]] = v;
@@ -25,9 +25,17 @@ function loadDotEnv(file = '.env.local'): Record<string, string> {
 async function main() {
   const env = loadDotEnv();
 
-  const URL = process.env.SUPABASE_URL || env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || env.VITE_SUPABASE_URL;
+  const URL =
+    process.env.SUPABASE_URL ||
+    env.SUPABASE_URL ||
+    process.env.VITE_SUPABASE_URL ||
+    env.VITE_SUPABASE_URL;
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
-  const ANON_KEY = process.env.SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY;
+  const ANON_KEY =
+    process.env.SUPABASE_ANON_KEY ||
+    env.SUPABASE_ANON_KEY ||
+    process.env.VITE_SUPABASE_ANON_KEY ||
+    env.VITE_SUPABASE_ANON_KEY;
   const MASTER_EMAIL = process.env.MASTER_EMAIL || env.MASTER_EMAIL;
   const MASTER_PASSWORD = process.env.MASTER_PASSWORD || env.MASTER_PASSWORD;
 
@@ -39,9 +47,18 @@ async function main() {
   // If master creds + anon key exist, sign in and call RPC as the master user (preferred)
   if (MASTER_EMAIL && MASTER_PASSWORD && ANON_KEY) {
     const s = createClient(URL, ANON_KEY, { auth: { persistSession: false } });
-    const { data: loginData, error: loginError } = await s.auth.signInWithPassword({ email: MASTER_EMAIL, password: MASTER_PASSWORD });
+    const { data: loginData, error: loginError } = await s.auth.signInWithPassword({
+      email: MASTER_EMAIL,
+      password: MASTER_PASSWORD,
+    });
     if (loginError) {
-      console.log(JSON.stringify({ mode: 'master', ok: false, error: { message: loginError.message } }, null, 2));
+      console.log(
+        JSON.stringify(
+          { mode: 'master', ok: false, error: { message: loginError.message } },
+          null,
+          2,
+        ),
+      );
       process.exit(1);
     }
     const { data: userInfo } = await s.auth.getUser();
@@ -62,7 +79,9 @@ async function main() {
           ok: !error,
           dataCount: Array.isArray(data) ? data.length : null,
           sample: Array.isArray(data) ? data.slice(0, 3) : null,
-          error: error ? { message: error.message, code: (error as any).code, details: (error as any).details } : null,
+          error: error
+            ? { message: error.message, code: (error as any).code, details: (error as any).details }
+            : null,
         },
         null,
         2,
@@ -86,7 +105,9 @@ async function main() {
         ok: !error,
         expectedSecureError: !!error,
         dataCount: Array.isArray(data) ? data.length : null,
-        error: error ? { message: error.message, code: (error as any).code, details: (error as any).details } : null,
+        error: error
+          ? { message: error.message, code: (error as any).code, details: (error as any).details }
+          : null,
       },
       null,
       2,

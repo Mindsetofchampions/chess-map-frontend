@@ -24,7 +24,8 @@ export async function handler(event) {
       if (!title || !content) {
         return { statusCode: 400, body: JSON.stringify({ error: 'Missing fields' }) };
       }
-      const rows = await sql`INSERT INTO posts (title, content) VALUES (${title}, ${content}) RETURNING *`;
+      const rows =
+        await sql`INSERT INTO posts (title, content) VALUES (${title}, ${content}) RETURNING *`;
       return { statusCode: 201, body: JSON.stringify(rows?.[0] ?? null) };
     }
 

@@ -3,9 +3,16 @@ import { useEffect, useMemo, useState } from 'react';
 
 import GlassContainer from '@/components/GlassContainer';
 import MasterBack from '@/components/master/MasterBack';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase, adminCreateUser, adminGenerateLink, adminSetPassword, adminDeleteUser, setUserRole } from '@/lib/supabase';
 import { useToast } from '@/components/ToastProvider';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  supabase,
+  adminCreateUser,
+  adminGenerateLink,
+  adminSetPassword,
+  adminDeleteUser,
+  setUserRole,
+} from '@/lib/supabase';
 
 interface Row {
   id: string;
@@ -160,7 +167,7 @@ export default function MasterUsersPage() {
 
   async function updateRole(u: Row, newRole: 'student' | 'staff' | 'org_admin' | 'master_admin') {
     // prevent self-demotion to avoid accidental lockout
-    if ((user?.email && u.email === user.email) && newRole !== 'master_admin') {
+    if (user?.email && u.email === user.email && newRole !== 'master_admin') {
       showWarning('Blocked', 'You cannot change your own role away from master_admin.');
       return;
     }

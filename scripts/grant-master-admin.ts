@@ -11,7 +11,7 @@ function loadDotEnv(file = '.env.local'): Record<string, string> {
       const m = line.match(/^([A-Z0-9_]+)\s*=\s*(.*)$/);
       if (!m) continue;
       let v = m[2].trim();
-      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith('\'') && v.endsWith('\''))) {
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
         v = v.slice(1, -1);
       }
       out[m[1]] = v;
@@ -20,11 +20,16 @@ function loadDotEnv(file = '.env.local'): Record<string, string> {
   return out;
 }
 
-async function findUserIdByEmail(url: string, serviceKey: string, email: string): Promise<string | null> {
+async function findUserIdByEmail(
+  url: string,
+  serviceKey: string,
+  email: string,
+): Promise<string | null> {
   const supabase = createClient(url, serviceKey, { auth: { persistSession: false } });
   let page = 1;
   const perPage = 200;
-  for (let i = 0; i < 50; i++) { // up to 10k users
+  for (let i = 0; i < 50; i++) {
+    // up to 10k users
     const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
     if (error) throw error;
     const match = data.users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
@@ -37,7 +42,11 @@ async function findUserIdByEmail(url: string, serviceKey: string, email: string)
 
 async function main() {
   const env = loadDotEnv();
-  const url = process.env.SUPABASE_URL || env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || env.VITE_SUPABASE_URL;
+  const url =
+    process.env.SUPABASE_URL ||
+    env.SUPABASE_URL ||
+    process.env.VITE_SUPABASE_URL ||
+    env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
   const email = process.env.MASTER_EMAIL || env.MASTER_EMAIL;
   if (!url || !serviceKey) {
@@ -66,7 +75,10 @@ async function main() {
     process.exit(1);
   }
   // Update profiles if present
-  const { error: profErr } = await admin.from('profiles').update({ role: 'master_admin' }).eq('user_id', userId);
+  const { error: profErr } = await admin
+    .from('profiles')
+    .update({ role: 'master_admin' })
+    .eq('user_id', userId);
   if (profErr) {
     console.warn('Warning: failed to update profiles (may not exist):', profErr.message);
   }

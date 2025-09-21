@@ -524,7 +524,10 @@ const MasterDashboard: React.FC = () => {
               <button onClick={openAllocate} className='btn-esports flex items-center gap-2'>
                 <PlusCircle className='w-4 h-4' /> Allocate to Org
               </button>
-              <button onClick={() => setShowUserAllocate(true)} className='btn-esports flex items-center gap-2'>
+              <button
+                onClick={() => setShowUserAllocate(true)}
+                className='btn-esports flex items-center gap-2'
+              >
                 <PlusCircle className='w-4 h-4' /> Allocate to User
               </button>
               <LogoutButton />

@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react';
+
 // no direct navigation, handled by MasterBack
-import MasterBack from '@/components/master/MasterBack';
 import GlassContainer from '@/components/GlassContainer';
+import MasterBack from '@/components/master/MasterBack';
 import { useToast } from '@/components/ToastProvider';
-import { listOrgOnboardings, approveOrgOnboarding, rejectOrgOnboarding, sendSystemNotification, OrgOnboardingRow } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  listOrgOnboardings,
+  approveOrgOnboarding,
+  rejectOrgOnboarding,
+  sendSystemNotification,
+  OrgOnboardingRow,
+} from '@/lib/supabase';
 
 export default function OrgOnboardingApprovals() {
   // navigation handled via MasterBack
@@ -106,7 +113,9 @@ export default function OrgOnboardingApprovals() {
                 <div className='flex items-center justify-between'>
                   <div>
                     <div className='text-white font-semibold'>{r.org_name}</div>
-                    <div className='text-gray-300 text-sm'>Submitted by: {r.submitter_email || r.submitted_by}</div>
+                    <div className='text-gray-300 text-sm'>
+                      Submitted by: {r.submitter_email || r.submitted_by}
+                    </div>
                     <div className='text-gray-400 text-xs'>Status: {r.status}</div>
                   </div>
                 </div>

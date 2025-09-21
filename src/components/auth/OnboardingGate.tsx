@@ -15,7 +15,8 @@ export default function OnboardingGate({ children }: { children: React.ReactNode
       // Org roles (org_admin, staff): use org onboarding gate instead of student flow
       if (role === 'org_admin' || role === 'staff') {
         const metadataApproved =
-          user?.user_metadata?.org_approved === true || user?.user_metadata?.org_approved === 'true';
+          user?.user_metadata?.org_approved === true ||
+          user?.user_metadata?.org_approved === 'true';
         const metadataSubmitted =
           user?.user_metadata?.org_onboarding_submitted === true ||
           user?.user_metadata?.org_onboarding_submitted === 'true';
@@ -83,7 +84,8 @@ export default function OnboardingGate({ children }: { children: React.ReactNode
   if (ok === null) return <div className='p-6 text-white'>Checking onboarding…</div>;
 
   // If user is an org role and not ok, route to org onboarding
-  if (!ok && (role === 'org_admin' || role === 'staff')) return <Navigate to='/onboarding/org' replace />;
+  if (!ok && (role === 'org_admin' || role === 'staff'))
+    return <Navigate to='/onboarding/org' replace />;
 
   if (!ok) return <Navigate to='/onboarding/start' replace />;
 

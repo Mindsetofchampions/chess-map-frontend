@@ -385,7 +385,9 @@ const MapView: React.FC<MapViewProps> = ({
       // Helper functions accessible across branches
       const resetMapInstance = () => {
         if (mapInstance.current) {
-          try { mapInstance.current.remove(); } catch {}
+          try {
+            mapInstance.current.remove();
+          } catch {}
           mapInstance.current = null;
         }
       };
@@ -401,7 +403,9 @@ const MapView: React.FC<MapViewProps> = ({
           clearTimeout(timeoutId);
           setIsLoading(false);
           setError(null);
-          try { mapInstance.current.resize(); } catch {}
+          try {
+            mapInstance.current.resize();
+          } catch {}
         });
 
         mapInstance.current.on('error', () => {
@@ -525,7 +529,9 @@ const MapView: React.FC<MapViewProps> = ({
 
         const resetMapInstance = () => {
           if (mapInstance.current) {
-            try { mapInstance.current.remove(); } catch {}
+            try {
+              mapInstance.current.remove();
+            } catch {}
             mapInstance.current = null;
           }
         };
@@ -567,7 +573,6 @@ const MapView: React.FC<MapViewProps> = ({
         } else {
           await initMapLibre();
         }
-
       } catch {
         clearTimeout(loadingTimeout);
         // Last-resort raster fallback
@@ -621,7 +626,9 @@ const MapView: React.FC<MapViewProps> = ({
   // Ensure map resizes with window to avoid white canvas issues
   useEffect(() => {
     const onWinResize = () => {
-      try { mapInstance.current?.resize(); } catch {}
+      try {
+        mapInstance.current?.resize();
+      } catch {}
     };
     window.addEventListener('resize', onWinResize);
     return () => window.removeEventListener('resize', onWinResize);
@@ -664,7 +671,10 @@ const MapView: React.FC<MapViewProps> = ({
         properties: { id: o.id, personas: o.activePersonas },
       }));
 
-    const sourceData = { type: 'FeatureCollection', features: buildFeatures(organizationsWithPersonas) } as any;
+    const sourceData = {
+      type: 'FeatureCollection',
+      features: buildFeatures(organizationsWithPersonas),
+    } as any;
 
     // Remove existing source/layers if they exist
     try {
@@ -697,15 +707,7 @@ const MapView: React.FC<MapViewProps> = ({
       source: clusterSourceId.current,
       filter: ['has', 'point_count'],
       paint: {
-        'circle-color': [
-          'step',
-          ['get', 'point_count'],
-          '#4ade80',
-          10,
-          '#22d3ee',
-          25,
-          '#a78bfa',
-        ],
+        'circle-color': ['step', ['get', 'point_count'], '#4ade80', 10, '#22d3ee', 25, '#a78bfa'],
         'circle-radius': ['step', ['get', 'point_count'], 16, 10, 20, 25, 26],
         'circle-opacity': 0.85,
       },
@@ -777,11 +779,14 @@ const MapView: React.FC<MapViewProps> = ({
           }))
           .filter((o) => o.activePersonas.length > 0);
 
-        const markers = addPersonaChipsToMap(glNSRef.current, mapInstance.current, filteredOrgs, (
-          persona: PersonaDef,
-        ) => {
-          console.log('Persona clicked:', persona.name);
-        });
+        const markers = addPersonaChipsToMap(
+          glNSRef.current,
+          mapInstance.current,
+          filteredOrgs,
+          (persona: PersonaDef) => {
+            console.log('Persona clicked:', persona.name);
+          },
+        );
         personaMarkersRef.current = markers;
       }
 
@@ -795,7 +800,7 @@ const MapView: React.FC<MapViewProps> = ({
       } catch {}
     };
 
-  updateDeclutter();
+    updateDeclutter();
     mapInstance.current.on('zoomend', updateDeclutter);
 
     return () => {
@@ -957,7 +962,11 @@ const MapView: React.FC<MapViewProps> = ({
         } catch {}
 
         // debounced updater
-        let t: any; const debounced = (fn: () => void) => { clearTimeout(t); t = setTimeout(fn, 400); };
+        let t: any;
+        const debounced = (fn: () => void) => {
+          clearTimeout(t);
+          t = setTimeout(fn, 400);
+        };
 
         const refreshSafe = async () => {
           try {
@@ -982,11 +991,17 @@ const MapView: React.FC<MapViewProps> = ({
       .catch(() => {});
 
     return () => {
-      try { unsubSafe?.(); } catch {}
-      try { unsubEvents?.(); } catch {}
       try {
-        if (map.getLayer(`${safeSpacesSourceId.current}-circles`)) map.removeLayer(`${safeSpacesSourceId.current}-circles`);
-        if (map.getLayer(`${eventsSourceId.current}-circles`)) map.removeLayer(`${eventsSourceId.current}-circles`);
+        unsubSafe?.();
+      } catch {}
+      try {
+        unsubEvents?.();
+      } catch {}
+      try {
+        if (map.getLayer(`${safeSpacesSourceId.current}-circles`))
+          map.removeLayer(`${safeSpacesSourceId.current}-circles`);
+        if (map.getLayer(`${eventsSourceId.current}-circles`))
+          map.removeLayer(`${eventsSourceId.current}-circles`);
         if (map.getSource(safeSpacesSourceId.current)) map.removeSource(safeSpacesSourceId.current);
         if (map.getSource(eventsSourceId.current)) map.removeSource(eventsSourceId.current);
       } catch {}
@@ -1071,7 +1086,9 @@ const MapView: React.FC<MapViewProps> = ({
                     style={{ backgroundColor: style.color }}
                   />
                   <span className='text-gray-100'>{style.label}</span>
-                  <span className={`ml-auto text-[10px] ${enabled ? 'text-green-300' : 'text-gray-300'}`}>
+                  <span
+                    className={`ml-auto text-[10px] ${enabled ? 'text-green-300' : 'text-gray-300'}`}
+                  >
                     {enabled ? 'ON' : 'OFF'}
                   </span>
                 </button>
@@ -1134,7 +1151,9 @@ const MapView: React.FC<MapViewProps> = ({
                         />
                         <span className='text-gray-100 text-xs'>{style.label}</span>
                       </div>
-                      <span className={`ml-auto text-[10px] ${enabled ? 'text-green-300' : 'text-gray-300'}`}>
+                      <span
+                        className={`ml-auto text-[10px] ${enabled ? 'text-green-300' : 'text-gray-300'}`}
+                      >
                         {enabled ? 'ON' : 'OFF'}
                       </span>
                     </button>

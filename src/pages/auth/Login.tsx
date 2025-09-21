@@ -122,8 +122,8 @@ const Login: React.FC = () => {
           resolvedRole === 'master_admin'
             ? '/master/dashboard'
             : resolvedRole === 'org_admin' || resolvedRole === 'staff'
-            ? '/org/dashboard'
-            : '/dashboard';
+              ? '/org/dashboard'
+              : '/dashboard';
 
         const attempted = location.state?.from?.pathname as string | undefined;
 

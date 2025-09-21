@@ -81,9 +81,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const location = useLocation();
 
   // Determine the actual required role.
-  // Historically `requireMaster` meant "admin-level area" (master/org/staff).
-  // Use 'staff' as the lowest admin-level so org_admin and master_admin are included.
-  const actualRequiredRole: AppRole = requiredRole || (requireMaster ? 'staff' : 'student');
+  // `requireMaster` strictly enforces master_admin access only.
+  const actualRequiredRole: AppRole = requiredRole || (requireMaster ? 'master_admin' : 'student');
   // Show loading while determining auth state
   if (loading) {
     return <AuthLoadingScreen message='Checking Authentication' />;

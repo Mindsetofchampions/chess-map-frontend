@@ -4,6 +4,7 @@ import OnboardingGate from '@/components/auth/OnboardingGate';
 import GlassContainer from '@/components/GlassContainer';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useToast } from '@/components/ToastProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   createOrgEngagement,
   distributeEngagement,
@@ -18,7 +19,6 @@ import {
   removeEngagementRecipient,
   upsertEngagementRecipient,
 } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
 
 const OrgDashboard: React.FC = () => {
   const { showSuccess, showError } = useToast();
@@ -59,8 +59,12 @@ const OrgDashboard: React.FC = () => {
   const [distributing, setDistributing] = useState(false);
 
   const selectedEngagement = useMemo(
-    () => engagements.find((e) => e.id === recpId) || engagements.find((e) => e.id === fundingId) || engagements.find((e) => e.id === distributingId) || null,
-    [engagements, recpId, fundingId, distributingId]
+    () =>
+      engagements.find((e) => e.id === recpId) ||
+      engagements.find((e) => e.id === fundingId) ||
+      engagements.find((e) => e.id === distributingId) ||
+      null,
+    [engagements, recpId, fundingId, distributingId],
   );
 
   useEffect(() => {
@@ -215,10 +219,13 @@ const OrgDashboard: React.FC = () => {
                 <div>
                   <div className='text-yellow-300 font-semibold'>Organization Pending Approval</div>
                   <div className='text-gray-200 text-sm'>
-                    Your organization onboarding is under review. You can set up engagements, but distributions may be limited until approval is granted.
+                    Your organization onboarding is under review. You can set up engagements, but
+                    distributions may be limited until approval is granted.
                   </div>
                 </div>
-                <a href='/onboarding/org' className='btn-secondary'>View Onboarding</a>
+                <a href='/onboarding/org' className='btn-secondary'>
+                  View Onboarding
+                </a>
               </div>
             </GlassContainer>
           )}
@@ -270,7 +277,11 @@ const OrgDashboard: React.FC = () => {
           <GlassContainer>
             <div className='flex items-center justify-between mb-3'>
               <h2 className='text-lg font-semibold text-white'>Engagements</h2>
-              <button className='btn-esports' onClick={refreshEngagements} disabled={loadingEngagements}>
+              <button
+                className='btn-esports'
+                onClick={refreshEngagements}
+                disabled={loadingEngagements}
+              >
                 {loadingEngagements ? 'Refreshing…' : 'Refresh'}
               </button>
             </div>
@@ -294,7 +305,8 @@ const OrgDashboard: React.FC = () => {
                           <span className='text-cyber-green-300 font-semibold'>
                             {(e.remaining ?? 0).toLocaleString()}
                           </span>{' '}
-                          • Distributed: {(e.total_distributed ?? 0).toLocaleString()} • Status: {e.status}
+                          • Distributed: {(e.total_distributed ?? 0).toLocaleString()} • Status:{' '}
+                          {e.status}
                         </div>
                       </div>
                       <div className='flex flex-wrap gap-2'>
@@ -318,7 +330,9 @@ const OrgDashboard: React.FC = () => {
                           className='btn-esports disabled:opacity-50 disabled:cursor-not-allowed'
                           onClick={() => onDistribute(e.id)}
                           disabled={!orgApproved || (distributing && distributingId === e.id)}
-                          title={!orgApproved ? 'Pending approval required to distribute' : undefined}
+                          title={
+                            !orgApproved ? 'Pending approval required to distribute' : undefined
+                          }
                         >
                           {distributing && distributingId === e.id ? 'Distributing…' : 'Distribute'}
                         </button>
@@ -336,7 +350,8 @@ const OrgDashboard: React.FC = () => {
               <div className='w-full max-w-md bg-glass border-glass rounded-2xl p-6'>
                 <div className='text-lg font-semibold text-white mb-3'>Fund Engagement</div>
                 <div className='text-gray-300 text-sm mb-3'>
-                  {selectedEngagement?.name} • Org wallet: {(wallet?.balance ?? 0).toLocaleString()} coins
+                  {selectedEngagement?.name} • Org wallet: {(wallet?.balance ?? 0).toLocaleString()}{' '}
+                  coins
                 </div>
                 <div className='grid gap-3'>
                   <input
@@ -353,7 +368,11 @@ const OrgDashboard: React.FC = () => {
                     className='bg-glass border-glass rounded-xl px-3 py-2 text-white'
                   />
                   <div className='flex justify-end gap-2'>
-                    <button className='btn-secondary' onClick={() => setFundingId(null)} disabled={funding}>
+                    <button
+                      className='btn-secondary'
+                      onClick={() => setFundingId(null)}
+                      disabled={funding}
+                    >
                       Cancel
                     </button>
                     <button className='btn-esports' onClick={onFundEngagement} disabled={funding}>
@@ -370,8 +389,12 @@ const OrgDashboard: React.FC = () => {
             <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm'>
               <div className='w-full max-w-2xl bg-glass border-glass rounded-2xl p-6'>
                 <div className='flex items-center justify-between mb-3'>
-                  <div className='text-lg font-semibold text-white'>Recipients • {selectedEngagement?.name}</div>
-                  <button className='btn-secondary' onClick={() => setRecpId(null)}>Close</button>
+                  <div className='text-lg font-semibold text-white'>
+                    Recipients • {selectedEngagement?.name}
+                  </div>
+                  <button className='btn-secondary' onClick={() => setRecpId(null)}>
+                    Close
+                  </button>
                 </div>
 
                 <div className='grid md:grid-cols-3 gap-3 mb-4'>
@@ -400,12 +423,22 @@ const OrgDashboard: React.FC = () => {
                 ) : (
                   <div className='space-y-2'>
                     {recipients.map((r) => (
-                      <div key={r.user_id} className='flex items-center justify-between bg-glass-dark border-glass-dark rounded-xl p-3'>
+                      <div
+                        key={r.user_id}
+                        className='flex items-center justify-between bg-glass-dark border-glass-dark rounded-xl p-3'
+                      >
                         <div>
                           <div className='text-white font-medium'>{r.email}</div>
-                          <div className='text-gray-300 text-sm'>Planned: {r.planned_amount.toLocaleString()}</div>
+                          <div className='text-gray-300 text-sm'>
+                            Planned: {r.planned_amount.toLocaleString()}
+                          </div>
                         </div>
-                        <button className='btn-secondary' onClick={() => onRemoveRecipient(r.email)}>Remove</button>
+                        <button
+                          className='btn-secondary'
+                          onClick={() => onRemoveRecipient(r.email)}
+                        >
+                          Remove
+                        </button>
                       </div>
                     ))}
                   </div>

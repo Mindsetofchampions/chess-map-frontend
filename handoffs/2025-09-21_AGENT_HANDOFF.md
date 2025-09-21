@@ -5,9 +5,11 @@ Branch: dev
 Repo: chess-map-frontend
 
 ## Context Summary
+
 This project is a React 18 + Vite + TypeScript frontend with Tailwind and Supabase (Postgres + RLS). It deploys to Netlify. The app supports roles (master_admin, org_admin, staff, student). There are wallet/ledger tables for coins, organization-level engagements (funding pools), and flows for onboarding and admin approvals.
 
 Key functional areas implemented recently:
+
 - Toast UX and self-guarding admin actions
 - Netlify deployment config and a Neon-backed Netlify Function
 - Org onboarding: private storage buckets + RLS, table, RPCs, and master approvals UI (+ notifications)
@@ -17,7 +19,9 @@ Key functional areas implemented recently:
 - Routing fixes: org users now route to /org/dashboard
 
 ## Database & RPCs
+
 Recent migrations (applied to remote with `supabase db push --include-all`):
+
 - 20250921104000_user_wallets_and_allocate_user_coins.sql
   - user_wallets table
   - get_user_id_by_email(email)
@@ -35,10 +39,12 @@ Recent migrations (applied to remote with `supabase db push --include-all`):
   - list_engagement_recipients(engagement_id)
 
 Notes:
+
 - Distribution deducts from engagement.remaining (not the org wallet at distribution time). The org wallet is debited during fund_org_engagement.
 - Views like v_org_coin_balance already exist from prior migrations.
 
 ## Frontend Changes
+
 - `src/lib/supabase.ts`:
   - Added helpers: getMyOrg, listOrgEngagements, createOrgEngagement, fundOrgEngagement,
     upsertEngagementRecipient, removeEngagementRecipient, distributeEngagement,
@@ -56,25 +62,29 @@ Notes:
   - Added .btn-secondary (Tailwind @apply used; LS warns about @apply but build is fine)
 
 ## Deployment
+
 - `netlify.toml` configured with:
   - build: npm run build; publish: dist; Node 20
   - headers (security)
   - functions dir + esbuild bundler
-  - redirect: /api/* → /.netlify/functions/:splat
+  - redirect: /api/\* → /.netlify/functions/:splat
   - Secrets scanning allowlist keys/paths to avoid false positives
 
 ## How to Run
+
 - Dev: `npm run dev`
 - Build: `npm run build`
 - Typecheck: `npm run type-check`
 - Apply DB migrations: `npx supabase db push --yes --include-all`
 
 Ensure local .env vars exist (not committed):
+
 - VITE_SUPABASE_URL
 - VITE_SUPABASE_ANON_KEY
 - VITE_MAPBOX_TOKEN
 
 ## Current Status
+
 - Build: PASS
 - Migrations: Applied
 - Known warnings: Tailwind CSS LS flags @tailwind/@apply; non-blocking
@@ -82,25 +92,32 @@ Ensure local .env vars exist (not committed):
 - Engagements: End-to-end funded distribution works as designed
 
 ## Open Work / Next Steps
-1) Org ledger and analytics
+
+1. Org ledger and analytics
+
 - Add an org ledger panel (org_coin_txns) to OrgDashboard for transparency
 - Simple charts for budget vs remaining, distribution totals
 
-2) Recipient UX refinements
+2. Recipient UX refinements
+
 - Autocomplete recipients by email (org members)
 - Inline editing of planned amounts
 
-3) Master/Admin separation polish
+3. Master/Admin separation polish
+
 - Ensure master-only links/components are hidden from org/staff contexts
 
-4) Tests
+4. Tests
+
 - Add unit/integration tests for new helpers and UI flows
 
 ## Troubleshooting
+
 - If org wallet doesn’t update: ensure funding via Fund action (not only distribute). Wallet decreases on fund, distribution reduces engagement remaining.
 - If routing appears stuck on a master page for org users: confirm changes in Login.tsx, onboarding pages, and App.tsx are in use and that the role is correctly resolved from user_roles/profiles.
 
 ## Contact Points
+
 - Org dashboards: `src/pages/org/OrgDashboard.tsx`
 - RPC helpers: `src/lib/supabase.ts`
 - Auth/role: `src/contexts/AuthContext.tsx`

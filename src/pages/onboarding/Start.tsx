@@ -19,7 +19,8 @@ export default function OnboardingStart() {
       // Org roles should go through org onboarding flow, not student
       if (role === 'org_admin' || role === 'staff') {
         const approved =
-          user?.user_metadata?.org_approved === true || user?.user_metadata?.org_approved === 'true';
+          user?.user_metadata?.org_approved === true ||
+          user?.user_metadata?.org_approved === 'true';
         const submitted =
           user?.user_metadata?.org_onboarding_submitted === true ||
           user?.user_metadata?.org_onboarding_submitted === 'true';

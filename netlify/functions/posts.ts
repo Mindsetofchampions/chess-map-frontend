@@ -30,13 +30,18 @@ export const handler: Handler = async (event) => {
       if (!title || !content) {
         return { statusCode: 400, body: JSON.stringify({ error: 'Missing fields' }) };
       }
-      const rows = await sql`INSERT INTO posts (title, content) VALUES (${title}, ${content}) RETURNING *`;
+      const rows =
+        await sql`INSERT INTO posts (title, content) VALUES (${title}, ${content}) RETURNING *`;
       return { statusCode: 201, body: JSON.stringify(rows?.[0] ?? null) };
     }
 
     return { statusCode: 405, body: 'Method Not Allowed' };
-  } catch (err: any) {
-    console.error('Neon function error:', err);
-    return { statusCode: 500, body: JSON.stringify({ error: err.message || 'Server error' }) };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Server error';
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.error('Neon function error:', err);
+    }
+    return { statusCode: 500, body: JSON.stringify({ error: message }) };
   }
 };

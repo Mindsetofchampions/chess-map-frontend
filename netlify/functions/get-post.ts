@@ -24,13 +24,11 @@ export default async (request: Request) => {
       status: 200,
       headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
     });
-  } catch (err: any) {
-    return new Response(
-      JSON.stringify({ error: err?.message || 'Database query failed' }),
-      {
-        status: 500,
-        headers: { 'content-type': 'application/json' },
-      },
-    );
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Database query failed';
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    });
   }
 };

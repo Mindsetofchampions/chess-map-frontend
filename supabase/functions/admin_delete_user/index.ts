@@ -11,14 +11,23 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
+  if (req.method !== 'POST')
+    return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
   try {
-  const { email } = await req.json();
-  if (!email) return new Response(JSON.stringify({ error: 'email required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-  const normalized = String(email).trim().toLowerCase();
+    const { email } = await req.json();
+    if (!email)
+      return new Response(JSON.stringify({ error: 'email required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    const normalized = String(email).trim().toLowerCase();
 
     const jwt = req.headers.get('Authorization')?.replace('Bearer ', '');
-    if (!jwt) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (!jwt)
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
 
     const check = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_master_admin`, {
       method: 'POST',
@@ -26,11 +35,18 @@ serve(async (req) => {
       body: '{}',
     });
     const ok = await check.json();
-    if (!ok) return new Response(JSON.stringify({ error: 'FORBIDDEN' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (!ok)
+      return new Response(JSON.stringify({ error: 'FORBIDDEN' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
 
-    const lookup = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(normalized)}`, {
-      headers: { Authorization: `Bearer ${SERVICE_ROLE}` },
-    });
+    const lookup = await fetch(
+      `${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(normalized)}`,
+      {
+        headers: { Authorization: `Bearer ${SERVICE_ROLE}` },
+      },
+    );
     const lu = await lookup.json();
     let userId = lu?.users?.[0]?.id || lu?.user?.id;
     // Fallback to PostgREST lookup in auth.users
@@ -61,7 +77,10 @@ serve(async (req) => {
 
     if (!del.ok) {
       const body = await del.json();
-      return new Response(JSON.stringify(body), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify(body), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Best-effort cleanup of app-side rows (ignore errors)
@@ -80,8 +99,14 @@ serve(async (req) => {
       });
     } catch (_) {}
 
-    return new Response(JSON.stringify({ id: userId, email: normalized }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ id: userId, email: normalized }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ error: String(e) }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

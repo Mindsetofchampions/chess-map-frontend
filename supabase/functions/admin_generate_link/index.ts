@@ -14,7 +14,7 @@ serve(async (req) => {
     if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
     if (req.method !== 'POST')
       return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
-  const { email, type = 'magiclink', redirectTo } = await req.json();
+    const { email, type = 'magiclink', redirectTo } = await req.json();
     if (!email)
       return new Response(JSON.stringify({ error: 'email required' }), {
         status: 400,
@@ -46,7 +46,10 @@ serve(async (req) => {
     if (redirectTo) {
       try {
         const u = new URL(redirectTo);
-        const allowed = (Deno.env.get('ALLOWED_REDIRECT_HOSTS') || '').split(',').map((s) => s.trim()).filter(Boolean);
+        const allowed = (Deno.env.get('ALLOWED_REDIRECT_HOSTS') || '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
         if (allowed.length === 0) {
           // default allow: same host as SUPABASE_URL if provided
           const sHost = new URL(SUPABASE_URL).host;
@@ -78,7 +81,11 @@ serve(async (req) => {
       JSON.stringify({ url: body?.properties?.action_link ?? body?.action_link }),
       {
         status: 200,
-        headers: { ...corsHeaders, 'Cache-Control': 'no-store', 'Content-Type': 'application/json' },
+        headers: {
+          ...corsHeaders,
+          'Cache-Control': 'no-store',
+          'Content-Type': 'application/json',
+        },
       },
     );
   } catch (e) {

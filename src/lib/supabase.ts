@@ -302,8 +302,7 @@ export async function allocateUserCoins(
   email: string,
   amount: number,
   reason: string,
-): Promise<{ ok: boolean; user_id: string; amount: number }>
-{
+): Promise<{ ok: boolean; user_id: string; amount: number }> {
   try {
     const { data, error } = await supabase.rpc('allocate_user_coins', {
       p_email: email,
@@ -489,7 +488,10 @@ export async function sendSystemNotification(to: string, subject: string, text: 
 }
 
 // Org admin: org and engagement flows
-export interface MyOrg { org_id: string; name: string }
+export interface MyOrg {
+  org_id: string;
+  name: string;
+}
 export interface OrgEngagement {
   id: string;
   org_id: string;
@@ -538,7 +540,11 @@ export async function fundOrgEngagement(engagementId: string, amount: number, re
   return data as { ok: boolean; remaining: number };
 }
 
-export async function upsertEngagementRecipient(engagementId: string, email: string, amount: number) {
+export async function upsertEngagementRecipient(
+  engagementId: string,
+  email: string,
+  amount: number,
+) {
   const { data, error } = await supabase.rpc('upsert_engagement_recipient', {
     p_engagement_id: engagementId,
     p_user_email: email,
@@ -565,8 +571,15 @@ export async function distributeEngagement(engagementId: string) {
   return data as { ok: boolean; distributed: number };
 }
 
-export interface OrgWallet { org_id: string; balance: number }
-export interface EngagementRecipient { user_id: string; email: string; planned_amount: number }
+export interface OrgWallet {
+  org_id: string;
+  balance: number;
+}
+export interface EngagementRecipient {
+  user_id: string;
+  email: string;
+  planned_amount: number;
+}
 
 export async function getMyOrgWallet(): Promise<OrgWallet> {
   const { data, error } = await supabase.rpc('get_my_org_wallet');
@@ -575,8 +588,16 @@ export async function getMyOrgWallet(): Promise<OrgWallet> {
   return { org_id: obj.org_id, balance: Number(obj.balance ?? 0) };
 }
 
-export async function listEngagementRecipients(engagementId: string): Promise<EngagementRecipient[]> {
-  const { data, error } = await supabase.rpc('list_engagement_recipients', { p_engagement_id: engagementId });
+export async function listEngagementRecipients(
+  engagementId: string,
+): Promise<EngagementRecipient[]> {
+  const { data, error } = await supabase.rpc('list_engagement_recipients', {
+    p_engagement_id: engagementId,
+  });
   if (error) throw new Error(mapPgError(error).message);
-  return (data as any[]).map((r: any) => ({ user_id: r.user_id, email: r.email, planned_amount: Number(r.planned_amount ?? 0) }));
+  return (data as any[]).map((r: any) => ({
+    user_id: r.user_id,
+    email: r.email,
+    planned_amount: Number(r.planned_amount ?? 0),
+  }));
 }

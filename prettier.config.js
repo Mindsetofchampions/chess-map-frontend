@@ -24,7 +24,7 @@ export default {
   bracketSameLine: false,
   jsxSingleQuote: true,
   arrowParens: 'always',
-  endOfLine: 'lf',
+  endOfLine: 'auto',
   embeddedLanguageFormatting: 'auto',
   htmlWhitespaceSensitivity: 'css',
   overrides: [

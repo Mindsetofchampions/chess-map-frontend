@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 
 import { useToast } from '@/components/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
 import { createSystemNotification } from '@/lib/notifications';
+import { supabase } from '@/lib/supabase';
 
 export default function OrgOnboarding() {
   const { user, refreshRole } = useAuth();
@@ -40,8 +40,8 @@ export default function OrgOnboarding() {
       const logoPath = `orgs/${user.id}/${Date.now()}_${logoFile.name}`;
       const idPath = `orgs/${user.id}/${Date.now()}_${idFile.name}`;
 
-  await uploadFile(logoBucket, logoPath, logoFile);
-  await uploadFile(idBucket, idPath, idFile);
+      await uploadFile(logoBucket, logoPath, logoFile);
+      await uploadFile(idBucket, idPath, idFile);
 
       // Insert onboarding row
       const { error: insertErr } = await supabase.from('org_onboardings').insert({
@@ -81,16 +81,19 @@ export default function OrgOnboarding() {
         // Email notification (edge function, best-effort) to submitter for receipt
         const { data: session } = await supabase.auth.getSession();
         const token = session.session?.access_token;
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send_onboarding_notification`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            event: 'system_notification',
-            parent_email: user.email,
-            subject: 'Organization onboarding submitted',
-            text: `We received your organization onboarding for ${orgName}. An admin will review it shortly.`,
-          }),
-        });
+        await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send_onboarding_notification`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              event: 'system_notification',
+              parent_email: user.email,
+              subject: 'Organization onboarding submitted',
+              text: `We received your organization onboarding for ${orgName}. An admin will review it shortly.`,
+            }),
+          },
+        );
       } catch (_) {
         // non-fatal
       }
