@@ -1,5 +1,5 @@
 /**
- * Babel configuration for Jest testing
+ * Babel configuration for Jest testing (CommonJS for Jest compatibility)
  */
 module.exports = {
   presets: [
@@ -7,7 +7,5 @@ module.exports = {
     ['@babel/preset-react', { runtime: 'automatic' }],
     '@babel/preset-typescript',
   ],
-  plugins: [
-    // Add any additional Babel plugins here if needed
-  ],
+  plugins: [],
 };

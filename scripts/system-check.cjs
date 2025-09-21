@@ -2,7 +2,7 @@
 
 /**
  * CHESS Map Frontend System Verification Script
- * 
+ *
  * Performs comprehensive read-only verification of frontend/backend wiring
  * without modifying any source files.
  */
@@ -18,7 +18,7 @@ const colors = {
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   reset: '\x1b[0m',
-  bold: '\x1b[1m'
+  bold: '\x1b[1m',
 };
 
 const results = {
@@ -28,7 +28,7 @@ const results = {
   testIds: {},
   supabase: {},
   sprites: {},
-  preview: {}
+  preview: {},
 };
 
 /**
@@ -36,17 +36,17 @@ const results = {
  */
 function execCommand(command, options = {}) {
   try {
-    const output = execSync(command, { 
-      encoding: 'utf8', 
+    const output = execSync(command, {
+      encoding: 'utf8',
       timeout: 60000,
-      ...options 
+      ...options,
     });
     return { success: true, output: output.trim() };
   } catch (error) {
-    return { 
-      success: false, 
+    return {
+      success: false,
       output: error.stdout || error.stderr || error.message,
-      exitCode: error.status 
+      exitCode: error.status,
     };
   }
 }
@@ -74,8 +74,10 @@ function readFile(filePath) {
  */
 function searchInFiles(pattern, directory = 'src') {
   try {
-    const result = execCommand(`grep -r "${pattern}" ${directory} --include="*.ts" --include="*.tsx" || true`);
-    return result.output.split('\n').filter(line => line.trim()).length;
+    const result = execCommand(
+      `grep -r "${pattern}" ${directory} --include="*.ts" --include="*.tsx" || true`,
+    );
+    return result.output.split('\n').filter((line) => line.trim()).length;
   } catch {
     return 0;
   }
@@ -100,11 +102,11 @@ console.log(`npm: ${npmVersion.output}`);
 const envFiles = ['.env', '.env.local', '.env.example'];
 let envVars = {};
 
-envFiles.forEach(file => {
+envFiles.forEach((file) => {
   const content = readFile(file);
   if (content) {
     const lines = content.split('\n');
-    lines.forEach(line => {
+    lines.forEach((line) => {
       const match = line.match(/^([A-Z_]+)=/);
       if (match) {
         envVars[match[1]] = 'present';
@@ -116,13 +118,13 @@ envFiles.forEach(file => {
 const requiredVars = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'];
 const optionalVars = ['VITE_MAPBOX_TOKEN'];
 
-requiredVars.forEach(varName => {
+requiredVars.forEach((varName) => {
   const present = !!envVars[varName];
   results.environment[varName] = present ? 'PASS' : 'FAIL';
   console.log(`${varName}: ${present ? '✅ PASS' : '❌ FAIL'}`);
 });
 
-optionalVars.forEach(varName => {
+optionalVars.forEach((varName) => {
   const present = !!envVars[varName];
   results.environment[varName] = present ? 'PASS' : 'WARN';
   console.log(`${varName}: ${present ? '✅ PASS' : '⚠️ WARN (optional)'}`);
@@ -166,11 +168,17 @@ if (!buildResult.success) {
 console.log(`\n${colors.blue}${colors.bold}3. Routes & Components${colors.reset}`);
 
 const expectedRoutes = [
-  '/login', '/signup', '/dashboard', '/quests', '/quests/:id', 
-  '/master/dashboard', '/master/quests/approvals', '/admin/diagnostics'
+  '/login',
+  '/signup',
+  '/dashboard',
+  '/quests',
+  '/quests/:id',
+  '/master/dashboard',
+  '/master/quests/approvals',
+  '/admin/diagnostics',
 ];
 
-expectedRoutes.forEach(route => {
+expectedRoutes.forEach((route) => {
   const found = searchInFiles(route, 'src') > 0;
   results.routes[route] = found ? 'PASS' : 'FAIL';
   console.log(`Route ${route}: ${found ? '✅ PASS' : '❌ FAIL'}`);
@@ -187,14 +195,29 @@ console.log(`SystemDiagnostics page: ${diagnosticsExists ? '✅ PASS' : '❌ FAI
 console.log(`\n${colors.blue}${colors.bold}4. Test IDs${colors.reset}`);
 
 const expectedTestIds = [
-  'btn-login', 'btn-signup', 'btn-logout', 'chip-wallet', 'table-ledger',
-  'btn-play-', 'btn-choice-', 'btn-approve-',
-  'btn-run-all', 'btn-run-env', 'btn-run-conn', 'btn-run-auth', 
-  'btn-run-wallet', 'btn-run-quests', 'btn-run-sprites', 'btn-run-map', 'btn-run-routes'
+  'btn-login',
+  'btn-signup',
+  'btn-logout',
+  'chip-wallet',
+  'table-ledger',
+  'btn-play-',
+  'btn-choice-',
+  'btn-approve-',
+  'btn-run-all',
+  'btn-run-env',
+  'btn-run-conn',
+  'btn-run-auth',
+  'btn-run-wallet',
+  'btn-run-quests',
+  'btn-run-sprites',
+  'btn-run-map',
+  'btn-run-routes',
 ];
 
-expectedTestIds.forEach(testId => {
-  const count = searchInFiles(`data-testid="${testId}`, 'src') + searchInFiles(`data-testid={\`${testId}`, 'src');
+expectedTestIds.forEach((testId) => {
+  const count =
+    searchInFiles(`data-testid="${testId}`, 'src') +
+    searchInFiles(`data-testid={\`${testId}`, 'src');
   results.testIds[testId] = count >= 1 ? 'PASS' : 'FAIL';
   console.log(`${testId}: ${count >= 1 ? '✅ PASS' : '❌ FAIL'} (${count} matches)`);
 });
@@ -207,7 +230,7 @@ console.log(`\n${colors.blue}${colors.bold}5. Supabase Helpers${colors.reset}`);
 const expectedHelpers = ['rpcSubmitMcq', 'rpcApproveQuest', 'getMyWallet', 'getMyLedger'];
 const expectedRpcs = ['submit_mcq_answer', 'approve_quest', 'get_my_wallet', 'get_my_ledger'];
 
-expectedHelpers.forEach(helper => {
+expectedHelpers.forEach((helper) => {
   const exported = searchInFiles(`export.*${helper}`, 'src/lib/supabase.ts') > 0;
   const used = searchInFiles(`import.*${helper}`, 'src') > 0;
   results.supabase[`${helper}_export`] = exported ? 'PASS' : 'FAIL';
@@ -216,7 +239,7 @@ expectedHelpers.forEach(helper => {
   console.log(`${helper} used: ${used ? '✅ PASS' : '❌ FAIL'}`);
 });
 
-expectedRpcs.forEach(rpc => {
+expectedRpcs.forEach((rpc) => {
   const found = searchInFiles(rpc, 'src/lib/supabase.ts') > 0;
   results.supabase[`rpc_${rpc}`] = found ? 'PASS' : 'FAIL';
   console.log(`RPC ${rpc}: ${found ? '✅ PASS' : '❌ FAIL'}`);
@@ -229,7 +252,7 @@ console.log(`\n${colors.blue}${colors.bold}6. Sprites & Assets${colors.reset}`);
 
 const expectedSprites = ['hootie.gif', 'kittykat.gif', 'gino.gif', 'hammer.gif', 'badge.gif'];
 
-expectedSprites.forEach(sprite => {
+expectedSprites.forEach((sprite) => {
   const exists = fileExists(`src/assets/personas/${sprite}`);
   results.sprites[sprite] = exists ? 'PASS' : 'FAIL';
   console.log(`${sprite}: ${exists ? '✅ PASS' : '❌ FAIL'}`);
@@ -255,22 +278,26 @@ if (buildResult.success) {
   try {
     console.log('Starting preview server...');
     const previewProcess = execCommand('timeout 20s npm run preview -- --port 4173 &');
-    
-    // Wait for server to start
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    
+
+    // Wait for server to start (CJS-safe, no top-level await)
+    execCommand('node -e "setTimeout(()=>{},5000)"');
+
     // Test diagnostics route
-    const curlResult = execCommand('curl -s -o /dev/null -w "%{http_code}" http://localhost:4173/admin/diagnostics');
+    const curlResult = execCommand(
+      'curl -s -o /dev/null -w "%{http_code}" http://localhost:4173/admin/diagnostics',
+    );
     const httpCode = curlResult.output;
-    
+
     if (httpCode === '200') {
       // Check if page contains expected test ID
       const pageContent = execCommand('curl -s http://localhost:4173/admin/diagnostics');
       const hasTestId = pageContent.output.includes('data-testid="btn-run-all"');
-      
+
       results.preview.status = hasTestId ? 'PASS' : 'FAIL';
       results.preview.httpCode = httpCode;
-      console.log(`Preview /admin/diagnostics: ${hasTestId ? '✅ PASS' : '❌ FAIL'} (HTTP ${httpCode})`);
+      console.log(
+        `Preview /admin/diagnostics: ${hasTestId ? '✅ PASS' : '❌ FAIL'} (HTTP ${httpCode})`,
+      );
     } else {
       results.preview.status = 'FAIL';
       results.preview.httpCode = httpCode;
@@ -331,7 +358,7 @@ const reportContent = `# CHESS Map Frontend System Verification Report
 
 | Test ID | Status | Count |
 |---------|--------|-------|
-${expectedTestIds.map(id => `| ${id} | ${results.testIds[id] === 'PASS' ? '✅ PASS' : '❌ FAIL'} | ${results.testIds[id + '_count'] || 0} |`).join('\n')}
+${expectedTestIds.map((id) => `| ${id} | ${results.testIds[id] === 'PASS' ? '✅ PASS' : '❌ FAIL'} | ${results.testIds[id + '_count'] || 0} |`).join('\n')}
 
 ## 🔗 Supabase Integration
 
@@ -459,11 +486,11 @@ function getDeploymentReadiness() {
     results.environment.VITE_SUPABASE_ANON_KEY === 'PASS',
     results.build.typeCheck === 'PASS',
     results.build.build === 'PASS',
-    results.routes.diagnosticsPage === 'PASS'
+    results.routes.diagnosticsPage === 'PASS',
   ];
-  
+
   const allCriticalPass = critical.every(Boolean);
-  
+
   if (allCriticalPass) {
     return `### 🟢 READY FOR DEPLOYMENT
 
@@ -478,16 +505,18 @@ The application is ready for testing deployment.`;
     return `### 🔴 NOT READY FOR DEPLOYMENT
 
 Critical issues must be resolved before deployment:
-${critical.map((pass, i) => {
-  const checks = ['Supabase URL', 'Supabase Key', 'Type Check', 'Build', 'Diagnostics'];
-  return pass ? `- ✅ ${checks[i]}` : `- ❌ ${checks[i]}`;
-}).join('\n')}`;
+${critical
+  .map((pass, i) => {
+    const checks = ['Supabase URL', 'Supabase Key', 'Type Check', 'Build', 'Diagnostics'];
+    return pass ? `- ✅ ${checks[i]}` : `- ❌ ${checks[i]}`;
+  })
+  .join('\n')}`;
   }
 }
 
 function getRemediationSteps() {
   const issues = [];
-  
+
   if (results.environment.VITE_SUPABASE_URL !== 'PASS') {
     issues.push('- Add VITE_SUPABASE_URL to .env file');
   }
@@ -500,11 +529,11 @@ function getRemediationSteps() {
   if (results.build.build !== 'PASS') {
     issues.push('- Fix build errors: `npm run build`');
   }
-  
+
   if (issues.length === 0) {
     return 'No critical issues found. System is ready for deployment.';
   }
-  
+
   return `Critical issues to resolve:\n${issues.join('\n')}`;
 }
 
@@ -519,13 +548,13 @@ const allChecks = [
   ...Object.values(results.routes),
   ...Object.values(results.testIds),
   ...Object.values(results.supabase),
-  ...Object.values(results.sprites)
+  ...Object.values(results.sprites),
 ];
 
-const passCount = allChecks.filter(r => r === 'PASS').length;
-const failCount = allChecks.filter(r => r === 'FAIL').length;
-const warnCount = allChecks.filter(r => r === 'WARN').length;
-const skipCount = allChecks.filter(r => r === 'SKIP').length;
+const passCount = allChecks.filter((r) => r === 'PASS').length;
+const failCount = allChecks.filter((r) => r === 'FAIL').length;
+const warnCount = allChecks.filter((r) => r === 'WARN').length;
+const skipCount = allChecks.filter((r) => r === 'SKIP').length;
 
 console.log(`${colors.green}✅ PASS: ${passCount}${colors.reset}`);
 console.log(`${colors.red}❌ FAIL: ${failCount}${colors.reset}`);
@@ -533,6 +562,10 @@ console.log(`${colors.yellow}⚠️ WARN: ${warnCount}${colors.reset}`);
 console.log(`${colors.blue}⏭️ SKIP: ${skipCount}${colors.reset}`);
 
 const overallStatus = failCount === 0 ? 'PASS' : 'FAIL';
-console.log(`\n${colors.bold}Overall Status: ${overallStatus === 'PASS' ? `${colors.green}✅ PASS` : `${colors.red}❌ FAIL`}${colors.reset}`);
+console.log(
+  `\n${colors.bold}Overall Status: ${overallStatus === 'PASS' ? `${colors.green}✅ PASS` : `${colors.red}❌ FAIL`}${colors.reset}`,
+);
 
-console.log(`\n${colors.blue}${colors.bold}SYSTEM CHECK COMPLETE — see SYSTEM_REPORT.md${colors.reset}`);
+console.log(
+  `\n${colors.blue}${colors.bold}SYSTEM CHECK COMPLETE — see SYSTEM_REPORT.md${colors.reset}`,
+);

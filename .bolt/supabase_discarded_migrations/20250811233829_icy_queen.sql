@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   updated_at timestamptz DEFAULT now(),
   
   -- Role constraint
-  CONSTRAINT users_role_check CHECK (role IN ('student', 'admin', 'master_admin'))
+  CONSTRAINT users_role_check CHECK (role IN ('student', 'org_admin', 'master_admin'))
 );
 
 -- Create admins table for role-based access control
@@ -134,7 +134,7 @@ BEGIN
   );
 
   -- If user is admin or master_admin, add to admins table
-  IF COALESCE(NEW.raw_user_meta_data->>'role', 'student') IN ('admin', 'master_admin') THEN
+  IF COALESCE(NEW.raw_user_meta_data->>'role', 'student') IN ('org_admin', 'master_admin') THEN
     INSERT INTO public.admins (user_id, created_at)
     VALUES (NEW.id, NOW());
   END IF;

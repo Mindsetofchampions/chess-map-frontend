@@ -1,20 +1,20 @@
 /**
  * Safe Formatting Utilities
- * 
+ *
  * Provides null-safe formatting functions for dates, numbers, and other data types
  * to prevent runtime errors and ensure consistent display across the application.
  */
 
 /**
  * Safe date formatting with null guards
- * 
+ *
  * @param date - Date string, Date object, or null/undefined
  * @param options - Intl.DateTimeFormatOptions for customization
  * @returns Formatted date string or fallback text
  */
 export function formatDateTime(
   date: string | Date | null | undefined,
-  options?: Intl.DateTimeFormatOptions
+  options?: Intl.DateTimeFormatOptions,
 ): string {
   if (!date) {
     return '--';
@@ -22,7 +22,7 @@ export function formatDateTime(
 
   try {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    
+
     // Check for invalid date
     if (isNaN(dateObj.getTime())) {
       return '--';
@@ -34,7 +34,7 @@ export function formatDateTime(
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      ...options
+      ...options,
     };
 
     return dateObj.toLocaleString('en-US', defaultOptions);
@@ -46,35 +46,31 @@ export function formatDateTime(
 
 /**
  * Safe date formatting for display (date only)
- * 
+ *
  * @param date - Date string, Date object, or null/undefined
  * @returns Formatted date string or fallback text
  */
-export function formatDate(
-  date: string | Date | null | undefined
-): string {
+export function formatDate(date: string | Date | null | undefined): string {
   return formatDateTime(date, {
     hour: undefined,
-    minute: undefined
+    minute: undefined,
   });
 }
 
 /**
  * Safe relative time formatting
- * 
+ *
  * @param date - Date string, Date object, or null/undefined
  * @returns Relative time string (e.g., "2 hours ago") or fallback text
  */
-export function formatRelativeTime(
-  date: string | Date | null | undefined
-): string {
+export function formatRelativeTime(date: string | Date | null | undefined): string {
   if (!date) {
     return '--';
   }
 
   try {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    
+
     if (isNaN(dateObj.getTime())) {
       return '--';
     }
@@ -105,14 +101,14 @@ export function formatRelativeTime(
 
 /**
  * Safe number formatting with locale support
- * 
+ *
  * @param num - Number or null/undefined
  * @param options - Intl.NumberFormatOptions for customization
  * @returns Formatted number string or fallback text
  */
 export function formatNumber(
   num: number | null | undefined,
-  options?: Intl.NumberFormatOptions
+  options?: Intl.NumberFormatOptions,
 ): string {
   if (num == null || isNaN(num)) {
     return '0';
@@ -128,24 +124,24 @@ export function formatNumber(
 
 /**
  * Safe currency formatting
- * 
+ *
  * @param amount - Number or null/undefined
  * @param currency - Currency code (default: 'USD')
  * @returns Formatted currency string or fallback text
  */
 export function formatCurrency(
   amount: number | null | undefined,
-  currency: string = 'USD'
+  currency: string = 'USD',
 ): string {
   return formatNumber(amount, {
     style: 'currency',
-    currency
+    currency,
   });
 }
 
 /**
  * Safe coin amount formatting for the quest system
- * 
+ *
  * @param coins - Number of coins or null/undefined
  * @returns Formatted coins string with unit
  */
@@ -160,7 +156,7 @@ export function formatCoins(coins: number | null | undefined): string {
 
 /**
  * Safe string truncation
- * 
+ *
  * @param str - String to truncate or null/undefined
  * @param maxLength - Maximum length before truncation
  * @param suffix - Suffix to add when truncated (default: '...')
@@ -169,7 +165,7 @@ export function formatCoins(coins: number | null | undefined): string {
 export function truncateText(
   str: string | null | undefined,
   maxLength: number,
-  suffix: string = '...'
+  suffix: string = '...',
 ): string {
   if (!str) {
     return '--';

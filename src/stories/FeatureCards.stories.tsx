@@ -1,15 +1,15 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import { within, userEvent } from '@storybook/testing-library';
 import { expect } from '@storybook/jest';
-import React from 'react';
+import type { Meta, StoryObj } from '@storybook/react';
+import { within, userEvent } from '@storybook/testing-library';
 import { MapPin, Shield, Compass } from 'lucide-react';
+import React from 'react';
 
 import GlassContainer from '../components/GlassContainer';
 
 /**
  * Feature Cards Section Component for Storybook
- * 
+ *
  * This story showcases the feature highlight cards that explain
  * the main capabilities of the CHESS Quest platform.
  */
@@ -32,61 +32,81 @@ const FeatureCardsSection: React.FC<{
 }> = ({
   onFeatureClick = action('feature-card-clicked'),
   showAnimations = true,
-  cardLayout = 'grid'
+  cardLayout = 'grid',
 }) => {
+  const gradientMap: Record<string, string> = {
+    'electric-blue-400': '#4F9BFF',
+    'electric-blue-600': '#1E5EEB',
+    'cyber-green-400': '#34D399',
+    'cyber-green-600': '#059669',
+    'neon-purple-400': '#D946EF',
+    'neon-purple-600': '#A21CAF',
+  };
+
   const features: FeatureCard[] = [
     {
-      icon: <MapPin className="w-8 h-8 text-white" />,
+      icon: <MapPin className='w-8 h-8 text-white' />,
       title: 'Dynamic Quests',
-      description: 'Discover location-based challenges that adapt to your learning pace and preferences. Complete quests to unlock new areas and earn valuable rewards.',
+      description:
+        'Discover location-based challenges that adapt to your learning pace and preferences. Complete quests to unlock new areas and earn valuable rewards.',
       actionText: 'Explore Quests',
-      actionIcon: <Compass className="w-4 h-4" />,
-      gradient: 'from-electric-blue-400 to-electric-blue-600',
+      actionIcon: <Compass className='w-4 h-4' />,
+      gradient: 'from-[var(--eb400)] to-[var(--eb600)]',
       actionColor: 'text-electric-blue-400',
-      onClick: () => onFeatureClick('quests')
+      onClick: () => onFeatureClick('quests'),
     },
     {
-      icon: <Shield className="w-8 h-8 text-white" />,
+      icon: <Shield className='w-8 h-8 text-white' />,
       title: 'Safe Spaces',
-      description: 'Find secure environments where you can learn, collaborate, and grow. Our protected zones ensure a positive and supportive experience for everyone.',
+      description:
+        'Find secure environments where you can learn, collaborate, and grow. Our protected zones ensure a positive and supportive experience for everyone.',
       actionText: 'Find Safety',
-      actionIcon: <Shield className="w-4 h-4" />,
-      gradient: 'from-cyber-green-400 to-cyber-green-600',
+      actionIcon: <Shield className='w-4 h-4' />,
+      gradient: 'from-[var(--cg400)] to-[var(--cg600)]',
       actionColor: 'text-cyber-green-400',
-      onClick: () => onFeatureClick('safety')
+      onClick: () => onFeatureClick('safety'),
     },
     {
-      icon: <Compass className="w-8 h-8 text-white" />,
+      icon: <Compass className='w-8 h-8 text-white' />,
       title: 'Live Navigation',
-      description: 'Navigate through your learning journey with real-time guidance. Interactive maps and smart routing help you discover the most engaging pathways.',
+      description:
+        'Navigate through your learning journey with real-time guidance. Interactive maps and smart routing help you discover the most engaging pathways.',
       actionText: 'Start Journey',
-      actionIcon: <Compass className="w-4 h-4" />,
-      gradient: 'from-neon-purple-400 to-neon-purple-600',
+      actionIcon: <Compass className='w-4 h-4' />,
+      gradient: 'from-[var(--np400)] to-[var(--np600)]',
       actionColor: 'text-neon-purple-400',
-      onClick: () => onFeatureClick('navigation')
-    }
+      onClick: () => onFeatureClick('navigation'),
+    },
   ];
 
-  const gridClasses = cardLayout === 'grid' 
-    ? 'grid-cols-1 md:grid-cols-3'
-    : 'grid-cols-1';
+  const gridClasses = cardLayout === 'grid' ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1';
 
   return (
-    <section className="py-16 px-6">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-          Power Up Your Learning
-        </h2>
-        <p className="text-gray-100 text-lg max-w-2xl mx-auto font-medium drop-shadow-sm">
-          Experience education through gamification with cutting-edge features designed for engagement and growth.
+    <section
+      className='py-16 px-6'
+      style={{
+        // supply CSS variables used in gradient fallbacks so backgrounds compute
+        ['--eb400' as any]: gradientMap['electric-blue-400'],
+        ['--eb600' as any]: gradientMap['electric-blue-600'],
+        ['--cg400' as any]: gradientMap['cyber-green-400'],
+        ['--cg600' as any]: gradientMap['cyber-green-600'],
+        ['--np400' as any]: gradientMap['neon-purple-400'],
+        ['--np600' as any]: gradientMap['neon-purple-600'],
+      }}
+    >
+      <div className='text-center mb-12'>
+        <h2 className='text-3xl md:text-4xl font-bold text-white mb-4'>Power Up Your Learning</h2>
+        <p className='text-gray-100 text-lg max-w-2xl mx-auto font-medium drop-shadow-sm'>
+          Experience education through gamification with cutting-edge features designed for
+          engagement and growth.
         </p>
       </div>
-      
+
       <div className={`grid ${gridClasses} gap-6`}>
         {features.map((feature, index) => (
-          <GlassContainer 
+          <GlassContainer
             key={feature.title}
-            variant="card" 
+            variant='card'
             className={`
               flex flex-col items-center space-y-4 text-center 
               hover:bg-glass-dark transition-all duration-300 
@@ -97,11 +117,13 @@ const FeatureCardsSection: React.FC<{
             delay={index * 0.2}
             onClick={feature.onClick}
           >
-            <div className={`w-16 h-16 bg-gradient-to-br ${feature.gradient} rounded-full flex items-center justify-center shadow-lg`}>
+            <div
+              className={`w-16 h-16 bg-gradient-to-br ${feature.gradient} rounded-full flex items-center justify-center shadow-lg`}
+            >
               {feature.icon}
             </div>
-            <h3 className="text-xl font-semibold text-white">{feature.title}</h3>
-            <p className="text-gray-100 text-sm leading-relaxed font-medium">
+            <h3 className='text-xl font-semibold text-white'>{feature.title}</h3>
+            <p className='text-gray-100 text-sm leading-relaxed font-medium'>
               {feature.description}
             </p>
             <div className={`flex items-center gap-2 ${feature.actionColor} text-sm font-medium`}>
@@ -206,7 +228,8 @@ export const RowLayout: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Feature cards arranged in a single column for alternative layouts or narrow spaces.',
+        story:
+          'Feature cards arranged in a single column for alternative layouts or narrow spaces.',
       },
     },
   },
@@ -219,19 +242,19 @@ export const WithInteractions: Story = {
   args: {},
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // Test all feature cards are present
     await expect(canvas.getByText('Dynamic Quests')).toBeInTheDocument();
     await expect(canvas.getByText('Safe Spaces')).toBeInTheDocument();
     await expect(canvas.getByText('Live Navigation')).toBeInTheDocument();
-    
+
     // Test hover interactions
     const questCard = canvas.getByText('Dynamic Quests').closest('div');
     if (questCard) {
       await userEvent.hover(questCard);
       await expect(questCard).toHaveClass('hover:scale-105');
     }
-    
+
     // Test click interactions
     const safetyCard = canvas.getByText('Find Safety');
     await userEvent.click(safetyCard);
@@ -291,7 +314,8 @@ export const AccessibilityTest: Story = {
     },
     docs: {
       description: {
-        story: 'Feature cards optimized for accessibility testing with high contrast and clear interactive elements.',
+        story:
+          'Feature cards optimized for accessibility testing with high contrast and clear interactive elements.',
       },
     },
   },

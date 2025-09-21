@@ -1,0 +1,26 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Netlify secrets scanning config: omit known public client keys and local env file path
+  SECRETS_SCAN_ENABLED = "true"
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_SERVICE_ROLE_KEY,SUPABASE_JWT_SECRET,SUPABASE_ANON_KEY,VITE_SUPABASE_ANON_KEY,VITE_SUPABASE_URL,VITE_MAPBOX_TOKEN,NETLIFY_DATABASE_URL,NETLIFY_DATABASE_URL_UNPOOLED"
+  SECRETS_SCAN_OMIT_PATHS = ".env"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200

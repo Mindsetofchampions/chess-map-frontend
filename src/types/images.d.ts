@@ -1,6 +1,6 @@
 /**
  * Image Module Declarations
- * 
+ *
  * Allows TypeScript to recognize GIF imports as strings
  */
 

@@ -13,7 +13,7 @@ export interface PersonaDef {
   icon: string;
 }
 
-interface MCQQuestion {
+export interface MCQQuestion {
   id: string;
   question_text: string;
   choices: Record<string, string>; // JSONB in DB
@@ -25,7 +25,7 @@ interface MCQQuestion {
   tags: string[];
 }
 
-interface MCQAnswer {
+export interface MCQAnswer {
   id: string;
   user_id: string;
   mcq_id: string;
@@ -33,7 +33,7 @@ interface MCQAnswer {
   created_at: string;
 }
 
-interface VideoResource {
+export interface VideoResource {
   id: string;
   title: string;
   video_url: string;
@@ -44,7 +44,7 @@ interface VideoResource {
   reflection_question?: string;
 }
 
-interface QuestEvidence {
+export interface QuestEvidence {
   id: string;
   user_id: string;
   quest_id?: string;
@@ -60,7 +60,7 @@ export interface UserProfile {
   created_at: string;
 }
 
-interface PublicEvent {
+export interface PublicEvent {
   id: string;
   title: string;
   description?: string;
@@ -73,7 +73,7 @@ interface PublicEvent {
   org_id?: string;
 }
 
-interface MemorySummary {
+export interface MemorySummary {
   recentTopics: string[];
   userPreferences: string[];
   conversationContext: string;

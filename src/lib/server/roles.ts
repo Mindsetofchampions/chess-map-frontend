@@ -1,12 +1,11 @@
 /**
  * Server-Side Role Management
- * 
+ *
  * Provides utilities for role checking and access control on the server side.
  * Used for route protection and server-side authorization.
  */
 
-import { createServerClient } from '@supabase/ssr';
-import type { Database } from '@/types/database';
+// Server-side role utilities — createServerClient can be used by callers when needed.
 
 /**
  * Application role types
@@ -15,15 +14,18 @@ export type AppRole = 'master_admin' | 'org_admin' | 'staff' | 'student' | 'unkn
 
 /**
  * Get user role from server-side Supabase client
- * 
+ *
  * @param supabaseServerClient - Server-side Supabase client instance
  * @returns User's role or 'unknown' if not found/authenticated
  */
 export async function getUserRole(supabaseServerClient: any): Promise<AppRole> {
   try {
     // Get current user
-    const { data: { user }, error: userError } = await supabaseServerClient.auth.getUser();
-    
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseServerClient.auth.getUser();
+
     if (userError || !user) {
       return 'unknown';
     }
@@ -64,18 +66,18 @@ export async function getUserRole(supabaseServerClient: any): Promise<AppRole> {
 
 /**
  * Check if user has at least the specified role level
- * 
+ *
  * @param userRole - Current user's role
  * @param requiredRole - Minimum required role
  * @returns True if user meets the role requirement
  */
 export function hasRoleLevel(userRole: AppRole, requiredRole: AppRole): boolean {
   const roleHierarchy: Record<AppRole, number> = {
-    'master_admin': 4,
-    'org_admin': 3,
-    'staff': 2,
-    'student': 1,
-    'unknown': 0
+    master_admin: 4,
+    org_admin: 3,
+    staff: 2,
+    student: 1,
+    unknown: 0,
   };
 
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
@@ -83,14 +85,14 @@ export function hasRoleLevel(userRole: AppRole, requiredRole: AppRole): boolean 
 
 /**
  * Server-side route guard utility
- * 
+ *
  * @param supabaseServerClient - Server-side Supabase client
  * @param requiredRole - Minimum required role for access
  * @returns Object with access status and user role
  */
 export async function requireRole(
   supabaseServerClient: any,
-  requiredRole: AppRole
+  requiredRole: AppRole,
 ): Promise<{ hasAccess: boolean; userRole: AppRole; shouldRedirect: boolean }> {
   const userRole = await getUserRole(supabaseServerClient);
   const hasAccess = hasRoleLevel(userRole, requiredRole);
@@ -98,13 +100,13 @@ export async function requireRole(
   return {
     hasAccess,
     userRole,
-    shouldRedirect: !hasAccess && userRole !== 'unknown'
+    shouldRedirect: !hasAccess && userRole !== 'unknown',
   };
 }
 
 /**
  * Create master admin check function
- * 
+ *
  * @param supabaseServerClient - Server-side Supabase client
  * @returns True if user is master admin
  */
@@ -115,7 +117,7 @@ export async function isMasterAdmin(supabaseServerClient: any): Promise<boolean>
 
 /**
  * Validate role assignment permissions
- * 
+ *
  * @param assignerRole - Role of the user attempting to assign roles
  * @param targetRole - Role being assigned
  * @returns True if the assignment is valid

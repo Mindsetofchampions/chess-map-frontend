@@ -1,0 +1,452 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`FloatingBubbles contains all expected CHESS attribute bubbles: floating-bubbles-complete 1`] = `
+<div
+  class="absolute inset-0 pointer-events-none overflow-hidden"
+>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 15%; top: 20%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="Hootie the Owl - Character attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(139, 92, 246, 0.125); border-color: rgba(139, 92, 246, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="Hootie the Owl sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/owl.gif/HOOTIE_WINGLIFT.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(139, 92, 246);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 75%; top: 15%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="Brenda the Cat - Health attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(16, 185, 129, 0.125); border-color: rgba(16, 185, 129, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="Brenda the Cat sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/cat.gif/KITTY_BOUNCE.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(16, 185, 129);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 20%; top: 70%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="Gino the Dog - Exploration attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(245, 158, 11, 0.125); border-color: rgba(245, 158, 11, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="Gino the Dog sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/dog.gif/GINO_COMPASSSPIN.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(245, 158, 11);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 80%; top: 65%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="Hammer the Robot - STEM attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(59, 130, 246, 0.125); border-color: rgba(59, 130, 246, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="Hammer the Robot sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/robot.gif/HAMMER_SWING.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(59, 130, 246);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 50%; top: 45%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="MOC Badge - Stewardship attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(239, 68, 68, 0.125); border-color: rgba(239, 68, 68, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="MOC Badge sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/badge.gif/BADGE_SHINE.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(239, 68, 68);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+</div>
+`;
+
+exports[`FloatingBubbles has proper accessibility attributes: accessibility-structure 1`] = `
+<div
+  class="absolute inset-0 pointer-events-none overflow-hidden"
+>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 15%; top: 20%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="Hootie the Owl - Character attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(139, 92, 246, 0.125); border-color: rgba(139, 92, 246, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="Hootie the Owl sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/owl.gif/HOOTIE_WINGLIFT.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(139, 92, 246);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 75%; top: 15%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="Brenda the Cat - Health attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(16, 185, 129, 0.125); border-color: rgba(16, 185, 129, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="Brenda the Cat sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/cat.gif/KITTY_BOUNCE.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(16, 185, 129);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 20%; top: 70%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="Gino the Dog - Exploration attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(245, 158, 11, 0.125); border-color: rgba(245, 158, 11, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="Gino the Dog sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/dog.gif/GINO_COMPASSSPIN.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(245, 158, 11);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 80%; top: 65%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="Hammer the Robot - STEM attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(59, 130, 246, 0.125); border-color: rgba(59, 130, 246, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="Hammer the Robot sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/robot.gif/HAMMER_SWING.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(59, 130, 246);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 50%; top: 45%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="MOC Badge - Stewardship attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(239, 68, 68, 0.125); border-color: rgba(239, 68, 68, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="MOC Badge sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/badge.gif/BADGE_SHINE.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(239, 68, 68);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+</div>
+`;
+
+exports[`FloatingBubbles renders all CHESS attribute bubbles correctly 1`] = `
+<div
+  class="absolute inset-0 pointer-events-none overflow-hidden"
+>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 15%; top: 20%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="Hootie the Owl - Character attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(139, 92, 246, 0.125); border-color: rgba(139, 92, 246, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="Hootie the Owl sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/owl.gif/HOOTIE_WINGLIFT.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(139, 92, 246);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 75%; top: 15%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="Brenda the Cat - Health attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(16, 185, 129, 0.125); border-color: rgba(16, 185, 129, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="Brenda the Cat sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/cat.gif/KITTY_BOUNCE.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(16, 185, 129);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 20%; top: 70%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="Gino the Dog - Exploration attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(245, 158, 11, 0.125); border-color: rgba(245, 158, 11, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="Gino the Dog sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/dog.gif/GINO_COMPASSSPIN.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(245, 158, 11);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 80%; top: 65%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="Hammer the Robot - STEM attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(59, 130, 246, 0.125); border-color: rgba(59, 130, 246, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="Hammer the Robot sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/robot.gif/HAMMER_SWING.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(59, 130, 246);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+  <div
+    animate="[object Object]"
+    class="absolute pointer-events-auto"
+    style="left: 50%; top: 45%; transform: translate(-50%, -50%);"
+    transition="[object Object]"
+  >
+    <button
+      aria-label="MOC Badge - Stewardship attribute bubble"
+      class=" rounded-full shadow-lg p-3 cursor-pointer transition-all duration-300 hover:shadow-xl min-w-[44px] min-h-[44px] touch-manipulation flex items-center justify-center border-2 relative "
+      role="button"
+      style="background-color: rgba(239, 68, 68, 0.125); border-color: rgba(239, 68, 68, 0.376);"
+      tabindex="0"
+    >
+      <img
+        alt="MOC Badge sprite"
+        class=" w-10 h-10 md:w-12 md:h-12 object-contain select-none pointer-events-none "
+        draggable="false"
+        src="/sprites/badge.gif/BADGE_SHINE.gif"
+        style="image-rendering: pixelated;"
+      />
+      <div
+        animate="[object Object]"
+        class="absolute inset-0 rounded-full border-2 opacity-60"
+        style="border-color: rgb(239, 68, 68);"
+        transition="[object Object]"
+      />
+    </button>
+  </div>
+</div>
+`;
+
+exports[`FloatingBubbles renders sprite images with correct sources: sprite-sources 1`] = `
+[
+  "/sprites/owl.gif/HOOTIE_WINGLIFT.gif",
+  "/sprites/cat.gif/KITTY_BOUNCE.gif",
+  "/sprites/dog.gif/GINO_COMPASSSPIN.gif",
+  "/sprites/robot.gif/HAMMER_SWING.gif",
+  "/sprites/badge.gif/BADGE_SHINE.gif",
+]
+`;

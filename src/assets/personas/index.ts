@@ -1,6 +1,6 @@
 /**
  * Persona GIF Assets
- * 
+ *
  * Imports persona GIF files for use in quest bubbles and map markers.
  * Uses actual GIF assets from the public sprites directory.
  */
@@ -17,7 +17,7 @@ export const PERSONA_GIF = {
   kittykat: kittykatGif,
   gino: ginoGif,
   hammer: hammerGif,
-  badge: badgeGif
+  badge: badgeGif,
 } as const;
 
 export type PersonaKey = keyof typeof PERSONA_GIF;
@@ -31,8 +31,8 @@ export const getPersonaInfo = (key: PersonaKey) => {
     kittykat: { name: 'Kitty Kat', emoji: '🐱', category: 'Health' },
     gino: { name: 'Gino the Dog', emoji: '🐕', category: 'Exploration' },
     hammer: { name: 'Hammer the Robot', emoji: '🤖', category: 'STEM' },
-    badge: { name: 'MOC Badge', emoji: '🏛️', category: 'Stewardship' }
+    badge: { name: 'MOC Badge', emoji: '🏛️', category: 'Stewardship' },
   };
-  
+
   return personaMap[key] || { name: key, emoji: '❓', category: 'Unknown' };
 };

@@ -1,26 +1,24 @@
 // filepath: src/components/MapView.tsx
-import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, MapPin, Sparkles, X } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { CHESS_COLORS } from '@/components/FloatingBubbles';
-import type { PersonaDef, PersonaKey as TypesPersonaKey } from '@/types';
+import { useEffect, useRef, useState, useCallback } from 'react';
+
 import { type PersonaKey } from '@/assets/personas';
-import { addPersonaChipsToMap, type PersonaChipMarker, type OrganizationWithPersonas } from '@/lib/sprites';
-import { 
-  PHILADELPHIA_BUBBLES, 
-  QUEST_STYLES, 
-  type QuestCategory,
-  type QuestBubble 
-} from '@/hooks/usePhiladelphiaData';
+import { useAuth } from '@/contexts/AuthContext';
+import { PHILADELPHIA_BUBBLES, QUEST_STYLES, type QuestBubble } from '@/hooks/usePhiladelphiaData';
+import {
+  addPersonaChipsToMap,
+  type PersonaChipMarker,
+  type OrganizationWithPersonas,
+} from '@/lib/sprites';
 import QuestMapOverlay from '@/pages/student/QuestMapOverlay';
+import type { PersonaDef } from '@/types';
 
 interface MapViewProps {
   center?: [number, number];
   zoom?: number;
   onQuestComplete?: (questId: string) => void;
 }
-
 
 interface BubbleTooltipProps {
   bubble: QuestBubble;
@@ -37,6 +35,17 @@ const BubbleTooltip: React.FC<BubbleTooltipProps> = ({
 }) => {
   const style = QUEST_STYLES[bubble.category];
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  const getActionLabel = (cat: string) => {
+    switch (cat) {
+      case 'safe_space':
+        return 'Enter Safe Space';
+      case 'event':
+        return 'Join Event';
+      default:
+        return 'Start Quest';
+    }
+  };
 
   const handleStart = () => {
     console.log('Starting quest from bubble:', bubble.id);
@@ -61,55 +70,52 @@ const BubbleTooltip: React.FC<BubbleTooltipProps> = ({
 
   return (
     <motion.div
-      className="pointer-events-auto"
+      className='pointer-events-auto'
       style={tooltipStyle}
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.8, y: 20 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
     >
-      <div className="bg-white/30 backdrop-blur-2xl border border-white/40 rounded-2xl shadow-2xl p-4 relative max-w-sm">
+      <div className='bg-white/30 backdrop-blur-2xl border border-white/40 rounded-2xl shadow-2xl p-4 relative max-w-sm'>
         <button
           onClick={onClose}
-          className="absolute top-2 right-2 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors min-w-touch min-h-touch touch-manipulation"
-          aria-label="Close tooltip"
+          className='absolute top-2 right-2 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors min-w-touch min-h-touch touch-manipulation'
+          aria-label='Close tooltip'
         >
-          <X className="w-4 h-4 text-white" />
+          <X className='w-4 h-4 text-white' />
         </button>
 
-        <div className="flex items-center gap-3 mb-3 pr-8">
+        <div className='flex items-center gap-3 mb-3 pr-8'>
           <div
-            className="w-12 h-12 rounded-full flex items-center justify-center border-2 border-white/40"
+            className='w-12 h-12 rounded-full flex items-center justify-center border-2 border-white/40'
             style={{ backgroundColor: `${style.color}40` }}
           >
             <img
               src={style.sprite}
               alt={style.character}
-              className="w-8 h-8 object-contain"
+              className='w-8 h-8 object-contain'
               draggable={false}
             />
           </div>
           <div>
-            <h3 className="text-white font-bold text-lg">{bubble.title}</h3>
-            <p className="text-gray-200 text-sm">{style.character}</p>
+            <h3 className='text-white font-bold text-lg'>{bubble.title}</h3>
+            <p className='text-gray-200 text-sm'>{style.character}</p>
           </div>
         </div>
 
-        <p className="text-gray-100 text-sm mb-3 leading-relaxed">
-          {bubble.description}
-        </p>
+        <p className='text-gray-100 text-sm mb-3 leading-relaxed'>{bubble.description}</p>
 
-        <div className="space-y-1 mb-4">
+        <div className='space-y-1 mb-4'>
           {bubble.organization && (
-            <div className="flex items-center gap-2 text-xs text-gray-200">
-              <MapPin className="w-3 h-3" />
+            <div className='flex items-center gap-2 text-xs text-gray-200'>
+              <MapPin className='w-3 h-3' />
               <span>{bubble.organization}</span>
             </div>
           )}
 
           {bubble.reward && (
-            <div className="flex items-center gap-2 text-xs text-yellow-300">
-              <Sparkles className="w-3 h-3" />
+            <div className='flex items-center gap-2 text-xs text-yellow-300'>
+              <Sparkles className='w-3 h-3' />
               <span>{bubble.reward} coins</span>
             </div>
           )}
@@ -117,18 +123,14 @@ const BubbleTooltip: React.FC<BubbleTooltipProps> = ({
 
         <button
           onClick={handleStart}
-          className="w-full py-3 px-4 rounded-xl font-semibold text-white transition-all duration-200 min-h-[44px] touch-manipulation hover:scale-105"
+          className='w-full py-3 px-4 rounded-xl font-semibold text-white transition-all duration-200 min-h-[44px] touch-manipulation hover:scale-105'
           style={{
             backgroundColor: `${style.color}80`,
             boxShadow: `0 4px 20px ${style.color}40`,
             border: `1px solid ${style.color}60`,
           }}
         >
-          {bubble.category === 'safe_space'
-            ? 'Enter Safe Space'
-            : bubble.category === 'event'
-            ? 'Join Event'
-            : 'Start Quest'}
+          {getActionLabel(bubble.category)}
         </button>
       </div>
     </motion.div>
@@ -184,7 +186,7 @@ const QuestBubbleComponent: React.FC<QuestBubbleProps> = ({
 
   return (
     <motion.div
-      className="absolute pointer-events-auto cursor-pointer"
+      className='absolute pointer-events-auto cursor-pointer'
       style={{
         left: `${bubble.position.x}%`,
         top: `${bubble.position.y}%`,
@@ -233,16 +235,16 @@ const QuestBubbleComponent: React.FC<QuestBubbleProps> = ({
                 bubble.category === 'character'
                   ? '🦉'
                   : bubble.category === 'health'
-                  ? '🐱'
-                  : bubble.category === 'exploration'
-                  ? '🐕'
-                  : bubble.category === 'stem'
-                  ? '🤖'
-                  : bubble.category === 'stewardship'
-                  ? '🏛️'
-                  : bubble.category === 'safe_space'
-                  ? '🛡️'
-                  : '📅';
+                    ? '🐱'
+                    : bubble.category === 'exploration'
+                      ? '🐕'
+                      : bubble.category === 'stem'
+                        ? '🤖'
+                        : bubble.category === 'stewardship'
+                          ? '🏛️'
+                          : bubble.category === 'safe_space'
+                            ? '🛡️'
+                            : '📅';
               parent.appendChild(fallback);
             }
           }}
@@ -250,7 +252,7 @@ const QuestBubbleComponent: React.FC<QuestBubbleProps> = ({
       </div>
 
       <motion.div
-        className="absolute inset-0 rounded-full border-2 pointer-events-none"
+        className='absolute inset-0 rounded-full border-2 pointer-events-none'
         style={{ borderColor: style.color }}
         animate={{ scale: [1, 1.5], opacity: [0.8, 0] }}
         transition={{
@@ -294,7 +296,7 @@ const MapView: React.FC<MapViewProps> = ({
     (bubble: QuestBubble, clickPosition: { x: number; y: number }) => {
       setTooltip({ bubble, position: clickPosition });
     },
-    []
+    [],
   );
 
   const handleStartQuest = useCallback(
@@ -306,7 +308,7 @@ const MapView: React.FC<MapViewProps> = ({
         console.warn('onQuestComplete not provided to MapView');
       }
     },
-    [onQuestComplete]
+    [onQuestComplete],
   );
 
   const closeTooltip = useCallback(() => setTooltip(null), []);
@@ -374,9 +376,7 @@ const MapView: React.FC<MapViewProps> = ({
 
         mapInstance.current = new mapboxgl.default.Map({
           container: mapContainer.current,
-          style:
-            import.meta.env.VITE_MAP_STYLE_URL ||
-            'mapbox://styles/mapbox/dark-v11',
+          style: import.meta.env.VITE_MAP_STYLE_URL || 'mapbox://styles/mapbox/dark-v11',
           center,
           zoom,
           attributionControl: false,
@@ -448,23 +448,23 @@ const MapView: React.FC<MapViewProps> = ({
       (persona: PersonaDef) => {
         // WHY: hook for persona interactions
         console.log('Persona clicked:', persona.name);
-      }
+      },
     );
     personaMarkersRef.current = markers;
   }, [isLoading, error]);
 
   return (
-    <div className="w-full h-full relative">
+    <div className='w-full h-full relative'>
       {/* Map area */}
       <div
         ref={mapContainer}
         id={mapContainerId.current}
-        className="w-full h-full bg-gradient-to-br from-dark-secondary to-dark-tertiary rounded-xl overflow-hidden"
+        className='w-full h-full bg-gradient-to-br from-dark-secondary to-dark-tertiary rounded-xl overflow-hidden'
         style={{ height: '100%', minHeight: '400px' }}
       />
 
       {/* Quest Bubbles Overlay */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
+      <div className='absolute inset-0 pointer-events-none overflow-hidden z-20'>
         {PHILADELPHIA_BUBBLES.map((bubble) => (
           <QuestBubbleComponent
             key={bubble.id}
@@ -484,43 +484,45 @@ const MapView: React.FC<MapViewProps> = ({
       {/* Mobile Legend Toggle */}
       {isMobile && (
         <motion.button
-          className="absolute top-4 right-4 z-30 bg-glass-dark border-glass-dark rounded-full p-3 text-white min-w-touch min-h-touch touch-manipulation"
+          className='absolute top-4 right-4 z-30 bg-glass-dark border-glass-dark rounded-full p-3 text-white min-w-touch min-h-touch touch-manipulation'
           onClick={() => setShowLegend((s) => !s)}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          aria-label="Toggle legend"
+          aria-label='Toggle legend'
         >
-          <Target className="w-5 h-5" />
+          <Target className='w-5 h-5' />
         </motion.button>
       )}
 
       {/* Desktop Legend */}
       {!isMobile && (
         <motion.div
-          className="absolute bottom-4 left-4 z-30 bg-glass-dark border-glass-dark rounded-xl p-4 max-w-xs backdrop-blur-lg"
+          className='absolute bottom-4 left-4 z-30 bg-glass-dark border-glass-dark rounded-xl p-4 max-w-xs backdrop-blur-lg'
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1 }}
         >
-          <h4 className="text-white font-bold text-sm mb-3">CHESS Quest Map</h4>
-          <div className="space-y-2">
-            {Object.entries(QUEST_STYLES).slice(0, 5).map(([category, style]) => (
-              <div key={category} className="flex items-center gap-2 text-xs">
-                <img
-                  src={style.sprite}
-                  alt={style.character}
-                  className="w-4 h-4 object-contain"
-                  draggable={false}
-                />
-                <div
-                  className="w-3 h-3 rounded-full border border-white/40"
-                  style={{ backgroundColor: style.color }}
-                />
-                <span className="text-gray-100">{style.character}</span>
-              </div>
-            ))}
+          <h4 className='text-white font-bold text-sm mb-3'>CHESS Quest Map</h4>
+          <div className='space-y-2'>
+            {Object.entries(QUEST_STYLES)
+              .slice(0, 5)
+              .map(([category, style]) => (
+                <div key={category} className='flex items-center gap-2 text-xs'>
+                  <img
+                    src={style.sprite}
+                    alt={style.character}
+                    className='w-4 h-4 object-contain'
+                    draggable={false}
+                  />
+                  <div
+                    className='w-3 h-3 rounded-full border border-white/40'
+                    style={{ backgroundColor: style.color }}
+                  />
+                  <span className='text-gray-100'>{style.character}</span>
+                </div>
+              ))}
           </div>
-          <div className="mt-3 text-xs text-gray-300">
+          <div className='mt-3 text-xs text-gray-300'>
             {PHILADELPHIA_BUBBLES.length} interactive locations
           </div>
         </motion.div>
@@ -530,49 +532,47 @@ const MapView: React.FC<MapViewProps> = ({
       <AnimatePresence>
         {isMobile && showLegend && (
           <motion.div
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            className='fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4'
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setShowLegend(false)}
           >
             <motion.div
-              className="bg-glass-dark border-glass-dark rounded-xl p-6 max-w-sm w-full"
+              className='bg-glass-dark border-glass-dark rounded-xl p-6 max-w-sm w-full'
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-white font-bold text-lg">CHESS Quest Map</h4>
+              <div className='flex items-center justify-between mb-4'>
+                <h4 className='text-white font-bold text-lg'>CHESS Quest Map</h4>
                 <button
                   onClick={() => setShowLegend(false)}
-                  className="p-2 rounded-full bg-glass hover:bg-glass-light transition-colors min-w-touch min-h-touch"
+                  className='p-2 rounded-full bg-glass hover:bg-glass-light transition-colors min-w-touch min-h-touch'
                 >
-                  <X className="w-4 h-4 text-gray-300" />
+                  <X className='w-4 h-4 text-gray-300' />
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className='grid grid-cols-2 gap-3'>
                 {Object.entries(QUEST_STYLES).map(([category, style]) => (
                   <div
                     key={category}
-                    className="flex items-center gap-2 text-xs bg-glass-light rounded-lg p-2"
+                    className='flex items-center gap-2 text-xs bg-glass-light rounded-lg p-2'
                   >
                     <img
                       src={style.sprite}
                       alt={style.character}
-                      className="w-5 h-5 object-contain"
+                      className='w-5 h-5 object-contain'
                       draggable={false}
                     />
                     <div>
                       <div
-                        className="w-3 h-3 rounded-full border border-white/40 mb-1"
+                        className='w-3 h-3 rounded-full border border-white/40 mb-1'
                         style={{ backgroundColor: style.color }}
                       />
-                      <span className="text-gray-100 text-xs">
-                        {style.character}
-                      </span>
+                      <span className='text-gray-100 text-xs'>{style.character}</span>
                     </div>
                   </div>
                 ))}
@@ -588,7 +588,7 @@ const MapView: React.FC<MapViewProps> = ({
           <>
             {isMobile && (
               <div
-                className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+                className='fixed inset-0 z-40 bg-black/30 backdrop-blur-sm'
                 onClick={closeTooltip}
               />
             )}
@@ -606,16 +606,16 @@ const MapView: React.FC<MapViewProps> = ({
       <AnimatePresence>
         {isLoading && (
           <motion.div
-            className="absolute inset-0 flex items-center justify-center bg-dark-secondary/95 backdrop-blur-md rounded-xl z-40"
+            className='absolute inset-0 flex items-center justify-center bg-dark-secondary/95 backdrop-blur-md rounded-xl z-40'
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="text-center text-white">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-electric-blue-400 mx-auto mb-4"></div>
-              <h3 className="text-lg font-semibold mb-2">Loading Philadelphia Map</h3>
-              <p className="text-sm text-gray-300">Connecting to Mapbox…</p>
+            <div className='text-center text-white'>
+              <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-electric-blue-400 mx-auto mb-4'></div>
+              <h3 className='text-lg font-semibold mb-2'>Loading Philadelphia Map</h3>
+              <p className='text-sm text-gray-300'>Connecting to Mapbox…</p>
             </div>
           </motion.div>
         )}
@@ -631,9 +631,11 @@ const MapView: React.FC<MapViewProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <div className="w-2 h-2 bg-cyber-green-400 rounded-full animate-pulse"></div>
+          <div className='w-2 h-2 bg-cyber-green-400 rounded-full animate-pulse'></div>
           <span>
-            {isMobile ? PHILADELPHIA_BUBBLES.length.toString() : `${PHILADELPHIA_BUBBLES.length} locations`}
+            {isMobile
+              ? PHILADELPHIA_BUBBLES.length.toString()
+              : `${PHILADELPHIA_BUBBLES.length} locations`}
           </span>
         </motion.div>
       )}

@@ -1,0 +1,66 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`BubbleMarker Snapshot Tests matches snapshot for default rendering 1`] = `
+<button
+  aria-label="security attribute marker"
+  class="rounded-full shadow-md flex items-center justify-center cursor-pointer border touch-manipulation min-w-touch min-h-touch w-12 h-12"
+  role="button"
+  tabindex="0"
+  type="button"
+>
+  <img
+    alt="security attribute icon"
+    draggable="false"
+    src="/icons/security-attribute.png"
+  />
+</button>
+`;
+
+exports[`BubbleMarker Snapshot Tests matches snapshot for large size variant 1`] = `
+<button
+  aria-label="security attribute marker"
+  class="rounded-full shadow-md flex items-center justify-center cursor-pointer border touch-manipulation min-w-touch min-h-touch w-16 h-16"
+  role="button"
+  tabindex="0"
+  type="button"
+>
+  <img
+    alt="security attribute icon"
+    draggable="false"
+    src="/icons/security-attribute.png"
+  />
+</button>
+`;
+
+exports[`BubbleMarker Snapshot Tests matches snapshot for small size variant 1`] = `
+<button
+  aria-label="security attribute marker"
+  class="rounded-full shadow-md flex items-center justify-center cursor-pointer border touch-manipulation min-w-touch min-h-touch w-10 h-10"
+  role="button"
+  tabindex="0"
+  type="button"
+>
+  <img
+    alt="security attribute icon"
+    draggable="false"
+    src="/icons/security-attribute.png"
+  />
+</button>
+`;
+
+exports[`BubbleMarker Snapshot Tests matches snapshot with position and custom class 1`] = `
+<button
+  aria-label="security attribute marker"
+  class="rounded-full shadow-md flex items-center justify-center cursor-pointer border touch-manipulation min-w-touch min-h-touch w-12 h-12 absolute custom-class"
+  role="button"
+  style="position: absolute; left: 50px; top: 100px;"
+  tabindex="0"
+  type="button"
+>
+  <img
+    alt="security attribute icon"
+    draggable="false"
+    src="/icons/security-attribute.png"
+  />
+</button>
+`;

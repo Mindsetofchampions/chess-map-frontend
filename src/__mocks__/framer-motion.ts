@@ -3,19 +3,36 @@
  */
 import React from 'react';
 
+// Remove motion-only props that cause React DOM warnings; keep core props for snapshot stability
+const stripMotionProps = (props: Record<string, any>) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const {
+    whileHover,
+    whileTap,
+    drag,
+    dragConstraints,
+    layout,
+    layoutId,
+    onAnimationStart,
+    onAnimationComplete,
+    ...rest
+  } = props || {};
+  return rest;
+};
+
 // Mock motion components
 export const motion = {
-  div: React.forwardRef<HTMLDivElement, any>(({ children, ...props }, ref) => 
-    React.createElement('div', { ...props, ref }, children)
+  div: React.forwardRef<HTMLDivElement, any>(({ children, ...props }, ref) =>
+    React.createElement('div', { ...stripMotionProps(props), ref }, children),
   ),
-  button: React.forwardRef<HTMLButtonElement, any>(({ children, ...props }, ref) => 
-    React.createElement('button', { ...props, ref }, children)
+  button: React.forwardRef<HTMLButtonElement, any>(({ children, ...props }, ref) =>
+    React.createElement('button', { ...stripMotionProps(props), ref }, children),
   ),
-  img: React.forwardRef<HTMLImageElement, any>(({ children, ...props }, ref) => 
-    React.createElement('img', { ...props, ref }, children)
+  img: React.forwardRef<HTMLImageElement, any>(({ children, ...props }, ref) =>
+    React.createElement('img', { ...stripMotionProps(props), ref }, children),
   ),
-  aside: React.forwardRef<HTMLElement, any>(({ children, ...props }, ref) => 
-    React.createElement('aside', { ...props, ref }, children)
+  aside: React.forwardRef<HTMLElement, any>(({ children, ...props }, ref) =>
+    React.createElement('aside', { ...stripMotionProps(props), ref }, children),
   ),
 };
 

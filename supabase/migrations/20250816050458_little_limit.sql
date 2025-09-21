@@ -20,7 +20,7 @@ create table if not exists users (
   role text default 'student'::text not null,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
-  constraint users_role_check check (role = any (array['student'::text, 'admin'::text, 'master_admin'::text]))
+  constraint users_role_check check (role = any (array['student'::text, 'org_admin'::text, 'master_admin'::text]))
 );
 
 alter table users enable row level security;

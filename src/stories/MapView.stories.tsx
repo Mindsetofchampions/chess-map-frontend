@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
+
 import GlassContainer from '../components/GlassContainer';
 
 /**
  * MapView Placeholder Component for Storybook
- * 
+ *
  * Since the actual MapView component requires Mapbox tokens and external dependencies,
  * this story provides a placeholder that demonstrates the layout and styling
  * expectations for the map integration section.
@@ -21,107 +22,107 @@ const MapViewPlaceholder: React.FC<{
   mapHeight = '600px',
   showLegend = true,
   errorState = false,
-  loadingState = false
+  loadingState = false,
 }) => {
   return (
-    <section className="py-16 px-6">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+    <section className='py-16 px-6'>
+      <div className='text-center mb-8'>
+        <h2 className='text-3xl md:text-4xl font-bold text-white mb-4'>
           Explore the CHESS Universe
         </h2>
-        <p className="text-gray-100 text-lg max-w-2xl mx-auto font-medium drop-shadow-sm">
-          Dive into an interactive world where learning meets adventure. Discover quests, locate safe spaces, and connect with your community.
+        <p className='text-gray-100 text-lg max-w-2xl mx-auto font-medium drop-shadow-sm'>
+          Dive into an interactive world where learning meets adventure. Discover quests, locate
+          safe spaces, and connect with your community.
         </p>
       </div>
-      
-      <GlassContainer variant="card" className="mt-8 p-0 overflow-hidden">
-        <div className="relative w-full" style={{ height: mapHeight }}>
-          
+
+      <GlassContainer variant='card' className='mt-8 p-0 overflow-hidden'>
+        <div className='relative w-full' style={{ height: mapHeight }}>
           {/* Map Placeholder */}
-          <div className="w-full h-full bg-gradient-to-br from-dark-secondary to-dark-tertiary rounded-xl flex items-center justify-center">
+          <div className='w-full h-full bg-gradient-to-br from-dark-secondary to-dark-tertiary rounded-xl flex items-center justify-center'>
             {loadingState ? (
-              <div className="text-center text-white">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-electric-blue-400 mx-auto mb-4"></div>
-                <p className="text-lg font-medium">Loading Interactive Map...</p>
-                <p className="text-sm text-gray-300 mt-2">Connecting to Mapbox services</p>
+              <div className='text-center text-white'>
+                <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-electric-blue-400 mx-auto mb-4'></div>
+                <p className='text-lg font-medium'>Loading Interactive Map...</p>
+                <p className='text-sm text-gray-300 mt-2'>Connecting to Mapbox services</p>
               </div>
             ) : errorState ? (
-              <div className="text-center text-white max-w-md">
-                <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">⚠️</span>
+              <div className='text-center text-white max-w-md'>
+                <div className='w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4'>
+                  <span className='text-2xl'>⚠️</span>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Map Unavailable</h3>
-                <p className="text-gray-300 mb-4">Unable to load map content. Please check your connection.</p>
-                <button className="btn-esports">
-                  Retry Loading
-                </button>
+                <h3 className='text-xl font-semibold mb-2'>Map Unavailable</h3>
+                <p className='text-gray-300 mb-4'>
+                  Unable to load map content. Please check your connection.
+                </p>
+                <button className='btn-esports'>Retry Loading</button>
               </div>
             ) : (
-              <div className="text-center text-white">
-                <div className="w-20 h-20 bg-gradient-to-br from-electric-blue-400 to-neon-purple-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-3xl">🗺️</span>
+              <div className='text-center text-white'>
+                <div className='w-20 h-20 bg-gradient-to-br from-electric-blue-400 to-neon-purple-400 rounded-full flex items-center justify-center mx-auto mb-4'>
+                  <span className='text-3xl'>🗺️</span>
                 </div>
-                <h3 className="text-2xl font-bold mb-2">Interactive Map</h3>
-                <p className="text-gray-300 max-w-md">
-                  This placeholder represents the Mapbox GL integration that would display
-                  CHESS quest locations, safe spaces, and interactive navigation features.
+                <h3 className='text-2xl font-bold mb-2'>Interactive Map</h3>
+                <p className='text-gray-300 max-w-md'>
+                  This placeholder represents the Mapbox GL integration that would display CHESS
+                  quest locations, safe spaces, and interactive navigation features.
                 </p>
               </div>
             )}
           </div>
-          
+
           {/* Map Overlay Info */}
           {showOverlay && !errorState && (
-            <div className="absolute top-4 left-4 right-4 z-10">
-              <div className="flex flex-wrap gap-2 justify-center">
-                <div className="bg-glass-dark border-glass-dark rounded-full px-3 py-1 text-xs text-gray-100 backdrop-blur-xl font-medium">
-                  <span className="w-2 h-2 bg-electric-blue-400 rounded-full inline-block mr-2"></span>
+            <div className='absolute top-4 left-4 right-4 z-10'>
+              <div className='flex flex-wrap gap-2 justify-center'>
+                <div className='bg-glass-dark border-glass-dark rounded-full px-3 py-1 text-xs text-gray-100 backdrop-blur-xl font-medium'>
+                  <span className='w-2 h-2 bg-electric-blue-400 rounded-full inline-block mr-2'></span>
                   Active Quests
                 </div>
-                <div className="bg-glass-dark border-glass-dark rounded-full px-3 py-1 text-xs text-gray-100 backdrop-blur-xl font-medium">
-                  <span className="w-2 h-2 bg-cyber-green-400 rounded-full inline-block mr-2"></span>
+                <div className='bg-glass-dark border-glass-dark rounded-full px-3 py-1 text-xs text-gray-100 backdrop-blur-xl font-medium'>
+                  <span className='w-2 h-2 bg-cyber-green-400 rounded-full inline-block mr-2'></span>
                   Safe Spaces
                 </div>
-                <div className="bg-glass-dark border-glass-dark rounded-full px-3 py-1 text-xs text-gray-100 backdrop-blur-xl font-medium">
-                  <span className="w-2 h-2 bg-neon-purple-400 rounded-full inline-block mr-2"></span>
+                <div className='bg-glass-dark border-glass-dark rounded-full px-3 py-1 text-xs text-gray-100 backdrop-blur-xl font-medium'>
+                  <span className='w-2 h-2 bg-neon-purple-400 rounded-full inline-block mr-2'></span>
                   Community Hubs
                 </div>
               </div>
             </div>
           )}
-          
+
           {/* Legend */}
           {showLegend && !errorState && !loadingState && (
-            <div className="absolute bottom-4 left-4 z-10">
-              <GlassContainer variant="overlay" className="p-3">
-                <h4 className="text-white font-semibold text-sm mb-2">Map Legend</h4>
-                <div className="space-y-1 text-xs text-gray-200">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-electric-blue-400 rounded-full"></div>
+            <div className='absolute bottom-4 left-4 z-10'>
+              <GlassContainer variant='overlay' className='p-3'>
+                <h4 className='text-white font-semibold text-sm mb-2'>Map Legend</h4>
+                <div className='space-y-1 text-xs text-gray-200'>
+                  <div className='flex items-center gap-2'>
+                    <div className='w-3 h-3 bg-electric-blue-400 rounded-full'></div>
                     <span>Quest Locations</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-cyber-green-400 rounded-full"></div>
+                  <div className='flex items-center gap-2'>
+                    <div className='w-3 h-3 bg-cyber-green-400 rounded-full'></div>
                     <span>Safe Spaces</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-neon-purple-400 rounded-full"></div>
+                  <div className='flex items-center gap-2'>
+                    <div className='w-3 h-3 bg-neon-purple-400 rounded-full'></div>
                     <span>Community Areas</span>
                   </div>
                 </div>
               </GlassContainer>
             </div>
           )}
-          
+
           {/* Mock Navigation Controls */}
           {!errorState && !loadingState && (
-            <div className="absolute top-4 right-4 z-10">
-              <div className="bg-glass border-glass rounded-lg shadow-lg">
-                <button className="block p-2 text-white hover:bg-glass-dark transition-colors border-b border-glass-light">
-                  <span className="text-lg">+</span>
+            <div className='absolute top-4 right-4 z-10'>
+              <div className='bg-glass border-glass rounded-lg shadow-lg'>
+                <button className='block p-2 text-white hover:bg-glass-dark transition-colors border-b border-glass-light'>
+                  <span className='text-lg'>+</span>
                 </button>
-                <button className="block p-2 text-white hover:bg-glass-dark transition-colors">
-                  <span className="text-lg">−</span>
+                <button className='block p-2 text-white hover:bg-glass-dark transition-colors'>
+                  <span className='text-lg'>−</span>
                 </button>
               </div>
             </div>
@@ -224,7 +225,8 @@ export const Compact: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Compact version of the map view suitable for smaller screen spaces or embedded contexts.',
+        story:
+          'Compact version of the map view suitable for smaller screen spaces or embedded contexts.',
       },
     },
   },
@@ -240,7 +242,8 @@ export const Loading: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Loading state displayed while connecting to Mapbox services and initializing the interactive map.',
+        story:
+          'Loading state displayed while connecting to Mapbox services and initializing the interactive map.',
       },
     },
   },
