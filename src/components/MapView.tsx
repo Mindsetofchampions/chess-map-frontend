@@ -283,6 +283,8 @@ const MapView: React.FC<MapViewProps> = ({
   const mapContainerId = useRef(`map-${Math.random().toString(36).slice(2)}`);
   const mapInstance = useRef<any>(null);
   const glNSRef = useRef<any>(null); // Map GL namespace (Mapbox or MapLibre)
+  const engineRef = useRef<'none' | 'mapbox' | 'maplibre' | 'osm-raster'>('none');
+  const [engine, setEngine] = useState<'none' | 'mapbox' | 'maplibre' | 'osm-raster'>('none');
   const personaMarkersRef = useRef<PersonaChipMarker[]>([]);
   const clusterSourceId = useRef(`org-personas-${Math.random().toString(36).slice(2)}`);
   const [isClusteredView, setIsClusteredView] = useState(false);
@@ -375,14 +377,69 @@ const MapView: React.FC<MapViewProps> = ({
     };
   }, []);
 
-  /** WHY: initialize Mapbox if token present; otherwise show bubbles on gradient */
+  /** WHY: initialize map with robust engine fallback to prevent white basemap */
   useEffect(() => {
     if (!mapContainer.current) return;
 
     const initializeMap = async () => {
+      // Helper functions accessible across branches
+      const resetMapInstance = () => {
+        if (mapInstance.current) {
+          try { mapInstance.current.remove(); } catch {}
+          mapInstance.current = null;
+        }
+      };
+
+      const attachCommonHandlers = (timeoutId: any) => {
+        // Add navigation controls for better UX (zoom/rotate)
+        try {
+          const nav = new glNSRef.current.NavigationControl({ visualizePitch: true });
+          mapInstance.current.addControl(nav, 'top-right');
+        } catch {}
+
+        mapInstance.current.on('load', () => {
+          clearTimeout(timeoutId);
+          setIsLoading(false);
+          setError(null);
+          try { mapInstance.current.resize(); } catch {}
+        });
+
+        mapInstance.current.on('error', () => {
+          // Let specific init attach fallbacks; for generic errors just note
+          setIsLoading(false);
+        });
+      };
+
+      // No-op reference to satisfy TS when tree-shaken in certain branches
+      void attachCommonHandlers;
+
+      const tryFallbackToMapLibre = async () => {
+        if (engineRef.current === 'mapbox') {
+          await initMapLibre();
+        }
+      };
+
+      const tryFallbackToOsmRaster = async () => {
+        if (engineRef.current === 'maplibre') {
+          await initOsmRaster();
+        }
+      };
+
+      // Define in outer scope; bodies assigned later after imports
+      let initMapbox = async () => {};
+      let initMapLibre = async () => {};
+      let initOsmRaster = async () => {};
+
       const loadingTimeout = setTimeout(() => {
-        setIsLoading(false);
-        setError('Map timed out — showing bubbles only');
+        // If map hasn't loaded by now, try fallback
+        if (engineRef.current === 'mapbox') {
+          tryFallbackToMapLibre();
+        } else if (engineRef.current === 'maplibre') {
+          tryFallbackToOsmRaster();
+        } else {
+          setIsLoading(false);
+          setError('Map timed out — showing bubbles only');
+        }
       }, 2500);
 
       try {
@@ -391,47 +448,39 @@ const MapView: React.FC<MapViewProps> = ({
           import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
           import.meta.env.VITE_MAPBOX_TOKEN_PK;
 
-        // Prefer Mapbox when token is present; otherwise fall back to MapLibre
-        if (mapboxToken && !/YOUR_|example_/i.test(mapboxToken)) {
+        initMapbox = async () => {
           const mapboxgl = await import('mapbox-gl');
-          mapboxgl.default.accessToken = mapboxToken;
+          mapboxgl.default.accessToken = mapboxToken!;
           glNSRef.current = mapboxgl.default;
-
-          if (mapInstance.current) {
-            mapInstance.current.remove();
-            mapInstance.current = null;
-          }
-
-          if (!mapContainer.current) {
-            clearTimeout(loadingTimeout);
-            setIsLoading(false);
-            return;
-          }
-
+          engineRef.current = 'mapbox';
+          setEngine('mapbox');
+          resetMapInstance();
           mapInstance.current = new mapboxgl.default.Map({
-            container: mapContainer.current,
+            container: mapContainer.current!,
             style: import.meta.env.VITE_MAP_STYLE_URL || 'mapbox://styles/mapbox/dark-v11',
             center,
             zoom,
             attributionControl: true,
           });
-        } else {
+          attachCommonHandlers(loadingTimeout);
+          // On style load errors, fallback
+          mapInstance.current.on('error', (e: any) => {
+            const status = e?.error?.status || e?.statusCode;
+            const resource = e?.error?.resourceType || e?.resourceType;
+            if (resource === 'style' || resource === 'source' || status) {
+              tryFallbackToMapLibre();
+            }
+          });
+        };
+
+        initMapLibre = async () => {
           const maplibregl = (await import('maplibre-gl')).default;
           glNSRef.current = maplibregl;
-
-          if (mapInstance.current) {
-            mapInstance.current.remove();
-            mapInstance.current = null;
-          }
-
-          if (!mapContainer.current) {
-            clearTimeout(loadingTimeout);
-            setIsLoading(false);
-            return;
-          }
-
+          engineRef.current = 'maplibre';
+          setEngine('maplibre');
+          resetMapInstance();
           mapInstance.current = new maplibregl.Map({
-            container: mapContainer.current,
+            container: mapContainer.current!,
             style:
               import.meta.env.VITE_MAPLIBRE_STYLE_URL ||
               'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
@@ -439,29 +488,119 @@ const MapView: React.FC<MapViewProps> = ({
             zoom,
             attributionControl: { compact: true },
           });
+          attachCommonHandlers(loadingTimeout);
+          mapInstance.current.on('error', (_e: any) => {
+            // Fallback to OSM raster if style fails
+            tryFallbackToOsmRaster();
+          });
+        };
+
+        initOsmRaster = async () => {
+          const maplibregl = (await import('maplibre-gl')).default;
+          glNSRef.current = maplibregl;
+          engineRef.current = 'osm-raster';
+          setEngine('osm-raster');
+          resetMapInstance();
+          const rasterStyle: any = {
+            version: 8,
+            sources: {
+              osm: {
+                type: 'raster',
+                tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                tileSize: 256,
+                attribution: '© OpenStreetMap contributors',
+              },
+            },
+            layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+          };
+          mapInstance.current = new maplibregl.Map({
+            container: mapContainer.current!,
+            style: rasterStyle,
+            center,
+            zoom,
+            attributionControl: { compact: true },
+          });
+          attachCommonHandlers(loadingTimeout);
+        };
+
+        const resetMapInstance = () => {
+          if (mapInstance.current) {
+            try { mapInstance.current.remove(); } catch {}
+            mapInstance.current = null;
+          }
+        };
+
+        const attachCommonHandlers = (timeoutId: any) => {
+          // Add navigation controls for better UX (zoom/rotate)
+          try {
+            const nav = new glNSRef.current.NavigationControl({ visualizePitch: true });
+            mapInstance.current.addControl(nav, 'top-right');
+          } catch {}
+
+          mapInstance.current.on('load', () => {
+            clearTimeout(timeoutId);
+            setIsLoading(false);
+            setError(null);
+          });
+
+          mapInstance.current.on('error', () => {
+            // Let specific init attach fallbacks; for generic errors just note
+            setIsLoading(false);
+          });
+        };
+
+        const tryFallbackToMapLibre = async () => {
+          if (engineRef.current === 'mapbox') {
+            await initMapLibre();
+          }
+        };
+
+        const tryFallbackToOsmRaster = async () => {
+          if (engineRef.current === 'maplibre') {
+            await initOsmRaster();
+          }
+        };
+
+        // Prefer Mapbox when token is present and looks valid; else MapLibre
+        if (mapboxToken && !/YOUR_|example_/i.test(mapboxToken)) {
+          await initMapbox();
+        } else {
+          await initMapLibre();
         }
 
-        // Add navigation controls for better UX (zoom/rotate)
-        try {
-          const nav = new glNSRef.current.NavigationControl({ visualizePitch: true });
-          mapInstance.current.addControl(nav, 'top-right');
-        } catch {}
-
-        mapInstance.current.on('load', () => {
-          clearTimeout(loadingTimeout);
-          setIsLoading(false);
-          setError(null);
-        });
-
-        mapInstance.current.on('error', () => {
-          clearTimeout(loadingTimeout);
-          setIsLoading(false);
-          setError('Map error — bubbles only');
-        });
       } catch {
         clearTimeout(loadingTimeout);
-        setIsLoading(false);
-        setError('Map init error — bubbles only');
+        // Last-resort raster fallback
+        try {
+          const maplibregl = (await import('maplibre-gl')).default;
+          glNSRef.current = maplibregl;
+          engineRef.current = 'osm-raster';
+          setEngine('osm-raster');
+          const rasterStyle: any = {
+            version: 8,
+            sources: {
+              osm: {
+                type: 'raster',
+                tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                tileSize: 256,
+                attribution: '© OpenStreetMap contributors',
+              },
+            },
+            layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+          };
+          resetMapInstance();
+          mapInstance.current = new maplibregl.Map({
+            container: mapContainer.current!,
+            style: rasterStyle,
+            center,
+            zoom,
+            attributionControl: { compact: true },
+          });
+          mapInstance.current.on('load', () => setIsLoading(false));
+        } catch {
+          setIsLoading(false);
+          setError('Map init error — bubbles only');
+        }
       }
     };
 
@@ -478,6 +617,15 @@ const MapView: React.FC<MapViewProps> = ({
       }
     };
   }, [center, zoom]);
+
+  // Ensure map resizes with window to avoid white canvas issues
+  useEffect(() => {
+    const onWinResize = () => {
+      try { mapInstance.current?.resize(); } catch {}
+    };
+    window.addEventListener('resize', onWinResize);
+    return () => window.removeEventListener('resize', onWinResize);
+  }, []);
 
   /** WHY: add persona chips after map is ready */
   useEffect(() => {
@@ -847,6 +995,11 @@ const MapView: React.FC<MapViewProps> = ({
 
   return (
     <div className='w-full h-full relative'>
+      {import.meta.env.DEV && (
+        <div className='absolute top-2 left-2 z-30 px-2 py-1 text-xs rounded bg-black/50 border border-white/20 text-white'>
+          Engine: {engine}
+        </div>
+      )}
       {/* Map area */}
       <div
         ref={mapContainer}

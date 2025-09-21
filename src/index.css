@@ -68,7 +68,8 @@
   }
 
   /* Map container specific styles */
-  .mapboxgl-map {
+  .mapboxgl-map,
+  .maplibregl-map {
     font-family: inherit;
     /* Prevent flashing during initialization */
     background-color: #0a0a0f;
@@ -77,7 +78,8 @@
 }
 
 /* Ensure proper canvas sizing */
-.mapboxgl-canvas {
+.mapboxgl-canvas,
+.maplibregl-canvas {
   outline: none;
   display: block;
 }
@@ -114,19 +116,22 @@
 }
 
 /* Ensure Mapbox canvas displays properly */
-.mapboxgl-map {
+.mapboxgl-map,
+.maplibregl-map {
   width: 100% !important;
   height: 100% !important;
   position: relative !important;
 }
 
-.mapboxgl-canvas-container {
+.mapboxgl-canvas-container,
+.maplibregl-canvas-container {
   width: 100% !important;
   height: 100% !important;
   position: relative !important;
 }
 
-.mapboxgl-canvas {
+.mapboxgl-canvas,
+.maplibregl-canvas {
   width: 100% !important;
   height: 100% !important;
   display: block !important;
@@ -134,7 +139,8 @@
 }
 
 /* Fix for Mapbox rendering issues */
-.mapboxgl-map canvas {
+.mapboxgl-map canvas,
+.maplibregl-map canvas {
   position: relative !important;
   width: 100% !important;
   height: 100% !important;
