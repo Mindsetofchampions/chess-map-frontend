@@ -14,7 +14,7 @@ serve(async (req) => {
     if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
     if (req.method !== 'POST')
       return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
-    const { email, type = 'magiclink', redirectTo } = await req.json();
+  const { email, type = 'magiclink', redirectTo } = await req.json();
     if (!email)
       return new Response(JSON.stringify({ error: 'email required' }), {
         status: 400,
@@ -41,10 +41,31 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
 
+    // Only include redirect_to if it matches allowed hosts (to avoid 400 from GoTrue)
+    let includeRedirect = false;
+    if (redirectTo) {
+      try {
+        const u = new URL(redirectTo);
+        const allowed = (Deno.env.get('ALLOWED_REDIRECT_HOSTS') || '').split(',').map((s) => s.trim()).filter(Boolean);
+        if (allowed.length === 0) {
+          // default allow: same host as SUPABASE_URL if provided
+          const sHost = new URL(SUPABASE_URL).host;
+          includeRedirect = u.host === sHost;
+        } else {
+          includeRedirect = allowed.includes(u.host);
+        }
+      } catch (_) {
+        includeRedirect = false;
+      }
+    }
+
+    const payload: Record<string, unknown> = { email, type };
+    if (includeRedirect) payload.redirect_to = redirectTo;
+
     const resp = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${SERVICE_ROLE}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, type, redirect_to: redirectTo }),
+      body: JSON.stringify(payload),
     });
     const body = await resp.json();
     if (!resp.ok)

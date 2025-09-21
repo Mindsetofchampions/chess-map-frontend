@@ -379,3 +379,27 @@ export async function adminSetPassword(email: string, password: string) {
     throw new Error(error?.message || String(error));
   }
 }
+
+/**
+ * Admin edge function: delete a user by email
+ */
+export async function adminDeleteUser(email: string) {
+  try {
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
+    const resp = await fetch(`${supabaseUrl}/functions/v1/admin_delete_user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const body = await resp.json();
+    if (!resp.ok) throw new Error(body?.error || 'admin_delete_user failed');
+    return body;
+  } catch (error: any) {
+    throw new Error(error?.message || String(error));
+  }
+}

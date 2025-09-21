@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 
 import GlassContainer from '@/components/GlassContainer';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase, adminCreateUser, adminGenerateLink, adminSetPassword, setUserRole } from '@/lib/supabase';
+import { supabase, adminCreateUser, adminGenerateLink, adminSetPassword, adminDeleteUser, setUserRole } from '@/lib/supabase';
+import { useToast } from '@/components/ToastProvider';
 
 interface Row {
   id: string;
@@ -13,6 +14,7 @@ interface Row {
 
 export default function MasterUsersPage() {
   const { user, resolvedRole } = useAuth() as any;
+  const { showSuccess, showError, showWarning } = useToast();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'org_admin' | 'student'>('student');
   const [users, setUsers] = useState<Row[]>([]);
@@ -88,9 +90,10 @@ export default function MasterUsersPage() {
       setShowCredsModal(true);
       setEmail('');
       setRole('student');
-  setCreateTempPass('');
+      setCreateTempPass('');
+      showSuccess('User created', 'Credentials shown in the modal.');
     } catch (e: any) {
-      alert(`Create error: ${e.message}`);
+      showError('Create user failed', e?.message || String(e));
     } finally {
       setLoading(false);
     }
@@ -104,13 +107,13 @@ export default function MasterUsersPage() {
       if (data?.url) {
         try {
           await navigator.clipboard.writeText(data.url);
-          alert('Magic link generated and copied to clipboard');
+          showSuccess('Magic link ready', 'Copied to clipboard.');
         } catch (_) {
           // ignore clipboard failure
         }
       }
     } catch (e: any) {
-      alert(`Link error: ${e.message}`);
+      showError('Magic link failed', e?.message || String(e));
     } finally {
       setLoading(false);
     }
@@ -119,18 +122,36 @@ export default function MasterUsersPage() {
   async function setPasswordForUser(u: Row) {
     const pass = rowTempPass[u.id] || '';
     if (!pass || pass.length < 10) {
-      alert('Provide a strong temp password (>= 10 chars)');
+      showWarning('Weak password', 'Provide a strong temp password (>= 10 chars).');
       return;
     }
     try {
       setLoading(true);
       const data = await adminSetPassword(u.email, pass);
-      alert(
-        `Password set for ${data.id || u.email}. Ask user to log in and rotate immediately.`,
-      );
+      showSuccess('Temporary password set', `For ${data.id || u.email}.`);
       setRowTempPass((prev) => ({ ...prev, [u.id]: '' }));
     } catch (e: any) {
-      alert(`Password error: ${e.message}`);
+      showError('Set password failed', e?.message || String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function deleteUser(u: Row) {
+    // Prevent deleting current signed-in user (self-delete guard)
+    if (user?.email && u.email === user.email) {
+      showWarning('Blocked', 'You cannot delete your own account.');
+      return;
+    }
+    // Simple browser confirm retained; could be upgraded to a modal
+    if (!confirm(`Delete user ${u.email}? This action cannot be undone.`)) return;
+    try {
+      setLoading(true);
+      await adminDeleteUser(u.email);
+      setUsers((prev) => prev.filter((x) => x.id !== u.id));
+      showSuccess('User deleted', `${u.email} removed.`);
+    } catch (e: any) {
+      showError('Delete failed', e?.message || String(e));
     } finally {
       setLoading(false);
     }
@@ -139,7 +160,7 @@ export default function MasterUsersPage() {
   async function updateRole(u: Row, newRole: 'student' | 'staff' | 'org_admin' | 'master_admin') {
     // prevent self-demotion to avoid accidental lockout
     if ((user?.email && u.email === user.email) && newRole !== 'master_admin') {
-      alert('Refusing to change your own role away from master_admin to avoid lockout. Use another master admin to make this change.');
+      showWarning('Blocked', 'You cannot change your own role away from master_admin.');
       return;
     }
     try {
@@ -147,8 +168,9 @@ export default function MasterUsersPage() {
       await setUserRole(u.email, newRole);
       // update local state optimistically
       setUsers((prev) => prev.map((row) => (row.id === u.id ? { ...row, role: newRole } : row)));
+      showSuccess('Role updated', `${u.email} is now ${newRole}.`);
     } catch (e: any) {
-      alert(`Role update failed: ${e.message || e}`);
+      showError('Role update failed', e?.message || String(e));
     } finally {
       setSavingRole(null);
     }
@@ -322,6 +344,14 @@ export default function MasterUsersPage() {
                       >
                         <KeyRound className='w-4 h-4' /> Temp PW
                       </button>
+                      <button
+                        onClick={() => deleteUser(u)}
+                        disabled={loading}
+                        className='inline-flex items-center gap-1 bg-red-500/20 border border-red-500/30 text-red-300 hover:bg-red-500/30 rounded-lg px-2 py-1'
+                        title='Delete user'
+                      >
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -420,9 +450,9 @@ export default function MasterUsersPage() {
                         setCreatedCreds((prev) => ({ ...(prev || {}), link: url }));
                         // auto-copy
                         if (url) await navigator.clipboard.writeText(url);
-                        alert('Magic link generated and copied to clipboard');
+                        showSuccess('Magic link ready', 'Copied to clipboard.');
                       } catch (e: any) {
-                        alert(`Link error: ${e.message}`);
+                        showError('Magic link failed', e?.message || String(e));
                       }
                     }}
                   >
