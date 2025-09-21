@@ -87,12 +87,9 @@ export default function OrgOnboarding() {
 
       // Refresh role/metadata and navigate to a pending page
       await refreshRole();
-      showSuccess(
-        'Submitted',
-        'Organization onboarding submitted. An admin will review and approve.',
-      );
-  // Send org_admin to a pending approvals page; others back to dashboard safely
-  navigate('/master/quests/approvals');
+      showSuccess('Submitted', 'Organization onboarding submitted and pending review.');
+      // Send org_admin to their dashboard where we can show a pending banner
+      navigate('/org/dashboard');
     } catch (err: any) {
       console.error('Org onboarding failed', err);
       showError('Submission Failed', err?.message || 'Unable to submit onboarding');

@@ -297,6 +297,35 @@ export async function getOrgBalances(): Promise<OrgBalance[]> {
   }
 }
 
+// Allocate coins directly to a user by email (master_admin or org_admin)
+export async function allocateUserCoins(
+  email: string,
+  amount: number,
+  reason: string,
+): Promise<{ ok: boolean; user_id: string; amount: number }>
+{
+  try {
+    const { data, error } = await supabase.rpc('allocate_user_coins', {
+      p_email: email,
+      p_amount: amount,
+      p_reason: reason,
+    });
+
+    if (error) {
+      throw new Error(mapPgError(error).message);
+    }
+
+    const obj: any = data || {};
+    return {
+      ok: Boolean(obj.ok ?? true),
+      user_id: obj.user_id,
+      amount: Number(obj.amount ?? amount),
+    };
+  } catch (error) {
+    throw new Error(mapPgError(error).message);
+  }
+}
+
 export default supabase;
 
 /**
@@ -457,4 +486,97 @@ export async function sendSystemNotification(to: string, subject: string, text: 
       // swallow, best-effort only
     }
   }
+}
+
+// Org admin: org and engagement flows
+export interface MyOrg { org_id: string; name: string }
+export interface OrgEngagement {
+  id: string;
+  org_id: string;
+  name: string;
+  description?: string | null;
+  budget_total: number;
+  remaining: number;
+  status: 'draft' | 'active' | 'closed';
+  total_distributed: number;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getMyOrg(): Promise<MyOrg | null> {
+  const { data, error } = await supabase.rpc('get_my_org');
+  if (error) throw new Error(mapPgError(error).message);
+  if (!data) return null;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  return { org_id: row.id ?? row.org_id, name: row.name } as MyOrg;
+}
+
+export async function listOrgEngagements(): Promise<OrgEngagement[]> {
+  const { data, error } = await supabase.rpc('list_org_engagements');
+  if (error) throw new Error(mapPgError(error).message);
+  return (data as OrgEngagement[]) || [];
+}
+
+export async function createOrgEngagement(name: string, description?: string) {
+  const { data, error } = await supabase.rpc('create_org_engagement', {
+    p_name: name,
+    p_description: description ?? null,
+  });
+  if (error) throw new Error(mapPgError(error).message);
+  return data as OrgEngagement;
+}
+
+export async function fundOrgEngagement(engagementId: string, amount: number, reason?: string) {
+  const { data, error } = await supabase.rpc('fund_org_engagement', {
+    p_engagement_id: engagementId,
+    p_amount: amount,
+    p_reason: reason ?? 'Fund engagement',
+  });
+  if (error) throw new Error(mapPgError(error).message);
+  return data as { ok: boolean; remaining: number };
+}
+
+export async function upsertEngagementRecipient(engagementId: string, email: string, amount: number) {
+  const { data, error } = await supabase.rpc('upsert_engagement_recipient', {
+    p_engagement_id: engagementId,
+    p_user_email: email,
+    p_amount: amount,
+  });
+  if (error) throw new Error(mapPgError(error).message);
+  return data as { ok: boolean };
+}
+
+export async function removeEngagementRecipient(engagementId: string, email: string) {
+  const { data, error } = await supabase.rpc('remove_engagement_recipient', {
+    p_engagement_id: engagementId,
+    p_user_email: email,
+  });
+  if (error) throw new Error(mapPgError(error).message);
+  return data as { ok: boolean };
+}
+
+export async function distributeEngagement(engagementId: string) {
+  const { data, error } = await supabase.rpc('distribute_engagement', {
+    p_engagement_id: engagementId,
+  });
+  if (error) throw new Error(mapPgError(error).message);
+  return data as { ok: boolean; distributed: number };
+}
+
+export interface OrgWallet { org_id: string; balance: number }
+export interface EngagementRecipient { user_id: string; email: string; planned_amount: number }
+
+export async function getMyOrgWallet(): Promise<OrgWallet> {
+  const { data, error } = await supabase.rpc('get_my_org_wallet');
+  if (error) throw new Error(mapPgError(error).message);
+  const obj: any = data || {};
+  return { org_id: obj.org_id, balance: Number(obj.balance ?? 0) };
+}
+
+export async function listEngagementRecipients(engagementId: string): Promise<EngagementRecipient[]> {
+  const { data, error } = await supabase.rpc('list_engagement_recipients', { p_engagement_id: engagementId });
+  if (error) throw new Error(mapPgError(error).message);
+  return (data as any[]).map((r: any) => ({ user_id: r.user_id, email: r.email, planned_amount: Number(r.planned_amount ?? 0) }));
 }

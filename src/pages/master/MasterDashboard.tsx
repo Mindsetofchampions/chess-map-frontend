@@ -38,6 +38,7 @@ import {
   getPlatformBalance,
   getOrgBalances,
   allocateOrgCoins,
+  allocateUserCoins,
   topUpPlatformBalance,
   type OrgBalance,
 } from '@/lib/supabase';
@@ -117,6 +118,12 @@ const MasterDashboard: React.FC = () => {
   const [notifTitle, setNotifTitle] = useState('');
   const [notifBody, setNotifBody] = useState('');
   const [sendingNotif, setSendingNotif] = useState(false);
+  // Allocate to user modal state
+  const [showUserAllocate, setShowUserAllocate] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [userAmount, setUserAmount] = useState('');
+  const [userReason, setUserReason] = useState('Direct user allocation');
+  const [allocatingUser, setAllocatingUser] = useState(false);
 
   /**
    * Fetch pending quests for approval
@@ -432,6 +439,33 @@ const MasterDashboard: React.FC = () => {
     }
   };
 
+  const handleAllocateUser = async () => {
+    const amt = parseInt(userAmount || '0', 10);
+    if (!userEmail.trim()) return showWarning('Email Required', 'Enter a user email.');
+    if (!amt || amt <= 0) return showWarning('Invalid Amount', 'Enter a positive amount.');
+    if (!serverConfirmed)
+      return showWarning(
+        'Unconfirmed Balance',
+        'Platform balance is not confirmed by server. Please top up first.',
+      );
+    if (amt > platformBalance)
+      return showWarning('Insufficient Balance', 'Amount exceeds platform balance.');
+
+    setAllocatingUser(true);
+    try {
+      await allocateUserCoins(userEmail.trim(), amt, userReason || 'Direct user allocation');
+      showSuccess('Coins Allocated', `Allocated ${amt.toLocaleString()} coins to ${userEmail}.`);
+      await fetchPlatformBalance();
+      setShowUserAllocate(false);
+      setUserEmail('');
+      setUserAmount('');
+    } catch (error: any) {
+      showError('Allocation Failed', mapPgError(error).message || error.message || 'Failed');
+    } finally {
+      setAllocatingUser(false);
+    }
+  };
+
   return (
     <div className='min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary'>
       <div className='container mx-auto max-w-7xl p-6'>
@@ -475,6 +509,9 @@ const MasterDashboard: React.FC = () => {
               )}
               <button onClick={openAllocate} className='btn-esports flex items-center gap-2'>
                 <PlusCircle className='w-4 h-4' /> Allocate to Org
+              </button>
+              <button onClick={() => setShowUserAllocate(true)} className='btn-esports flex items-center gap-2'>
+                <PlusCircle className='w-4 h-4' /> Allocate to User
               </button>
               <LogoutButton />
             </div>
@@ -903,6 +940,64 @@ const MasterDashboard: React.FC = () => {
                   className='flex-1 bg-electric-blue-500/20 border border-electric-blue-500/30 text-electric-blue-300 hover:bg-electric-blue-500/30 rounded-xl px-4 py-2 font-medium transition-all duration-200'
                 >
                   {allocating ? 'Allocating...' : 'Allocate Coins'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Allocate to User Modal */}
+        {showUserAllocate && (
+          <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm'>
+            <motion.div
+              className='bg-glass backdrop-blur-2xl border-glass rounded-2xl shadow-2xl p-6 max-w-md w-full'
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <h3 className='text-xl font-bold text-white mb-2'>Allocate Coins to User</h3>
+              <p className='text-gray-300 mb-4'>Send coins directly to a user by email.</p>
+
+              <label className='block text-sm text-gray-300 mb-1'>User Email</label>
+              <input
+                type='email'
+                value={userEmail}
+                onChange={(e) => setUserEmail(e.target.value)}
+                placeholder='user@example.com'
+                className='w-full bg-glass border-glass rounded-xl px-3 py-2 text-white mb-3'
+              />
+
+              <label className='block text-sm text-gray-300 mb-1'>Amount</label>
+              <input
+                type='number'
+                min={1}
+                value={userAmount}
+                onChange={(e) => setUserAmount(e.target.value)}
+                placeholder='e.g. 500'
+                className='w-full bg-glass border-glass rounded-xl px-3 py-2 text-white mb-3'
+              />
+
+              <label className='block text-sm text-gray-300 mb-1'>Reason</label>
+              <input
+                type='text'
+                value={userReason}
+                onChange={(e) => setUserReason(e.target.value)}
+                className='w-full bg-glass border-glass rounded-xl px-3 py-2 text-white mb-4'
+              />
+
+              <div className='flex gap-3'>
+                <button
+                  onClick={() => setShowUserAllocate(false)}
+                  className='flex-1 bg-glass border-glass hover:bg-glass-dark text-gray-300 hover:text-white rounded-xl px-4 py-2 font-medium transition-all duration-200'
+                  disabled={allocatingUser}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAllocateUser}
+                  disabled={allocatingUser || !userEmail.trim()}
+                  className='flex-1 bg-electric-blue-500/20 border border-electric-blue-500/30 text-electric-blue-300 hover:bg-electric-blue-500/30 rounded-xl px-4 py-2 font-medium transition-all duration-200'
+                >
+                  {allocatingUser ? 'Allocating...' : 'Allocate Coins'}
                 </button>
               </div>
             </motion.div>
