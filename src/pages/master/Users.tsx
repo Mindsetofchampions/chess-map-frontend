@@ -1,9 +1,9 @@
-import { Award, Shield, Link as LinkIcon, KeyRound, Plus } from 'lucide-react';
+import { Award, Shield, Link as LinkIcon, KeyRound, Plus, Eye, EyeOff } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import GlassContainer from '@/components/GlassContainer';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase, adminCreateUser, adminGenerateLink, adminSetPassword } from '@/lib/supabase';
+import { supabase, adminCreateUser, adminGenerateLink, adminSetPassword, setUserRole } from '@/lib/supabase';
 
 interface Row {
   id: string;
@@ -17,8 +17,12 @@ export default function MasterUsersPage() {
   const [role, setRole] = useState<'org_admin' | 'student'>('student');
   const [users, setUsers] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
+  const [savingRole, setSavingRole] = useState<string | null>(null);
   const [linkUrl, setLinkUrl] = useState<string | null>(null);
-  const [tempPass, setTempPass] = useState('');
+  const [createTempPass, setCreateTempPass] = useState('');
+  const [showCreatePass, setShowCreatePass] = useState(false);
+  const [rowTempPass, setRowTempPass] = useState<Record<string, string>>({});
+  const [showRowPass, setShowRowPass] = useState<Record<string, boolean>>({});
   const [orgs, setOrgs] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
   const [showCredsModal, setShowCredsModal] = useState(false);
@@ -67,8 +71,8 @@ export default function MasterUsersPage() {
       setLoading(true);
       // generate a reasonably strong temporary password if not provided in the temp field
       const generatedPassword =
-        tempPass && tempPass.length >= 10
-          ? tempPass
+        createTempPass && createTempPass.length >= 10
+          ? createTempPass
           : `tmp_${Math.random().toString(36).slice(2, 12)}`;
       console.log('[master/users] creating user', { email, role, selectedOrg });
       const data = await adminCreateUser({
@@ -84,7 +88,7 @@ export default function MasterUsersPage() {
       setShowCredsModal(true);
       setEmail('');
       setRole('student');
-      setTempPass('');
+  setCreateTempPass('');
     } catch (e: any) {
       alert(`Create error: ${e.message}`);
     } finally {
@@ -97,6 +101,14 @@ export default function MasterUsersPage() {
       setLoading(true);
       const data = await adminGenerateLink(targetEmail, window.location.origin);
       setLinkUrl(data.url);
+      if (data?.url) {
+        try {
+          await navigator.clipboard.writeText(data.url);
+          alert('Magic link generated and copied to clipboard');
+        } catch (_) {
+          // ignore clipboard failure
+        }
+      }
     } catch (e: any) {
       alert(`Link error: ${e.message}`);
     } finally {
@@ -104,22 +116,41 @@ export default function MasterUsersPage() {
     }
   }
 
-  async function setPassword(targetEmail: string) {
-    if (!tempPass || tempPass.length < 10) {
+  async function setPasswordForUser(u: Row) {
+    const pass = rowTempPass[u.id] || '';
+    if (!pass || pass.length < 10) {
       alert('Provide a strong temp password (>= 10 chars)');
       return;
     }
     try {
       setLoading(true);
-      const data = await adminSetPassword(targetEmail, tempPass);
+      const data = await adminSetPassword(u.email, pass);
       alert(
-        `Password set for ${data.id || targetEmail}. Ask user to log in and rotate immediately.`,
+        `Password set for ${data.id || u.email}. Ask user to log in and rotate immediately.`,
       );
-      setTempPass('');
+      setRowTempPass((prev) => ({ ...prev, [u.id]: '' }));
     } catch (e: any) {
       alert(`Password error: ${e.message}`);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function updateRole(u: Row, newRole: 'student' | 'staff' | 'org_admin' | 'master_admin') {
+    // prevent self-demotion to avoid accidental lockout
+    if ((user?.email && u.email === user.email) && newRole !== 'master_admin') {
+      alert('Refusing to change your own role away from master_admin to avoid lockout. Use another master admin to make this change.');
+      return;
+    }
+    try {
+      setSavingRole(u.id);
+      await setUserRole(u.email, newRole);
+      // update local state optimistically
+      setUsers((prev) => prev.map((row) => (row.id === u.id ? { ...row, role: newRole } : row)));
+    } catch (e: any) {
+      alert(`Role update failed: ${e.message || e}`);
+    } finally {
+      setSavingRole(null);
     }
   }
 
@@ -159,7 +190,7 @@ export default function MasterUsersPage() {
             onChange={(e) => setEmail(e.target.value)}
           />
           <select
-            className='bg-glass border-glass rounded-lg px-3 py-2 text-white'
+            className='bg-gray-800/70 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-electric-blue-400'
             value={role}
             onChange={(e) => setRole(e.target.value as any)}
           >
@@ -169,7 +200,7 @@ export default function MasterUsersPage() {
         </div>
         <div className='flex gap-2 items-center'>
           <select
-            className='bg-glass border-glass rounded-lg px-3 py-2 text-white'
+            className='bg-gray-800/70 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-electric-blue-400'
             value={selectedOrg ?? ''}
             onChange={(e) => setSelectedOrg(e.target.value || null)}
           >
@@ -180,15 +211,25 @@ export default function MasterUsersPage() {
               </option>
             ))}
           </select>
-          <input
-            type='password'
-            placeholder='temp password (optional, >=10)'
-            className='bg-glass border-glass rounded px-2 py-1 text-white'
-            value={tempPass}
-            onChange={(e) => setTempPass(e.target.value)}
-            style={{ width: 220 }}
-            title='Provide a temporary password to assign directly (will be shown once only)'
-          />
+          <div className='relative'>
+            <input
+              type={showCreatePass ? 'text' : 'password'}
+              placeholder='temp password (optional, >=10)'
+              className='bg-glass border-glass rounded px-2 py-1 text-white pr-8'
+              value={createTempPass}
+              onChange={(e) => setCreateTempPass(e.target.value)}
+              style={{ width: 220 }}
+              title='Provide a temporary password to assign directly (will be shown once only)'
+            />
+            <button
+              type='button'
+              onClick={() => setShowCreatePass((v) => !v)}
+              className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white'
+              aria-label={showCreatePass ? 'Hide password' : 'Show password'}
+            >
+              {showCreatePass ? <EyeOff className='w-4 h-4' /> : <Eye className='w-4 h-4' />}
+            </button>
+          </div>
           <button
             onClick={createUser}
             disabled={loading || !email}
@@ -218,7 +259,25 @@ export default function MasterUsersPage() {
               {users.map((u) => (
                 <tr key={u.id} className='border-t border-glass'>
                   <td className='py-2'>{u.email}</td>
-                  <td className='py-2'>{u.role ?? '—'}</td>
+                  <td className='py-2'>
+                    <select
+                      className='bg-gray-800/70 border border-white/20 rounded-lg px-2 py-1 text-white focus:outline-none focus:ring-1 focus:ring-electric-blue-400 disabled:opacity-60'
+                      value={(u.role as any) || 'student'}
+                      disabled={loading || savingRole === u.id}
+                      onChange={(e) =>
+                        updateRole(
+                          u,
+                          e.target.value as 'student' | 'staff' | 'org_admin' | 'master_admin',
+                        )
+                      }
+                      title='Change role'
+                    >
+                      <option value='student'>student</option>
+                      <option value='staff'>staff</option>
+                      <option value='org_admin'>org_admin</option>
+                      <option value='master_admin'>master_admin</option>
+                    </select>
+                  </td>
                   <td className='py-2'>
                     <div className='flex gap-2 items-center'>
                       <button
@@ -229,17 +288,35 @@ export default function MasterUsersPage() {
                       >
                         <LinkIcon className='w-4 h-4' /> Link
                       </button>
-                      <input
-                        type='password'
-                        placeholder='temp password (>=10)'
-                        className='bg-glass border-glass rounded px-2 py-1 text-white'
-                        value={tempPass}
-                        onChange={(e) => setTempPass(e.target.value)}
-                        style={{ width: 220 }}
-                      />
+                      <div className='relative'>
+                        <input
+                          type={showRowPass[u.id] ? 'text' : 'password'}
+                          placeholder='temp password (>=10)'
+                          className='bg-glass border-glass rounded px-2 py-1 text-white pr-8'
+                          value={rowTempPass[u.id] || ''}
+                          onChange={(e) =>
+                            setRowTempPass((prev) => ({ ...prev, [u.id]: e.target.value }))
+                          }
+                          style={{ width: 220 }}
+                        />
+                        <button
+                          type='button'
+                          onClick={() =>
+                            setShowRowPass((prev) => ({ ...prev, [u.id]: !prev[u.id] }))
+                          }
+                          className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white'
+                          aria-label={showRowPass[u.id] ? 'Hide password' : 'Show password'}
+                        >
+                          {showRowPass[u.id] ? (
+                            <EyeOff className='w-4 h-4' />
+                          ) : (
+                            <Eye className='w-4 h-4' />
+                          )}
+                        </button>
+                      </div>
                       <button
-                        onClick={() => setPassword(u.email)}
-                        disabled={loading || tempPass.length < 10}
+                        onClick={() => setPasswordForUser(u)}
+                        disabled={loading || (rowTempPass[u.id]?.length || 0) < 10}
                         className='inline-flex items-center gap-1 bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/30 rounded-lg px-2 py-1'
                         title='Set temporary password'
                       >

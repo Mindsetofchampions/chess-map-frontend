@@ -8,6 +8,11 @@
 
 /* Custom base styles for better typography and layout */
 @layer base {
+  :root {
+    /* Hint browsers to render native form controls in dark mode */
+    color-scheme: dark;
+  }
+
   html {
     font-family:
       "Inter",
@@ -29,6 +34,21 @@
 
 /* Custom component styles */
 @layer components {
+  /* Dark themed selects globally */
+  select,
+  .select-dark {
+    @apply bg-gray-800/70 text-gray-100 border border-white/20 rounded;
+  }
+
+  select:focus {
+    @apply outline-none ring-1 ring-electric-blue-400;
+  }
+
+  /* Dropdown option panel colors (browser support varies) */
+  option {
+    background-color: #111827; /* gray-900 */
+    color: #f9fafb; /* gray-50 */
+  }
   /* Enhanced glassmorphism effect */
   .glassmorphism {
     @apply bg-white/30 backdrop-blur-md border border-white/20 shadow-xl;
