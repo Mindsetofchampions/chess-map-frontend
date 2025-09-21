@@ -16,13 +16,13 @@ serve(async (req) => {
     const jwt = req.headers.get('Authorization')?.replace('Bearer ', '');
     if (!jwt) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
 
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/user_roles?select=role&limit=1`, {
-      headers: { Authorization: `Bearer ${jwt}` },
+    const check = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_master_admin`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+      body: '{}',
     });
-    const data = await r.json();
-    if (!Array.isArray(data) || data[0]?.role !== 'master_admin') {
-      return new Response(JSON.stringify({ error: 'FORBIDDEN' }), { status: 403 });
-    }
+    const ok = await check.json();
+    if (!ok) return new Response(JSON.stringify({ error: 'FORBIDDEN' }), { status: 403 });
 
     const lookup = await fetch(
       `${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(email)}`,

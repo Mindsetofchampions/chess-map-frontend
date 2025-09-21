@@ -37,17 +37,13 @@ export default function MasterUsersPage() {
   useEffect(() => {
     if (!isMaster) return;
     (async () => {
-      const { data: roles } = await supabase.from('user_roles').select('user_id, role');
-      const { data: vw } = await supabase
-        .from('admin_user_list_vw' as any)
-        .select('*')
-        .order('email', { ascending: true });
-      if (vw?.length) {
-        setUsers(vw as any);
-      } else {
-        setUsers(
-          (roles ?? []).map((r: any) => ({ id: r.user_id, email: r.user_id, role: r.role })),
-        );
+      try {
+        // Prefer secure RPC for master admins
+        const { data, error } = await supabase.rpc('get_admin_user_list');
+        if (error) throw error;
+        if (Array.isArray(data)) setUsers(data as any);
+      } catch (e) {
+        console.error('Load users failed', e);
       }
       // load organizations for optional association
       try {
@@ -74,12 +70,14 @@ export default function MasterUsersPage() {
         tempPass && tempPass.length >= 10
           ? tempPass
           : `tmp_${Math.random().toString(36).slice(2, 12)}`;
+      console.log('[master/users] creating user', { email, role, selectedOrg });
       const data = await adminCreateUser({
         email,
         role,
         password: generatedPassword,
         org_id: selectedOrg || undefined,
       });
+      console.log('[master/users] create response', data);
       // If function returned a temporaryPassword, show it in a modal plus magic link when requested
       const temp = data?.temporaryPassword || (generatedPassword && generatedPassword);
       setCreatedCreds({ email: data?.user?.email || email, password: temp });

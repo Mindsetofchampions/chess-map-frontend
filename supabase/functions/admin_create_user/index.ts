@@ -83,14 +83,25 @@ serve(async (req) => {
       );
     }
 
-    // Verify caller is master admin
+    // Verify caller is master admin (accept from user_roles OR profiles for backward compatibility)
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', callingUser.id)
-      .single();
+      .maybeSingle();
 
-    if (roleError || !roleData || roleData.role !== 'master_admin') {
+    let isMaster = roleData?.role === 'master_admin';
+
+    if (!isMaster) {
+      const { data: profData } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('user_id', callingUser.id)
+        .maybeSingle();
+      isMaster = profData?.role === 'master_admin';
+    }
+
+    if (!isMaster) {
       return new Response(
         JSON.stringify({
           success: false,
