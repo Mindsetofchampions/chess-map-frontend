@@ -13,6 +13,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import GlassContainer from '@/components/GlassContainer';
 import { useToast } from '@/components/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
+import { routeForRole } from '@/lib/routes';
 
 /**
  * Login form data interface
@@ -43,7 +44,7 @@ interface FormErrors {
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, loading, refreshRole, role, roleLoading } = useAuth();
+  const { signIn, loading, refreshRole } = useAuth();
   const { showSuccess, showError } = useToast();
 
   const [formData, setFormData] = useState<LoginForm>({
@@ -103,38 +104,11 @@ const Login: React.FC = () => {
       if (result.success) {
         showSuccess('Welcome back!', 'Successfully signed in to CHESS Quest');
 
-        // Ensure auth context has settled and role is resolved before navigating.
-        // Call refreshRole to kick a fetch, then wait for roleLoading to become false.
-        void refreshRole();
-
-        // Wait up to ~3s for roleResolution; this prevents navigating to a protected admin URL
-        // before the user's role is loaded (which caused "Access Restricted" flashes).
-        const start = Date.now();
-        while (roleLoading && Date.now() - start < 3000) {
-          // eslint-disable-next-line no-await-in-loop
-          await new Promise((r) => setTimeout(r, 150));
-        }
-
-        const resolvedRole = role;
-
-        // Determine role-aware default next path
-        const next =
-          resolvedRole === 'master_admin'
-            ? '/master/dashboard'
-            : resolvedRole === 'org_admin' || resolvedRole === 'staff'
-              ? '/org/dashboard'
-              : '/dashboard';
-
+        // Resolve the freshest role and route consistently
+        const resolvedRole = await refreshRole();
         const attempted = location.state?.from?.pathname as string | undefined;
-
-        if (resolvedRole === 'org_admin' || resolvedRole === 'staff') {
-          navigate('/org/dashboard', { replace: true });
-        } else if (resolvedRole === 'master_admin') {
-          navigate('/master/dashboard', { replace: true });
-        } else {
-          const from = attempted || next;
-          navigate(from, { replace: true });
-        }
+        const next = attempted || routeForRole(resolvedRole);
+        navigate(next, { replace: true });
       } else {
         showError('Sign in failed', result.error);
       }

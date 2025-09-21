@@ -25,6 +25,7 @@ import MapView from './components/MapView';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ToastProvider } from './components/ToastProvider';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { routeForRole } from './lib/routes';
 import SystemDiagnostics from './pages/admin/SystemDiagnostics';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
@@ -49,26 +50,12 @@ import QuestsList from './pages/quests/QuestsList';
  * Public landing page with marketing content
  */
 const LandingPage: React.FC = () => {
-  const { user } = useAuth();
-  const { role } = useAuth();
+  const { user, role } = useAuth();
   const currentYear = new Date().getFullYear();
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
   // Redirect authenticated users to their appropriate dashboard
-  if (user) {
-    // Master admin users go to quest approvals
-    if (role === 'master_admin') {
-      return <Navigate to='/master/dashboard' replace />;
-    }
-
-    // Admin-level users (org_admin, staff) go to org dashboard
-    if (role === 'org_admin' || role === 'staff') {
-      return <Navigate to='/org/dashboard' replace />;
-    }
-
-    // All other users go to student dashboard
-    return <Navigate to='/dashboard' replace />;
-  }
+  if (user) return <Navigate to={routeForRole(role)} replace />;
 
   return (
     <GlassContainer variant='page'>
@@ -668,13 +655,7 @@ const LandingPage: React.FC = () => {
 const AppRouter: React.FC = () => {
   const { user, role, loading, roleLoading } = useAuth();
 
-  // Helper: decide default route for a role
-  const routeForRole = (role?: string) =>
-    role === 'master_admin'
-      ? '/master/dashboard'
-      : role === 'org_admin' || role === 'staff'
-        ? '/org/dashboard'
-        : '/dashboard';
+  // Using shared route helper for consistency
 
   // Auto-redirect authenticated users who land on auth pages
   useEffect(() => {
@@ -720,7 +701,6 @@ const AppRouter: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          path="/store"
           <Route
             path='/quests'
             element={

@@ -13,6 +13,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import GlassContainer from '@/components/GlassContainer';
 import { useToast } from '@/components/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
+import { routeForRole } from '@/lib/routes';
 
 /**
  * Signup form data interface
@@ -121,12 +122,7 @@ const Signup: React.FC = () => {
         );
 
         // Role-aware redirect using the freshly resolved role
-        const next =
-          resolvedRole === 'master_admin' ||
-          resolvedRole === 'org_admin' ||
-          resolvedRole === 'staff'
-            ? '/master/dashboard'
-            : '/dashboard';
+        const next = routeForRole(resolvedRole);
         navigate(next, { replace: true });
       } else {
         showError('Sign up failed', result.error);

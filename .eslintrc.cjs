@@ -27,6 +27,7 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'module',
     ecmaFeatures: { jsx: true },
+    warnOnUnsupportedTypeScriptVersion: false,
     // Temporarily disable type-aware linting to avoid parser issues (tests/stories outside tsconfig).
     // We'll re-enable this after fixing the tsconfig/ESLint file inclusion list.
     project: undefined,
