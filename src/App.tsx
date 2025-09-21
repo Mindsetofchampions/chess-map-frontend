@@ -705,7 +705,14 @@ const AppRouter: React.FC = () => {
           <Route path='/onboarding/start' element={<OnboardingStart />} />
           <Route path='/onboarding/student' element={<StudentOnboarding />} />
           <Route path='/onboarding/parent' element={<ParentConsent />} />
-          <Route path='/onboarding/org' element={<OrgOnboarding />} />
+          <Route
+            path='/onboarding/org'
+            element={
+              <ProtectedRoute requiredRole='staff'>
+                <OrgOnboarding />
+              </ProtectedRoute>
+            }
+          />
           path="/store"
           <Route
             path='/quests'

@@ -18,9 +18,13 @@ import {
   removeEngagementRecipient,
   upsertEngagementRecipient,
 } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 const OrgDashboard: React.FC = () => {
   const { showSuccess, showError } = useToast();
+  const { user } = useAuth();
+  const orgApproved =
+    user?.user_metadata?.org_approved === true || user?.user_metadata?.org_approved === 'true';
 
   // Wallet and org state
   const [org, setOrg] = useState<{ org_id: string; name: string } | null>(null);
@@ -204,6 +208,21 @@ const OrgDashboard: React.FC = () => {
         <div className='container mx-auto p-6 max-w-6xl'>
           <h1 className='text-2xl font-bold text-white mb-6'>Organization Dashboard</h1>
 
+          {/* Pending Approval Banner */}
+          {!orgApproved && (
+            <GlassContainer className='mb-4 bg-yellow-500/10 border-yellow-400/30'>
+              <div className='flex items-start justify-between gap-4'>
+                <div>
+                  <div className='text-yellow-300 font-semibold'>Organization Pending Approval</div>
+                  <div className='text-gray-200 text-sm'>
+                    Your organization onboarding is under review. You can set up engagements, but distributions may be limited until approval is granted.
+                  </div>
+                </div>
+                <a href='/onboarding/org' className='btn-secondary'>View Onboarding</a>
+              </div>
+            </GlassContainer>
+          )}
+
           {/* Wallet Panel */}
           <GlassContainer className='mb-6'>
             <div className='flex items-center justify-between gap-4'>
@@ -280,12 +299,15 @@ const OrgDashboard: React.FC = () => {
                       </div>
                       <div className='flex flex-wrap gap-2'>
                         <button
-                          className='btn-esports'
+                          className='btn-esports disabled:opacity-50 disabled:cursor-not-allowed'
                           onClick={() => {
+                            if (!orgApproved) return;
                             setFundingId(e.id);
                             setFundAmount('');
                             setFundReason('Fund engagement');
                           }}
+                          disabled={!orgApproved}
+                          title={!orgApproved ? 'Pending approval required to fund' : undefined}
                         >
                           Fund
                         </button>
@@ -293,9 +315,10 @@ const OrgDashboard: React.FC = () => {
                           Recipients
                         </button>
                         <button
-                          className='btn-esports'
+                          className='btn-esports disabled:opacity-50 disabled:cursor-not-allowed'
                           onClick={() => onDistribute(e.id)}
-                          disabled={distributing && distributingId === e.id}
+                          disabled={!orgApproved || (distributing && distributingId === e.id)}
+                          title={!orgApproved ? 'Pending approval required to distribute' : undefined}
                         >
                           {distributing && distributingId === e.id ? 'Distributing…' : 'Distribute'}
                         </button>

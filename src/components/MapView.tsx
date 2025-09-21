@@ -277,7 +277,12 @@ const MapView: React.FC<MapViewProps> = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapContainerId = useRef(`map-${Math.random().toString(36).slice(2)}`);
   const mapInstance = useRef<any>(null);
+  const glNSRef = useRef<any>(null); // Map GL namespace (Mapbox or MapLibre)
   const personaMarkersRef = useRef<PersonaChipMarker[]>([]);
+  const clusterSourceId = useRef(`org-personas-${Math.random().toString(36).slice(2)}`);
+  const [isClusteredView, setIsClusteredView] = useState(false);
+  const safeSpacesSourceId = useRef(`safe-spaces-${Math.random().toString(36).slice(2)}`);
+  const eventsSourceId = useRef(`events-${Math.random().toString(36).slice(2)}`);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -353,34 +358,61 @@ const MapView: React.FC<MapViewProps> = ({
           import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
           import.meta.env.VITE_MAPBOX_TOKEN_PK;
 
-        if (!mapboxToken || /YOUR_|example_/i.test(mapboxToken)) {
-          clearTimeout(loadingTimeout);
-          setIsLoading(false);
-          setError('No Mapbox token — showing bubbles only');
-          return;
+        // Prefer Mapbox when token is present; otherwise fall back to MapLibre
+        if (mapboxToken && !/YOUR_|example_/i.test(mapboxToken)) {
+          const mapboxgl = await import('mapbox-gl');
+          mapboxgl.default.accessToken = mapboxToken;
+          glNSRef.current = mapboxgl.default;
+
+          if (mapInstance.current) {
+            mapInstance.current.remove();
+            mapInstance.current = null;
+          }
+
+          if (!mapContainer.current) {
+            clearTimeout(loadingTimeout);
+            setIsLoading(false);
+            return;
+          }
+
+          mapInstance.current = new mapboxgl.default.Map({
+            container: mapContainer.current,
+            style: import.meta.env.VITE_MAP_STYLE_URL || 'mapbox://styles/mapbox/dark-v11',
+            center,
+            zoom,
+            attributionControl: true,
+          });
+        } else {
+          const maplibregl = (await import('maplibre-gl')).default;
+          glNSRef.current = maplibregl;
+
+          if (mapInstance.current) {
+            mapInstance.current.remove();
+            mapInstance.current = null;
+          }
+
+          if (!mapContainer.current) {
+            clearTimeout(loadingTimeout);
+            setIsLoading(false);
+            return;
+          }
+
+          mapInstance.current = new maplibregl.Map({
+            container: mapContainer.current,
+            style:
+              import.meta.env.VITE_MAPLIBRE_STYLE_URL ||
+              'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+            center,
+            zoom,
+            attributionControl: { compact: true },
+          });
         }
 
-        const mapboxgl = await import('mapbox-gl');
-        mapboxgl.default.accessToken = mapboxToken;
-
-        if (mapInstance.current) {
-          mapInstance.current.remove();
-          mapInstance.current = null;
-        }
-
-        if (!mapContainer.current) {
-          clearTimeout(loadingTimeout);
-          setIsLoading(false);
-          return;
-        }
-
-        mapInstance.current = new mapboxgl.default.Map({
-          container: mapContainer.current,
-          style: import.meta.env.VITE_MAP_STYLE_URL || 'mapbox://styles/mapbox/dark-v11',
-          center,
-          zoom,
-          attributionControl: false,
-        });
+        // Add navigation controls for better UX (zoom/rotate)
+        try {
+          const nav = new glNSRef.current.NavigationControl({ visualizePitch: true });
+          mapInstance.current.addControl(nav, 'top-right');
+        } catch {}
 
         mapInstance.current.on('load', () => {
           clearTimeout(loadingTimeout);
@@ -442,15 +474,256 @@ const MapView: React.FC<MapViewProps> = ({
       },
     ];
 
-    const markers = addPersonaChipsToMap(
-      mapInstance.current,
-      organizationsWithPersonas,
-      (persona: PersonaDef) => {
-        // WHY: hook for persona interactions
-        console.log('Persona clicked:', persona.name);
+    // Build a flat GeoJSON of org points for clustering (use the org location once)
+    const features = organizationsWithPersonas.map((o) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [o.lng, o.lat] },
+      properties: { id: o.id, personas: o.activePersonas },
+    }));
+
+    const sourceData = { type: 'FeatureCollection', features } as any;
+
+    // Remove existing source/layers if they exist
+    try {
+      if (mapInstance.current.getLayer(`${clusterSourceId.current}-clusters`)) {
+        mapInstance.current.removeLayer(`${clusterSourceId.current}-clusters`);
+      }
+      if (mapInstance.current.getLayer(`${clusterSourceId.current}-cluster-count`)) {
+        mapInstance.current.removeLayer(`${clusterSourceId.current}-cluster-count`);
+      }
+      if (mapInstance.current.getLayer(`${clusterSourceId.current}-unclustered`)) {
+        mapInstance.current.removeLayer(`${clusterSourceId.current}-unclustered`);
+      }
+      if (mapInstance.current.getSource(clusterSourceId.current)) {
+        mapInstance.current.removeSource(clusterSourceId.current);
+      }
+    } catch {}
+
+    // Add clustered source and layers
+    mapInstance.current.addSource(clusterSourceId.current, {
+      type: 'geojson',
+      data: sourceData,
+      cluster: true,
+      clusterMaxZoom: 14,
+      clusterRadius: 50,
+    });
+
+    mapInstance.current.addLayer({
+      id: `${clusterSourceId.current}-clusters`,
+      type: 'circle',
+      source: clusterSourceId.current,
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': [
+          'step',
+          ['get', 'point_count'],
+          '#4ade80',
+          10,
+          '#22d3ee',
+          25,
+          '#a78bfa',
+        ],
+        'circle-radius': ['step', ['get', 'point_count'], 16, 10, 20, 25, 26],
+        'circle-opacity': 0.85,
       },
-    );
-    personaMarkersRef.current = markers;
+    });
+
+    mapInstance.current.addLayer({
+      id: `${clusterSourceId.current}-cluster-count`,
+      type: 'symbol',
+      source: clusterSourceId.current,
+      filter: ['has', 'point_count'],
+      layout: {
+        'text-field': ['get', 'point_count_abbreviated'],
+        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+        'text-size': 12,
+      },
+      paint: {
+        'text-color': '#ffffff',
+      },
+    });
+
+    mapInstance.current.addLayer({
+      id: `${clusterSourceId.current}-unclustered`,
+      type: 'circle',
+      source: clusterSourceId.current,
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-color': '#60a5fa',
+        'circle-radius': 8,
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#ffffff',
+        'circle-opacity': 0.9,
+      },
+    });
+
+    // Click to zoom into clusters
+    mapInstance.current.on('click', `${clusterSourceId.current}-clusters`, (e: any) => {
+      const features = mapInstance.current.queryRenderedFeatures(e.point, {
+        layers: [`${clusterSourceId.current}-clusters`],
+      });
+      const clusterId = features[0].properties.cluster_id;
+      (mapInstance.current.getSource(clusterSourceId.current) as any).getClusterExpansionZoom(
+        clusterId,
+        (err: any, zoom: number) => {
+          if (err) return;
+          mapInstance.current.easeTo({ center: features[0].geometry.coordinates, zoom });
+        },
+      );
+    });
+
+    // Manage decluttering: show DOM persona markers at high zoom only
+    const updateDeclutter = () => {
+      const currentZoom = mapInstance.current.getZoom();
+      const shouldUseDom = currentZoom >= 14; // threshold
+      setIsClusteredView(!shouldUseDom);
+
+      // Remove any existing DOM markers
+      personaMarkersRef.current.forEach((m) => m.remove());
+      personaMarkersRef.current = [];
+
+      if (shouldUseDom) {
+        const markers = addPersonaChipsToMap(
+          glNSRef.current,
+          mapInstance.current,
+          organizationsWithPersonas,
+          (persona: PersonaDef) => {
+            console.log('Persona clicked:', persona.name);
+          },
+        );
+        personaMarkersRef.current = markers;
+      }
+
+      // Toggle visibility of unclustered layer when DOM markers active
+      try {
+        mapInstance.current.setLayoutProperty(
+          `${clusterSourceId.current}-unclustered`,
+          'visibility',
+          shouldUseDom ? 'none' : 'visible',
+        );
+      } catch {}
+    };
+
+    updateDeclutter();
+    mapInstance.current.on('zoomend', updateDeclutter);
+
+    return () => {
+      try {
+        mapInstance.current.off('zoomend', updateDeclutter);
+      } catch {}
+    };
+  }, [isLoading, error]);
+
+  /** Realtime: safe_spaces and events live updates */
+  useEffect(() => {
+    if (!mapInstance.current || isLoading || error) return;
+
+    const map = mapInstance.current;
+    const ensureSources = () => {
+      try {
+        if (!map.getSource(safeSpacesSourceId.current)) {
+          map.addSource(safeSpacesSourceId.current, {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] },
+          });
+          map.addLayer({
+            id: `${safeSpacesSourceId.current}-circles`,
+            type: 'circle',
+            source: safeSpacesSourceId.current,
+            paint: {
+              'circle-color': '#06D6A0',
+              'circle-radius': 7,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff',
+              'circle-opacity': 0.9,
+            },
+          });
+        }
+        if (!map.getSource(eventsSourceId.current)) {
+          map.addSource(eventsSourceId.current, {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] },
+          });
+          map.addLayer({
+            id: `${eventsSourceId.current}-circles`,
+            type: 'circle',
+            source: eventsSourceId.current,
+            paint: {
+              'circle-color': '#A78BFA',
+              'circle-radius': 7,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff',
+              'circle-opacity': 0.9,
+            },
+          });
+        }
+      } catch (e) {
+        // ignore if style not ready yet
+      }
+    };
+
+    const toFC = (rows: { id: string; lat: number | null; lng: number | null }[]) => ({
+      type: 'FeatureCollection',
+      features: rows
+        .filter((r) => r.lat != null && r.lng != null)
+        .map((r) => ({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [Number(r.lng), Number(r.lat)] },
+          properties: { id: r.id },
+        })),
+    });
+
+    let unsubSafe: null | (() => void) = null;
+    let unsubEvents: null | (() => void) = null;
+
+    import('@/lib/realtime/places')
+      .then(async ({ fetchSafeSpaces, fetchEvents, subscribeToSafeSpaces, subscribeToEvents }) => {
+        ensureSources();
+
+        // initial loads
+        try {
+          const [srows, erows] = await Promise.all([fetchSafeSpaces(), fetchEvents()]);
+          const ssrc: any = map.getSource(safeSpacesSourceId.current);
+          if (ssrc?.setData) ssrc.setData(toFC(srows));
+          const esrc: any = map.getSource(eventsSourceId.current);
+          if (esrc?.setData) esrc.setData(toFC(erows));
+        } catch {}
+
+        // debounced updater
+        let t: any; const debounced = (fn: () => void) => { clearTimeout(t); t = setTimeout(fn, 400); };
+
+        const refreshSafe = async () => {
+          try {
+            const srows = await fetchSafeSpaces();
+            const ssrc: any = map.getSource(safeSpacesSourceId.current);
+            if (ssrc?.setData) ssrc.setData(toFC(srows));
+          } catch {}
+        };
+        const refreshEvents = async () => {
+          try {
+            const erows = await fetchEvents();
+            const esrc: any = map.getSource(eventsSourceId.current);
+            if (esrc?.setData) esrc.setData(toFC(erows));
+          } catch {}
+        };
+
+        const sSub = subscribeToSafeSpaces(() => debounced(refreshSafe));
+        const eSub = subscribeToEvents(() => debounced(refreshEvents));
+        unsubSafe = () => sSub.unsubscribe();
+        unsubEvents = () => eSub.unsubscribe();
+      })
+      .catch(() => {});
+
+    return () => {
+      try { unsubSafe?.(); } catch {}
+      try { unsubEvents?.(); } catch {}
+      try {
+        if (map.getLayer(`${safeSpacesSourceId.current}-circles`)) map.removeLayer(`${safeSpacesSourceId.current}-circles`);
+        if (map.getLayer(`${eventsSourceId.current}-circles`)) map.removeLayer(`${eventsSourceId.current}-circles`);
+        if (map.getSource(safeSpacesSourceId.current)) map.removeSource(safeSpacesSourceId.current);
+        if (map.getSource(eventsSourceId.current)) map.removeSource(eventsSourceId.current);
+      } catch {}
+    };
   }, [isLoading, error]);
 
   return (
@@ -460,7 +733,7 @@ const MapView: React.FC<MapViewProps> = ({
         ref={mapContainer}
         id={mapContainerId.current}
         className='w-full h-full bg-gradient-to-br from-dark-secondary to-dark-tertiary rounded-xl overflow-hidden'
-        style={{ height: '100%', minHeight: '400px' }}
+        style={{ height: '100%', minHeight: isMobile ? '60vh' : '500px' }}
       />
 
       {/* Quest Bubbles Overlay */}
@@ -632,11 +905,7 @@ const MapView: React.FC<MapViewProps> = ({
           transition={{ delay: 0.5 }}
         >
           <div className='w-2 h-2 bg-cyber-green-400 rounded-full animate-pulse'></div>
-          <span>
-            {isMobile
-              ? PHILADELPHIA_BUBBLES.length.toString()
-              : `${PHILADELPHIA_BUBBLES.length} locations`}
-          </span>
+          <span>{isClusteredView ? 'Cluster view' : 'Detailed view'}</span>
         </motion.div>
       )}
     </div>

@@ -1,5 +1,6 @@
-/* Mapbox GL CSS - Critical for map rendering */
+/* Map GL CSS - Mapbox and MapLibre */
 @import "mapbox-gl/dist/mapbox-gl.css";
+@import "maplibre-gl/dist/maplibre-gl.css";
 
 /* Tailwind CSS base styles */
 @tailwind base;

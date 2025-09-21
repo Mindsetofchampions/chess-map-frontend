@@ -10,13 +10,25 @@ export default function OnboardingStart() {
 
   useEffect(() => {
     (async () => {
-      // If a master/org_admin lands on the onboarding start page, send them to approvals
+      // If a master lands on the onboarding start page, send them to approvals
       if (role === 'master_admin') {
         navigate('/master/dashboard');
         return;
       }
+
+      // Org roles should go through org onboarding flow, not student
       if (role === 'org_admin' || role === 'staff') {
-        navigate('/org/dashboard');
+        const approved =
+          user?.user_metadata?.org_approved === true || user?.user_metadata?.org_approved === 'true';
+        const submitted =
+          user?.user_metadata?.org_onboarding_submitted === true ||
+          user?.user_metadata?.org_onboarding_submitted === 'true';
+
+        if (approved || submitted) {
+          navigate('/org/dashboard');
+        } else {
+          navigate('/onboarding/org');
+        }
         return;
       }
       if (!user?.id) return;

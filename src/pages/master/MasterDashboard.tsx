@@ -124,6 +124,7 @@ const MasterDashboard: React.FC = () => {
   const [userAmount, setUserAmount] = useState('');
   const [userReason, setUserReason] = useState('Direct user allocation');
   const [allocatingUser, setAllocatingUser] = useState(false);
+  const [pendingOrgOnboardings, setPendingOrgOnboardings] = useState<number>(0);
 
   /**
    * Fetch pending quests for approval
@@ -151,6 +152,18 @@ const MasterDashboard: React.FC = () => {
       setLoadingQuests(false);
     }
   }, [role]);
+
+  // Fetch pending org onboardings count for quick stats
+  const fetchPendingOrgOnboardings = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.rpc('list_org_onboardings', { p_status: 'pending' });
+      if (error) throw error;
+      setPendingOrgOnboardings(Array.isArray(data) ? data.length : 0);
+    } catch (err) {
+      // non-fatal for dashboard
+      setPendingOrgOnboardings(0);
+    }
+  }, []);
 
   /**
    * Fetch platform balance
@@ -365,6 +378,7 @@ const MasterDashboard: React.FC = () => {
     fetchPendingQuests();
     fetchPlatformBalance();
     fetchOrgBalances();
+    fetchPendingOrgOnboardings();
 
     // Set up realtime subscription for pending quests
     const subscription = subscribeToApprovals(() => {
@@ -544,6 +558,14 @@ const MasterDashboard: React.FC = () => {
             color='bg-neon-purple-500/20 border border-neon-purple-500/30'
             href='/master/quests/approvals'
             delay={0.1}
+          />
+          <StatsCard
+            title='Pending Org Onboardings'
+            value={pendingOrgOnboardings.toString()}
+            icon={<Shield className='w-6 h-6 text-white' />}
+            color='bg-yellow-500/20 border border-yellow-500/30'
+            href='/master/org-onboarding'
+            delay={0.15}
           />
           <StatsCard
             title='System Diagnostics'

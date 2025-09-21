@@ -1,11 +1,9 @@
 /**
- * Sprite Management for Mapbox Integration
+ * Sprite Management for Map GL Integration
  *
- * Handles loading persona GIFs into Mapbox as symbols and creating
- * DOM-based animated markers for quest bubbles.
+ * Works with either Mapbox GL JS or MapLibre GL via the provided GL namespace.
+ * Creates DOM-based animated markers for quest bubbles.
  */
-
-import mapboxgl from 'mapbox-gl';
 
 import { PERSONA_GIF, getPersonaInfo, type PersonaKey } from '@/assets/personas';
 import type { PersonaDef } from '@/types';
@@ -63,7 +61,7 @@ async function gifToImageBitmap(src: string, size: number = 36): Promise<ImageBi
  * Register persona sprites in Mapbox map for use in symbol layers
  * Creates both normal and hover variants for each persona
  */
-export async function registerPersonaSprites(map: mapboxgl.Map): Promise<void> {
+export async function registerPersonaSprites(map: any): Promise<void> {
   const registrationTasks: Promise<void>[] = [];
 
   (Object.keys(PERSONA_GIF) as PersonaKey[]).forEach((key) => {
@@ -97,17 +95,18 @@ export async function registerPersonaSprites(map: mapboxgl.Map): Promise<void> {
 
 /**
  * Create animated DOM-based persona marker for quest bubbles
- * Uses actual GIF animation instead of static Mapbox symbols
+ * Uses actual GIF animation instead of static symbol layers
  */
 export function createPersonaMarker(options: {
-  map: mapboxgl.Map;
+  GL: any; // Mapbox GL or MapLibre GL namespace
+  map: any;
   persona: PersonaKey;
   lngLat: [number, number];
   title?: string;
   onClick?: () => void;
   size?: number;
-}): mapboxgl.Marker {
-  const { map, persona, lngLat, title, onClick, size = 48 } = options;
+}): any {
+  const { GL, map, persona, lngLat, title, onClick, size = 48 } = options;
 
   // Create marker element
   const element = document.createElement('div');
@@ -169,7 +168,7 @@ export function createPersonaMarker(options: {
   }
 
   // Create and return Mapbox marker
-  const marker = new mapboxgl.Marker(element).setLngLat(lngLat).addTo(map);
+  const marker = new GL.Marker(element).setLngLat(lngLat).addTo(map);
 
   return marker;
 }
@@ -179,11 +178,12 @@ export function createPersonaMarker(options: {
  * Placeholder implementation that returns empty markers array
  */
 export function addPersonaChipsToMap(
-  map: mapboxgl.Map,
+  GL: any,
+  map: any,
   organizations: OrganizationWithPersonas[],
   onPersonaClick: (persona: PersonaDef) => void,
 ): PersonaChipMarker[] {
-  const markers: mapboxgl.Marker[] = [];
+  const markers: any[] = [];
 
   organizations.forEach((org, orgIndex) => {
     const baseLng = org.lng;
@@ -198,6 +198,7 @@ export function addPersonaChipsToMap(
         const personaInfo = getPersonaInfo(personaKey as PersonaKey);
 
         const marker = createPersonaMarker({
+          GL,
           map,
           persona: personaKey as PersonaKey,
           lngLat: [offsetLng, offsetLat],

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { createSystemNotification } from '@/lib/notifications';
 
 export default function OrgOnboarding() {
   const { user, refreshRole } = useAuth();
@@ -67,8 +68,17 @@ export default function OrgOnboarding() {
       const { error: updErr } = await supabase.auth.updateUser(updates);
       if (updErr) throw updErr;
 
-      // Send a notification email (best-effort)
+      // Notify master admins (in-app) and email the submitter (best-effort)
       try {
+        // In-app notification for master_admins
+        await createSystemNotification({
+          title: 'New Org Onboarding Submitted',
+          body: `${orgName} submitted by ${user.email}`,
+          created_by: user.id,
+          target_role: 'master_admin',
+        });
+
+        // Email notification (edge function, best-effort) to submitter for receipt
         const { data: session } = await supabase.auth.getSession();
         const token = session.session?.access_token;
         await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send_onboarding_notification`, {
