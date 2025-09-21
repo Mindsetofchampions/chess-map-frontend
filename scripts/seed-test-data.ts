@@ -22,22 +22,27 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
 
 const argv = process.argv.slice(2);
 function getArg(name: string, fallback?: string) {
-  const idx = argv.findIndex(a => a === `--${name}`);
+  const idx = argv.findIndex((a) => a === `--${name}`);
   if (idx >= 0 && argv[idx + 1]) return argv[idx + 1];
-  const kv = argv.find(a => a.startsWith(`--${name}=`));
+  const kv = argv.find((a) => a.startsWith(`--${name}=`));
   if (kv) return kv.split('=')[1];
   return fallback;
 }
 
 const email = getArg('email', 'test.user@example.com')!;
 const displayName = getArg('name', 'Test User')!;
-const role = (getArg('role', 'org_admin')! as 'student' | 'org_admin' | 'staff');
+const role = getArg('role', 'org_admin')! as 'student' | 'org_admin' | 'staff';
 const orgSlug = getArg('org', 'test-org')!;
-const orgRole = (getArg('orgRole', role === 'org_admin' ? 'org_admin' : 'student')! as 'org_admin' | 'staff' | 'student');
+const orgRole = getArg('orgRole', role === 'org_admin' ? 'org_admin' : 'student')! as
+  | 'org_admin'
+  | 'staff'
+  | 'student';
 const password = getArg('password');
 
 async function main() {
-  const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+  const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 
   // Ensure organization exists
   let orgId: string | null = null;
@@ -72,7 +77,7 @@ async function main() {
   {
     const { data: found, error: findErr } = await admin.auth.admin.listUsers();
     if (findErr) throw findErr;
-    const existing = found.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    const existing = found.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
     if (existing) {
       userId = existing.id;
     } else {
@@ -81,7 +86,7 @@ async function main() {
         email,
         password: tmpPass,
         email_confirm: true,
-        user_metadata: { display_name: displayName }
+        user_metadata: { display_name: displayName },
       });
       if (createErr) throw createErr;
       if (!created.user) throw new Error('User creation failed');
@@ -106,7 +111,12 @@ async function main() {
     try {
       await admin
         .from('profiles')
-  .upsert({ user_id: userId, display_name: displayName, role: role === 'org_admin' ? 'org_admin' : 'student', org_id: orgId })
+        .upsert({
+          user_id: userId,
+          display_name: displayName,
+          role: role === 'org_admin' ? 'org_admin' : 'student',
+          org_id: orgId,
+        })
         .select();
     } catch (_) {}
   }
@@ -120,7 +130,9 @@ async function main() {
     if (memErr) throw memErr;
   }
 
-  console.log(`Seed complete. Org ${orgSlug} (${orgId}); user ${email} (${userId}) role=${role}, orgRole=${orgRole}`);
+  console.log(
+    `Seed complete. Org ${orgSlug} (${orgId}); user ${email} (${userId}) role=${role}, orgRole=${orgRole}`,
+  );
 }
 
 main().catch((e) => {

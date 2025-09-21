@@ -1,15 +1,16 @@
 /**
  * Wallet Balance Chip
- * 
+ *
  * Displays current user's coin balance with real-time updates
  * and loading states.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Coins, RefreshCw } from 'lucide-react';
-import { getMyWallet } from '@/lib/supabase';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import { useToast } from '@/components/ToastProvider';
+import { getMyWallet } from '@/lib/supabase';
 import type { Wallet } from '@/types/backend';
 
 /**
@@ -24,7 +25,7 @@ interface WalletChipProps {
 
 /**
  * Wallet Chip Component
- * 
+ *
  * Features:
  * - Real-time balance display
  * - Manual refresh capability
@@ -39,7 +40,7 @@ const WalletChip: React.FC<WalletChipProps> = ({
   ...props
 }) => {
   const { showError } = useToast();
-  
+
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -47,28 +48,31 @@ const WalletChip: React.FC<WalletChipProps> = ({
   /**
    * Fetch wallet data
    */
-  const fetchWallet = useCallback(async (isRefresh = false) => {
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-
-    try {
-      const walletData = await getMyWallet();
-      setWallet(walletData);
-    } catch (error: any) {
-      console.error('Failed to fetch wallet:', error);
-      
-      // Only show error toast for manual refresh
+  const fetchWallet = useCallback(
+    async (isRefresh = false) => {
       if (isRefresh) {
-        showError('Failed to refresh balance', error.message);
+        setRefreshing(true);
+      } else {
+        setLoading(true);
       }
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [showError]);
+
+      try {
+        const walletData = await getMyWallet();
+        setWallet(walletData);
+      } catch (error: any) {
+        console.error('Failed to fetch wallet:', error);
+
+        // Only show error toast for manual refresh
+        if (isRefresh) {
+          showError('Failed to refresh balance', error.message);
+        }
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [showError],
+  );
 
   /**
    * Manual refresh handler
@@ -122,16 +126,16 @@ const WalletChip: React.FC<WalletChipProps> = ({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <Coins className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-      
-      <div className="flex items-center gap-2">
+      <Coins className='w-4 h-4 text-yellow-400 flex-shrink-0' />
+
+      <div className='flex items-center gap-2'>
         {loading ? (
-          <div className="flex items-center gap-2">
-            <div className="animate-spin rounded-full h-4 w-4 border-b border-gray-300"></div>
-            <span className="text-gray-300 text-sm">Loading...</span>
+          <div className='flex items-center gap-2'>
+            <div className='animate-spin rounded-full h-4 w-4 border-b border-gray-300'></div>
+            <span className='text-gray-300 text-sm'>Loading...</span>
           </div>
         ) : (
-          <span className="text-yellow-400 font-semibold text-sm whitespace-nowrap">
+          <span className='text-yellow-400 font-semibold text-sm whitespace-nowrap'>
             {formatBalance(wallet?.balance || 0)} coins
           </span>
         )}
@@ -140,8 +144,8 @@ const WalletChip: React.FC<WalletChipProps> = ({
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="p-1 rounded-full hover:bg-white/10 transition-colors disabled:opacity-50"
-            aria-label="Refresh balance"
+            className='p-1 rounded-full hover:bg-white/10 transition-colors disabled:opacity-50'
+            aria-label='Refresh balance'
           >
             <RefreshCw className={`w-3 h-3 text-gray-400 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
@@ -177,6 +181,6 @@ export const useWallet = () => {
     wallet,
     loading,
     refreshWallet,
-    balance: wallet?.balance || 0
+    balance: wallet?.balance || 0,
   };
 };

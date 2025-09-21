@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export default function OnboardingStart() {
   const { user, role } = useAuth() as any;
@@ -43,12 +44,20 @@ export default function OnboardingStart() {
   }, [user?.id, role, navigate]);
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-bold text-white">Welcome — Complete Onboarding</h1>
-      <p className="text-gray-300">Please complete both steps to access the site:</p>
-      <ol className="list-decimal ml-6 text-gray-200 space-y-2">
-        <li><Link className="text-cyber-green-300 underline" to="/onboarding/student">Student Qualifying Questions</Link></li>
-        <li><Link className="text-cyber-green-300 underline" to="/onboarding/parent">Parent Consent & ID Upload</Link></li>
+    <div className='max-w-xl mx-auto p-6 space-y-4'>
+      <h1 className='text-2xl font-bold text-white'>Welcome — Complete Onboarding</h1>
+      <p className='text-gray-300'>Please complete both steps to access the site:</p>
+      <ol className='list-decimal ml-6 text-gray-200 space-y-2'>
+        <li>
+          <Link className='text-cyber-green-300 underline' to='/onboarding/student'>
+            Student Qualifying Questions
+          </Link>
+        </li>
+        <li>
+          <Link className='text-cyber-green-300 underline' to='/onboarding/parent'>
+            Parent Consent & ID Upload
+          </Link>
+        </li>
       </ol>
     </div>
   );

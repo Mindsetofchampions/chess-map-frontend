@@ -4,14 +4,14 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
-  
+
   // Path resolution
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': path.resolve(__dirname, './src'),
     },
   },
-  
+
   // Development server configuration
   server: {
     host: '0.0.0.0', // Allow external connections
@@ -20,7 +20,7 @@ export default defineConfig({
     cors: true,
     hmr: true, // Simplified HMR configuration
   },
-  
+
   // Build configuration
   build: {
     outDir: 'dist',
@@ -32,35 +32,29 @@ export default defineConfig({
           vendor: ['react', 'react-dom'],
           mapbox: ['mapbox-gl'],
           supabase: ['@supabase/supabase-js'],
-          ui: ['lucide-react']
-        }
-      }
+          ui: ['lucide-react'],
+        },
+      },
     },
     // Increase chunk size warning limit
     chunkSizeWarningLimit: 1000,
   },
-  
+
   // Environment variables configuration
   envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
-  
+
   // Dependency optimization
   optimizeDeps: {
-    include: [
-      'react', 
-      'react-dom', 
-      'mapbox-gl', 
-      '@supabase/supabase-js',
-      'lucide-react'
-    ],
-    exclude: ['@bolt/cli']
+    include: ['react', 'react-dom', 'mapbox-gl', '@supabase/supabase-js', 'lucide-react'],
+    exclude: ['@bolt/cli'],
   },
-  
+
   // CSS configuration
   css: {
     postcss: './postcss.config.js',
     devSourcemap: true,
   },
-  
+
   // Define global constants
   define: {
     global: 'globalThis',

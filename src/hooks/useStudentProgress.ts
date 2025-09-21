@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import type { Quest } from '@/types/backend';
 
 type CategoryKey = 'character' | 'health' | 'exploration' | 'stem' | 'stewardship';
@@ -10,10 +11,14 @@ const CATEGORY_MAP: Record<string, CategoryKey> = {
   health: 'health',
   exploration: 'exploration',
   stem: 'stem',
-  stewardship: 'stewardship'
+  stewardship: 'stewardship',
 };
 
-type ProgressEntry = { total: number; completed: number; percent: number };
+interface ProgressEntry {
+  total: number;
+  completed: number;
+  percent: number;
+}
 type ProgressMap = Record<CategoryKey, ProgressEntry>;
 
 const makeEmptyProgress = (): ProgressMap => ({
@@ -53,7 +58,11 @@ export const useStudentProgress = () => {
           if (!totals[key]) return;
           const total = Number(r.total || 0);
           const completed = Number(r.completed || 0);
-          totals[key] = { total, completed, percent: total ? Math.round((completed / total) * 100) : 0 };
+          totals[key] = {
+            total,
+            completed,
+            percent: total ? Math.round((completed / total) * 100) : 0,
+          };
         });
         setProgress(totals);
         return;
@@ -74,11 +83,18 @@ export const useStudentProgress = () => {
       const questCategory: Record<string, CategoryKey> = {};
       quests.forEach((q) => {
         const key = String(q.attribute_id || '').toLowerCase();
-        const cat = (q.attribute_id && (CATEGORY_MAP[q.attribute_id] || CATEGORY_MAP[key])) || 'character';
+        const cat =
+          (q.attribute_id && (CATEGORY_MAP[q.attribute_id] || CATEGORY_MAP[key])) || 'character';
         questCategory[q.id] = cat;
       });
 
-      const totalsCount: Record<CategoryKey, number> = { character: 0, health: 0, exploration: 0, stem: 0, stewardship: 0 };
+      const totalsCount: Record<CategoryKey, number> = {
+        character: 0,
+        health: 0,
+        exploration: 0,
+        stem: 0,
+        stewardship: 0,
+      };
       quests.forEach((q) => {
         const c = questCategory[q.id] || 'character';
         totalsCount[c] = (totalsCount[c] || 0) + 1;
@@ -92,7 +108,13 @@ export const useStudentProgress = () => {
       if (subsErr) throw subsErr;
 
       const submissions = (subsData || []) as Array<{ quest_id: string; status: string }>;
-      const completedByCategory: Record<CategoryKey, number> = { character: 0, health: 0, exploration: 0, stem: 0, stewardship: 0 };
+      const completedByCategory: Record<CategoryKey, number> = {
+        character: 0,
+        health: 0,
+        exploration: 0,
+        stem: 0,
+        stewardship: 0,
+      };
       submissions.forEach((s) => {
         const qid = s.quest_id;
         const cat = questCategory[qid];
@@ -102,11 +124,41 @@ export const useStudentProgress = () => {
       });
 
       const result: ProgressMap = {
-        character: { total: totalsCount.character, completed: completedByCategory.character, percent: totalsCount.character ? Math.round((completedByCategory.character / totalsCount.character) * 100) : 0 },
-        health: { total: totalsCount.health, completed: completedByCategory.health, percent: totalsCount.health ? Math.round((completedByCategory.health / totalsCount.health) * 100) : 0 },
-        exploration: { total: totalsCount.exploration, completed: completedByCategory.exploration, percent: totalsCount.exploration ? Math.round((completedByCategory.exploration / totalsCount.exploration) * 100) : 0 },
-        stem: { total: totalsCount.stem, completed: completedByCategory.stem, percent: totalsCount.stem ? Math.round((completedByCategory.stem / totalsCount.stem) * 100) : 0 },
-        stewardship: { total: totalsCount.stewardship, completed: completedByCategory.stewardship, percent: totalsCount.stewardship ? Math.round((completedByCategory.stewardship / totalsCount.stewardship) * 100) : 0 },
+        character: {
+          total: totalsCount.character,
+          completed: completedByCategory.character,
+          percent: totalsCount.character
+            ? Math.round((completedByCategory.character / totalsCount.character) * 100)
+            : 0,
+        },
+        health: {
+          total: totalsCount.health,
+          completed: completedByCategory.health,
+          percent: totalsCount.health
+            ? Math.round((completedByCategory.health / totalsCount.health) * 100)
+            : 0,
+        },
+        exploration: {
+          total: totalsCount.exploration,
+          completed: completedByCategory.exploration,
+          percent: totalsCount.exploration
+            ? Math.round((completedByCategory.exploration / totalsCount.exploration) * 100)
+            : 0,
+        },
+        stem: {
+          total: totalsCount.stem,
+          completed: completedByCategory.stem,
+          percent: totalsCount.stem
+            ? Math.round((completedByCategory.stem / totalsCount.stem) * 100)
+            : 0,
+        },
+        stewardship: {
+          total: totalsCount.stewardship,
+          completed: completedByCategory.stewardship,
+          percent: totalsCount.stewardship
+            ? Math.round((completedByCategory.stewardship / totalsCount.stewardship) * 100)
+            : 0,
+        },
       };
       setProgress(result);
     } catch (err: any) {

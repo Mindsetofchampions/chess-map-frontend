@@ -15,7 +15,10 @@ function loadDotEnv(file = '.env.local') {
       let key = trimmed.slice(0, eq).trim();
       let val = trimmed.slice(eq + 1).trim();
       // strip optional quotes
-      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      if (
+        (val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))
+      ) {
         val = val.slice(1, -1);
       }
       env[key] = val;
@@ -29,14 +32,15 @@ function loadDotEnv(file = '.env.local') {
 async function main() {
   const env = loadDotEnv();
   const SUPABASE_URL = env.SUPABASE_URL || process.env.SUPABASE_URL;
-  const SUPABASE_SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const SUPABASE_SERVICE_ROLE_KEY =
+    env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     console.error('Need SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local or env');
     process.exit(1);
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false }
+    auth: { persistSession: false },
   });
 
   const orgId = randomUUID();
@@ -47,7 +51,10 @@ async function main() {
   // 1) Try to call the assign_organization_admin RPC (requires migration applied)
   try {
     console.log('Calling assign_organization_admin RPC...');
-    const { data, error } = await supabase.rpc('assign_organization_admin', { p_org_id: orgId, p_user_id: userId });
+    const { data, error } = await supabase.rpc('assign_organization_admin', {
+      p_org_id: orgId,
+      p_user_id: userId,
+    });
     if (error) {
       console.error('RPC assign_organization_admin error:', error);
     } else {
@@ -69,7 +76,7 @@ async function main() {
         cacheControl: '3600',
         upsert: false,
         // metadata must be strings
-        metadata: { uploader_id: userId, org_id: orgId }
+        metadata: { uploader_id: userId, org_id: orgId },
       });
       // @ts-ignore
       if (res.error) {
@@ -99,7 +106,9 @@ async function main() {
       if (listRes.data && listRes.data.length > 0) {
         // @ts-ignore
         const first = listRes.data[0].name || listRes.data[0].path;
-        const { data: urlData, error: urlErr } = await supabase.storage.from('org_logos').createSignedUrl(first, 60);
+        const { data: urlData, error: urlErr } = await supabase.storage
+          .from('org_logos')
+          .createSignedUrl(first, 60);
         if (urlErr) console.error('signed url error', urlErr);
         else console.log('signed url:', urlData?.signedUrl || urlData);
       }
@@ -108,7 +117,9 @@ async function main() {
     console.error('Signed url/list failed', err);
   }
 
-  console.log('Test script completed. If uploads failed, ensure migrations and storage policies are applied and buckets exist.');
+  console.log(
+    'Test script completed. If uploads failed, ensure migrations and storage policies are applied and buckets exist.',
+  );
   process.exit(0);
 }
 

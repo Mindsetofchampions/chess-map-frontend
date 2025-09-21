@@ -2,7 +2,6 @@
 
 This folder contains Deno-based Edge Functions used by the project. The local `tsconfig.json` helps editors avoid false positives.
 
-
 Deployment (recommended):
 
 1. Install Supabase CLI and ensure Docker is running (Windows: Docker Desktop).
@@ -28,6 +27,7 @@ npx supabase secrets set RESEND_API_KEY="..." SENDGRID_API_KEY="..." FROM_EMAIL=
 ```
 
 Windows tips:
+
 - Ensure Docker Desktop is installed and running before using the Supabase CLI local dev or deploy commands.
 - Run the `deploy.sh` script from Git Bash or WSL so `npx` and the shell behave consistently.
 

@@ -2,17 +2,17 @@
 export default {
   // Content paths for Tailwind to scan for classes
   content: ['./src/**/*.{ts,tsx}', './public/index.html'],
-  
+
   theme: {
     extend: {
       // Custom futuristic esports color palette
       colors: {
         // Dark background system for youth appeal
         'dark-primary': '#0A0A0F',
-        'dark-secondary': '#161622', 
+        'dark-secondary': '#161622',
         'dark-tertiary': '#1F1F2E',
         'dark-accent': '#2A2A3E',
-        
+
         'electric-blue': {
           50: '#eff8ff',
           100: '#dbeafe',
@@ -71,9 +71,9 @@ export default {
           medium: 'rgba(255, 255, 255, 0.08)',
           dark: 'rgba(255, 255, 255, 0.12)',
           'ultra-light': 'rgba(255, 255, 255, 0.03)',
-        }
+        },
       },
-      
+
       // Enhanced backdrop blur utilities
       backdropBlur: {
         xs: '2px',
@@ -84,7 +84,7 @@ export default {
         '2xl': '40px',
         '3xl': '64px',
       },
-      
+
       // Custom animation keyframes for esports theme
       keyframes: {
         'fade-in': {
@@ -101,27 +101,27 @@ export default {
           '60%': { transform: 'translateY(-2px)' },
         },
         'pulse-glow': {
-          '0%, 100%': { 
+          '0%, 100%': {
             boxShadow: '0 0 5px rgba(59, 130, 246, 0.5)',
-            transform: 'scale(1)'
+            transform: 'scale(1)',
           },
-          '50%': { 
+          '50%': {
             boxShadow: '0 0 20px rgba(59, 130, 246, 0.8)',
-            transform: 'scale(1.05)'
+            transform: 'scale(1.05)',
           },
         },
         'neon-pulse': {
-          '0%, 100%': { 
+          '0%, 100%': {
             textShadow: '0 0 5px currentColor',
-            opacity: '1'
+            opacity: '1',
           },
-          '50%': { 
+          '50%': {
             textShadow: '0 0 20px currentColor, 0 0 30px currentColor',
-            opacity: '0.8'
+            opacity: '0.8',
           },
-        }
+        },
       },
-      
+
       // Custom animations
       animation: {
         'fade-in': 'fade-in 0.5s ease-out',
@@ -130,141 +130,143 @@ export default {
         'pulse-glow': 'pulse-glow 2s infinite',
         'neon-pulse': 'neon-pulse 2s infinite',
       },
-      
+
       // Custom font families for futuristic theme
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
-      
+
       // Custom spacing for consistent layout
       spacing: {
-        '18': '4.5rem',
-        '22': '5.5rem',
-        '88': '22rem',
-        '112': '28rem',
+        18: '4.5rem',
+        22: '5.5rem',
+        88: '22rem',
+        112: '28rem',
       },
-      
+
       // Mobile-first responsive breakpoints
       screens: {
-        'xs': '475px',
-        'sm': '640px',
-        'md': '768px',
-        'lg': '1024px',
-        'xl': '1280px',
+        xs: '475px',
+        sm: '640px',
+        md: '768px',
+        lg: '1024px',
+        xl: '1280px',
         '2xl': '1536px',
       },
-      
+
       // Custom minimum touch target sizes
       minHeight: {
-        'touch': '44px',
+        touch: '44px',
       },
       minWidth: {
-        'touch': '44px',
-      }
+        touch: '44px',
+      },
     },
   },
-  
+
   plugins: [
     // Custom utilities for glassmorphism effects
-    function({ addUtilities, addComponents }) {
+    function ({ addUtilities, addComponents }) {
       const newUtilities = {
         // Glass background utilities
         '.bg-glass': {
           'background-color': 'rgba(255, 255, 255, 0.08)',
           'backdrop-filter': 'blur(32px) saturate(180%)',
           '-webkit-backdrop-filter': 'blur(32px) saturate(180%)',
-          'border': '1px solid rgba(255, 255, 255, 0.15)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
         },
         '.bg-glass-light': {
           'background-color': 'rgba(255, 255, 255, 0.05)',
           'backdrop-filter': 'blur(20px) saturate(160%)',
           '-webkit-backdrop-filter': 'blur(20px) saturate(160%)',
-          'border': '1px solid rgba(255, 255, 255, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
         },
         '.bg-glass-dark': {
           'background-color': 'rgba(255, 255, 255, 0.12)',
           'backdrop-filter': 'blur(40px) saturate(200%)',
           '-webkit-backdrop-filter': 'blur(40px) saturate(200%)',
-          'border': '1px solid rgba(255, 255, 255, 0.2)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
         },
-        
+
         // Glass border utilities
         '.border-glass': {
-          'border': '1px solid rgba(255, 255, 255, 0.15)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
         },
         '.border-glass-light': {
-          'border': '1px solid rgba(255, 255, 255, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
         },
         '.border-glass-dark': {
-          'border': '1px solid rgba(255, 255, 255, 0.2)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
         },
-        
+
         // Touch optimization
         '.touch-manipulation': {
           'touch-action': 'manipulation',
         },
-        
+
         // Neon text effects
         '.text-neon-blue': {
-          'color': '#3b82f6',
+          color: '#3b82f6',
           'text-shadow': '0 0 10px rgba(59, 130, 246, 0.8)',
         },
         '.text-neon-purple': {
-          'color': '#a855f7',
+          color: '#a855f7',
           'text-shadow': '0 0 10px rgba(168, 85, 247, 0.8)',
         },
         '.text-neon-green': {
-          'color': '#22c55e',
+          color: '#22c55e',
           'text-shadow': '0 0 10px rgba(34, 197, 94, 0.8)',
-        }
-      }
-      
+        },
+      };
+
       const newComponents = {
         // Pre-built glassmorphism card components
         '.glassmorphism-card': {
           'background-color': 'rgba(255, 255, 255, 0.08)',
           'backdrop-filter': 'blur(32px) saturate(180%)',
           '-webkit-backdrop-filter': 'blur(32px) saturate(180%)',
-          'border': '1px solid rgba(255, 255, 255, 0.15)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
           'border-radius': '1rem',
           'box-shadow': '0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
         },
         '.glassmorphism-overlay': {
-          'background': 'rgba(255, 255, 255, 0.03)',
+          background: 'rgba(255, 255, 255, 0.03)',
           'backdrop-filter': 'blur(48px) saturate(200%)',
           '-webkit-backdrop-filter': 'blur(48px) saturate(200%)',
-          'border': '1px solid rgba(255, 255, 255, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
           'box-shadow': 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
         },
-        
+
         // Youth-focused button styles
         '.btn-esports': {
-          'background': 'linear-gradient(135deg, rgba(79, 155, 255, 0.3), rgba(217, 70, 239, 0.3))',
+          background: 'linear-gradient(135deg, rgba(79, 155, 255, 0.3), rgba(217, 70, 239, 0.3))',
           'backdrop-filter': 'blur(24px) saturate(180%)',
           '-webkit-backdrop-filter': 'blur(24px) saturate(180%)',
-          'border': '1px solid rgba(255, 255, 255, 0.25)',
+          border: '1px solid rgba(255, 255, 255, 0.25)',
           'border-radius': '0.75rem',
-          'padding': '0.75rem 1.5rem',
+          padding: '0.75rem 1.5rem',
           'font-weight': '600',
-          'color': 'white',
+          color: 'white',
           'text-shadow': '0 2px 8px rgba(0, 0, 0, 0.8)',
-          'transition': 'all 0.3s ease',
-          'cursor': 'pointer',
+          transition: 'all 0.3s ease',
+          cursor: 'pointer',
           'min-height': '44px',
           'min-width': '44px',
           'touch-action': 'manipulation',
-          'box-shadow': '0 4px 20px rgba(79, 155, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+          'box-shadow':
+            '0 4px 20px rgba(79, 155, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
           '&:hover': {
-            'transform': 'translateY(-2px)',
-            'box-shadow': '0 8px 32px rgba(79, 155, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-            'background': 'linear-gradient(135deg, rgba(79, 155, 255, 0.4), rgba(217, 70, 239, 0.4))',
-          }
-        }
-      }
-      
-      addUtilities(newUtilities)
-      addComponents(newComponents)
-    }
+            transform: 'translateY(-2px)',
+            'box-shadow':
+              '0 8px 32px rgba(79, 155, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
+            background: 'linear-gradient(135deg, rgba(79, 155, 255, 0.4), rgba(217, 70, 239, 0.4))',
+          },
+        },
+      };
+
+      addUtilities(newUtilities);
+      addComponents(newComponents);
+    },
   ],
-}
+};

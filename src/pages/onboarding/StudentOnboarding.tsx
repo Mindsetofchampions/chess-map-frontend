@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 const CHECKS = [
-  { key: 'age_confirm', label: 'I confirm I meet the minimum age requirement or have parental consent.' },
+  {
+    key: 'age_confirm',
+    label: 'I confirm I meet the minimum age requirement or have parental consent.',
+  },
   { key: 'tos_accept', label: 'I agree to the Terms of Service.' },
   { key: 'privacy_accept', label: 'I agree to the Privacy Policy.' },
   { key: 'code_of_conduct', label: 'I agree to follow the Code of Conduct.' },
@@ -17,7 +21,7 @@ export default function StudentOnboarding() {
   const [checks, setChecks] = useState<Record<string, boolean>>({});
   const [eligible, setEligible] = useState(false);
   const [saving, setSaving] = useState(false);
-  const allChecked = useMemo(() => CHECKS.every(c => checks[c.key]), [checks]);
+  const allChecked = useMemo(() => CHECKS.every((c) => checks[c.key]), [checks]);
 
   useEffect(() => {
     if (!studentId) return;
@@ -28,7 +32,7 @@ export default function StudentOnboarding() {
     }
 
     let cancelled = false;
-+    (async () => {
+    +(async () => {
       const { data } = await supabase
         .from('onboarding_responses')
         .select('*')
@@ -41,7 +45,9 @@ export default function StudentOnboarding() {
       }
     })();
 
-    return () => { cancelled = true };
+    return () => {
+      cancelled = true;
+    };
   }, [studentId, role, navigate]);
 
   async function save() {
@@ -69,15 +75,15 @@ export default function StudentOnboarding() {
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-bold text-white">Student Onboarding</h1>
-      <div className="bg-glass border-glass rounded-xl p-4 space-y-3">
-        {CHECKS.map(item => (
-          <label key={item.key} className="flex gap-3 text-white items-center">
+    <div className='max-w-xl mx-auto p-6 space-y-4'>
+      <h1 className='text-2xl font-bold text-white'>Student Onboarding</h1>
+      <div className='bg-glass border-glass rounded-xl p-4 space-y-3'>
+        {CHECKS.map((item) => (
+          <label key={item.key} className='flex gap-3 text-white items-center'>
             <input
-              type="checkbox"
+              type='checkbox'
               checked={!!checks[item.key]}
-              onChange={e => setChecks(prev => ({ ...prev, [item.key]: e.target.checked }))}
+              onChange={(e) => setChecks((prev) => ({ ...prev, [item.key]: e.target.checked }))}
             />
             <span>{item.label}</span>
           </label>
@@ -86,11 +92,11 @@ export default function StudentOnboarding() {
       <button
         onClick={save}
         disabled={saving}
-        className="bg-cyber-green-500/20 border border-cyber-green-500/30 text-cyber-green-300 hover:bg-cyber-green-500/30 rounded-lg px-4 py-2"
+        className='bg-cyber-green-500/20 border border-cyber-green-500/30 text-cyber-green-300 hover:bg-cyber-green-500/30 rounded-lg px-4 py-2'
       >
         {saving ? 'Saving…' : 'Save'}
       </button>
-      <div className="text-gray-300">Status: {eligible ? 'Eligible ✅' : 'Incomplete ❌'}</div>
+      <div className='text-gray-300'>Status: {eligible ? 'Eligible ✅' : 'Incomplete ❌'}</div>
     </div>
   );
 }

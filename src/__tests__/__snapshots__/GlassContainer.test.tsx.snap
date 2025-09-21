@@ -1,0 +1,82 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`GlassContainer Snapshot Tests matches snapshot for default card variant 1`] = `
+<div
+  animate="[object Object]"
+  class="bg-glass backdrop-blur-2xl border-glass rounded-2xl shadow-2xl p-6 sm:p-8 relative"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    data-testid="test-content"
+  >
+    Test Content
+  </div>
+  <div
+    class="absolute -inset-px bg-gradient-to-r from-electric-blue-400/30 via-neon-purple-400/30 to-cyber-green-400/30 rounded-2xl -z-10 blur-sm"
+  />
+</div>
+`;
+
+exports[`GlassContainer Snapshot Tests matches snapshot for overlay variant 1`] = `
+<div
+  animate="[object Object]"
+  class="bg-glass-light backdrop-blur-3xl border-glass-light rounded-xl shadow-xl p-4 sm:p-6 relative"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    data-testid="test-content"
+  >
+    Test Content
+  </div>
+</div>
+`;
+
+exports[`GlassContainer Snapshot Tests matches snapshot for page variant 1`] = `
+<div
+  animate="[object Object]"
+  class="min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary p-4 sm:p-6 lg:p-8"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    data-testid="test-content"
+  >
+    Test Content
+  </div>
+</div>
+`;
+
+exports[`GlassContainer Snapshot Tests matches snapshot with animation delay 1`] = `
+<div
+  animate="[object Object]"
+  class="bg-glass backdrop-blur-2xl border-glass rounded-2xl shadow-2xl p-6 sm:p-8 relative"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    data-testid="test-content"
+  >
+    Test Content
+  </div>
+  <div
+    class="absolute -inset-px bg-gradient-to-r from-electric-blue-400/30 via-neon-purple-400/30 to-cyber-green-400/30 rounded-2xl -z-10 blur-sm"
+  />
+</div>
+`;
+
+exports[`GlassContainer Snapshot Tests matches snapshot with custom className and no animation 1`] = `
+<div
+  class="bg-glass backdrop-blur-2xl border-glass rounded-2xl shadow-2xl p-6 sm:p-8 relative custom-test-class"
+>
+  <div
+    data-testid="test-content"
+  >
+    Test Content
+  </div>
+  <div
+    class="absolute -inset-px bg-gradient-to-r from-electric-blue-400/30 via-neon-purple-400/30 to-cyber-green-400/30 rounded-2xl -z-10 blur-sm"
+  />
+</div>
+`;

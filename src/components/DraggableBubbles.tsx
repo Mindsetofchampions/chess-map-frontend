@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import React, { useState, useRef, useCallback } from 'react';
 
 /**
  * Individual draggable bubble data interface
@@ -32,16 +32,16 @@ const DECORATIVE_COLORS = [
 const generateBubbles = (): DraggableBubble[] => {
   const bubbles: DraggableBubble[] = [];
   const bubbleCount = 8; // Number of decorative bubbles
-  
+
   for (let i = 0; i < bubbleCount; i++) {
     // Generate positions that avoid the center content areas
     const isLeftSide = Math.random() > 0.5;
-    const x = isLeftSide 
-      ? Math.random() * 15 + 5   // Left side: 5-20%
+    const x = isLeftSide
+      ? Math.random() * 15 + 5 // Left side: 5-20%
       : Math.random() * 15 + 80; // Right side: 80-95%
-    
+
     const y = Math.random() * 70 + 15; // 15-85% from top
-    
+
     bubbles.push({
       id: `decorative-${i}`,
       color: DECORATIVE_COLORS[i % DECORATIVE_COLORS.length],
@@ -50,7 +50,7 @@ const generateBubbles = (): DraggableBubble[] => {
       initialY: y,
     });
   }
-  
+
   return bubbles;
 };
 
@@ -64,25 +64,28 @@ interface DraggableBubbleProps {
 
 const DraggableBubbleComponent: React.FC<DraggableBubbleProps> = ({ bubble, onDragEnd }) => {
   const constraintsRef = useRef(null);
-  
+
   // Size configurations
   const sizeClasses = {
     sm: 'w-8 h-8',
     md: 'w-12 h-12',
-    lg: 'w-16 h-16'
+    lg: 'w-16 h-16',
   };
 
   // Handle drag end
-  const handleDragEnd = useCallback((event: any) => {
-    const rect = event.target.getBoundingClientRect();
-    const parentRect = event.target.offsetParent?.getBoundingClientRect();
-    
-    if (parentRect) {
-      const newX = ((rect.left - parentRect.left) / parentRect.width) * 100;
-      const newY = ((rect.top - parentRect.top) / parentRect.height) * 100;
-      onDragEnd(bubble.id, newX, newY);
-    }
-  }, [bubble.id, onDragEnd]);
+  const handleDragEnd = useCallback(
+    (event: any) => {
+      const rect = event.target.getBoundingClientRect();
+      const parentRect = event.target.offsetParent?.getBoundingClientRect();
+
+      if (parentRect) {
+        const newX = ((rect.left - parentRect.left) / parentRect.width) * 100;
+        const newY = ((rect.top - parentRect.top) / parentRect.height) * 100;
+        onDragEnd(bubble.id, newX, newY);
+      }
+    },
+    [bubble.id, onDragEnd],
+  );
 
   return (
     <motion.div
@@ -107,56 +110,53 @@ const DraggableBubbleComponent: React.FC<DraggableBubbleProps> = ({ bubble, onDr
         backgroundColor: bubble.color,
         left: `${bubble.initialX}%`,
         top: `${bubble.initialY}%`,
-        transform: 'translate(-50%, -50%)'
+        transform: 'translate(-50%, -50%)',
       }}
-      
       // Dragging configuration
       drag
       dragMomentum={false}
       dragElastic={0.1}
       dragConstraints={constraintsRef}
       onDragEnd={handleDragEnd}
-      
       // Initial animation
-      initial={{ 
-        scale: 0, 
+      initial={{
+        scale: 0,
         opacity: 0,
-        rotate: Math.random() * 360
+        rotate: Math.random() * 360,
       }}
-      
-      
       // Hover effects
-      whileHover={{ 
+      whileHover={{
         scale: 1.1,
         opacity: 1,
-        transition: { duration: 0.2 }
+        transition: { duration: 0.2 },
       }}
-      
       // Drag effects
-      whileDrag={{ 
+      whileDrag={{
         scale: 1.2,
         opacity: 1,
         zIndex: 50,
-        boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+        boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
       }}
-      
       // Floating animation
       animate={{
         scale: 1,
         opacity: 0.8,
         y: [0, -8, 0],
-        rotate: [0, 2, -2, 0]
+        rotate: [0, 2, -2, 0],
       }}
       transition={{
         scale: { type: 'spring', stiffness: 260, damping: 20, delay: Math.random() * 2 },
-        default: { duration: 4 + Math.random() * 2, repeat: Infinity, ease: 'easeInOut', delay: Math.random() * 2 }
+        default: {
+          duration: 4 + Math.random() * 2,
+          repeat: Infinity,
+          ease: 'easeInOut',
+          delay: Math.random() * 2,
+        },
       }}
-      
       // Accessibility
-      role="button"
+      role='button'
       tabIndex={0}
       aria-label={`Draggable ${bubble.color} bubble`}
-      
       // Keyboard interaction
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -166,16 +166,16 @@ const DraggableBubbleComponent: React.FC<DraggableBubbleProps> = ({ bubble, onDr
       }}
     >
       {/* Shine effect */}
-      <div 
-        className="absolute inset-0 rounded-full"
+      <div
+        className='absolute inset-0 rounded-full'
         style={{
-          background: `linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%)`
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%)',
         }}
       />
-      
+
       {/* Pulse ring */}
       <motion.div
-        className="absolute inset-0 rounded-full border-2 opacity-60"
+        className='absolute inset-0 rounded-full border-2 opacity-60'
         style={{ borderColor: bubble.color }}
         animate={{
           scale: [1, 1.4, 1],
@@ -184,8 +184,8 @@ const DraggableBubbleComponent: React.FC<DraggableBubbleProps> = ({ bubble, onDr
         transition={{
           duration: 3,
           repeat: Infinity,
-          ease: "easeInOut",
-          delay: Math.random() * 3
+          ease: 'easeInOut',
+          delay: Math.random() * 3,
         }}
       />
     </motion.div>
@@ -194,14 +194,14 @@ const DraggableBubbleComponent: React.FC<DraggableBubbleProps> = ({ bubble, onDr
 
 /**
  * Main draggable bubbles container component
- * 
+ *
  * Features:
  * - Generates random decorative bubbles in empty screen space
  * - Smooth touch/drag functionality with momentum
  * - Collision detection and boundary constraints
  * - Performance optimized for multiple interactive elements
  * - Accessibility support with keyboard navigation
- * 
+ *
  * @returns {JSX.Element} Container with draggable bubble elements
  */
 const DraggableBubbles: React.FC = () => {
@@ -212,11 +212,9 @@ const DraggableBubbles: React.FC = () => {
    * Handle bubble position updates after drag
    */
   const handleBubbleDragEnd = useCallback((id: string, x: number, y: number) => {
-    setBubbles(prev => prev.map(bubble => 
-      bubble.id === id 
-        ? { ...bubble, initialX: x, initialY: y }
-        : bubble
-    ));
+    setBubbles((prev) =>
+      prev.map((bubble) => (bubble.id === id ? { ...bubble, initialX: x, initialY: y } : bubble)),
+    );
   }, []);
 
   /**
@@ -227,25 +225,22 @@ const DraggableBubbles: React.FC = () => {
   }, []);
 
   return (
-    <div 
+    <div
       ref={containerRef}
-      className="absolute inset-0 pointer-events-none overflow-hidden"
+      className='absolute inset-0 pointer-events-none overflow-hidden'
       style={{ zIndex: 5 }} // Below CHESS bubbles but above background
     >
       {/* Draggable bubbles */}
       {bubbles.map((bubble) => (
-        <div key={bubble.id} className="pointer-events-auto">
-          <DraggableBubbleComponent
-            bubble={bubble}
-            onDragEnd={handleBubbleDragEnd}
-          />
+        <div key={bubble.id} className='pointer-events-auto'>
+          <DraggableBubbleComponent bubble={bubble} onDragEnd={handleBubbleDragEnd} />
         </div>
       ))}
-      
+
       {/* Reset button (hidden by default, can be shown for debugging) */}
       {process.env.NODE_ENV === 'development' && (
         <motion.button
-          className="fixed bottom-4 right-4 bg-glass border-glass rounded-full p-2 text-white text-xs pointer-events-auto"
+          className='fixed bottom-4 right-4 bg-glass border-glass rounded-full p-2 text-white text-xs pointer-events-auto'
           onClick={resetBubbles}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}

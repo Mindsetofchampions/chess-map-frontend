@@ -1,6 +1,6 @@
 /**
  * Backend Interface Types
- * 
+ *
  * Minimal types mirroring the exact columns we read from Supabase tables.
  * These match the schema without adding client-side assumptions.
  */
@@ -11,7 +11,7 @@
 export type QuestStatus = 'draft' | 'submitted' | 'approved' | 'rejected' | 'archived';
 
 /**
- * Quest type from database enum  
+ * Quest type from database enum
  */
 export type QuestType = 'mcq' | 'text' | 'video';
 

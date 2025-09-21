@@ -1,6 +1,7 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import GlassContainer from './GlassContainer';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+
+import GlassContainer from './GlassContainer';
 
 /**
  * Error Boundary State Interface
@@ -23,52 +24,52 @@ interface ErrorBoundaryProps {
 /**
  * Default Error Fallback Component
  */
-const DefaultErrorFallback: React.FC<{ 
-  error: Error; 
+const DefaultErrorFallback: React.FC<{
+  error: Error;
   resetError: () => void;
   goHome: () => void;
 }> = ({ error, resetError, goHome }) => (
-  <GlassContainer variant="page">
-    <div className="min-h-screen flex items-center justify-center">
-      <GlassContainer variant="card" className="text-center max-w-md">
-        <div className="mb-6">
-          <AlertTriangle className="w-20 h-20 text-red-400 mx-auto mb-4" />
+  <GlassContainer variant='page'>
+    <div className='min-h-screen flex items-center justify-center'>
+      <GlassContainer variant='card' className='text-center max-w-md'>
+        <div className='mb-6'>
+          <AlertTriangle className='w-20 h-20 text-red-400 mx-auto mb-4' />
         </div>
 
-        <h2 className="text-3xl font-bold text-white mb-4">Something went wrong</h2>
-        
-        <p className="text-gray-300 mb-6 text-sm">
+        <h2 className='text-3xl font-bold text-white mb-4'>Something went wrong</h2>
+
+        <p className='text-gray-300 mb-6 text-sm'>
           We encountered an unexpected error. Don't worry - your data is safe.
         </p>
 
         {process.env.NODE_ENV === 'development' && (
-          <details className="mb-6 text-left bg-glass-dark border-glass rounded-lg p-4">
-            <summary className="text-red-300 font-medium cursor-pointer mb-2">
+          <details className='mb-6 text-left bg-glass-dark border-glass rounded-lg p-4'>
+            <summary className='text-red-300 font-medium cursor-pointer mb-2'>
               Error Details (Development)
             </summary>
-            <pre className="text-xs text-red-200 overflow-auto max-h-40">
+            <pre className='text-xs text-red-200 overflow-auto max-h-40'>
               {error.message}
               {error.stack && `\n\nStack trace:\n${error.stack}`}
             </pre>
           </details>
         )}
 
-        <div className="space-y-3">
+        <div className='space-y-3'>
           <button
             onClick={resetError}
-            className="w-full btn-esports flex items-center justify-center gap-2"
-            aria-label="Try again"
+            className='w-full btn-esports flex items-center justify-center gap-2'
+            aria-label='Try again'
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className='w-4 h-4' />
             Try Again
           </button>
 
           <button
             onClick={goHome}
-            className="w-full bg-glass border-glass hover:bg-glass-dark text-white rounded-xl px-6 py-3 font-medium transition-all duration-200 flex items-center justify-center gap-2"
-            aria-label="Go to home page"
+            className='w-full bg-glass border-glass hover:bg-glass-dark text-white rounded-xl px-6 py-3 font-medium transition-all duration-200 flex items-center justify-center gap-2'
+            aria-label='Go to home page'
           >
-            <Home className="w-4 h-4" />
+            <Home className='w-4 h-4' />
             Go Home
           </button>
         </div>
@@ -79,7 +80,7 @@ const DefaultErrorFallback: React.FC<{
 
 /**
  * Error Boundary Component
- * 
+ *
  * Catches JavaScript errors anywhere in the child component tree,
  * logs those errors, and displays a fallback UI.
  */
@@ -156,8 +157,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
       // Default fallback component
       return (
-        <DefaultErrorFallback 
-          error={this.state.error} 
+        <DefaultErrorFallback
+          error={this.state.error}
           resetError={this.resetError}
           goHome={this.goHome}
         />

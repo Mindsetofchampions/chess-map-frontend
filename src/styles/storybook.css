@@ -13,7 +13,7 @@
 /* Custom scrollbar for Storybook dark theme */
 .sb-show-main {
   scrollbar-width: thin;
-  scrollbar-color: #4F9BFF #161622;
+  scrollbar-color: #4f9bff #161622;
 }
 
 .sb-show-main::-webkit-scrollbar {
@@ -25,22 +25,22 @@
 }
 
 .sb-show-main::-webkit-scrollbar-thumb {
-  background: #4F9BFF;
+  background: #4f9bff;
   border-radius: 4px;
 }
 
 .sb-show-main::-webkit-scrollbar-thumb:hover {
-  background: #2E7AFF;
+  background: #2e7aff;
 }
 
 /* Storybook control panel customization */
 .sidebar-container {
-  background: #0A0A0F !important;
+  background: #0a0a0f !important;
 }
 
 /* Enhanced focus indicators for accessibility testing */
 .storybook-focus-indicator {
-  outline: 2px solid #4F9BFF;
+  outline: 2px solid #4f9bff;
   outline-offset: 2px;
 }
 
@@ -55,11 +55,11 @@
 /* Responsive breakpoint indicators (visible in Storybook only) */
 @media (max-width: 640px) {
   .storybook-breakpoint::before {
-    content: 'Mobile: < 640px';
+    content: "Mobile: < 640px";
     position: fixed;
     top: 10px;
     right: 10px;
-    background: #4F9BFF;
+    background: #4f9bff;
     color: white;
     padding: 4px 8px;
     border-radius: 4px;
@@ -70,11 +70,11 @@
 
 @media (min-width: 641px) and (max-width: 1024px) {
   .storybook-breakpoint::before {
-    content: 'Tablet: 641px - 1024px';
+    content: "Tablet: 641px - 1024px";
     position: fixed;
     top: 10px;
     right: 10px;
-    background: #D946EF;
+    background: #d946ef;
     color: white;
     padding: 4px 8px;
     border-radius: 4px;
@@ -85,11 +85,11 @@
 
 @media (min-width: 1025px) {
   .storybook-breakpoint::before {
-    content: 'Desktop: > 1024px';
+    content: "Desktop: > 1024px";
     position: fixed;
     top: 10px;
     right: 10px;
-    background: #10B981;
+    background: #10b981;
     color: white;
     padding: 4px 8px;
     border-radius: 4px;

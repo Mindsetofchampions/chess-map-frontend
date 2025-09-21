@@ -2,7 +2,7 @@
 // Deno std modules; provide minimal types to avoid false positives.
 // deno-lint-ignore-file no-explicit-any
 // @ts-ignore - Deno std import
-import { serve } from "https://deno.land/std@0.201.0/http/server.ts";
+import { serve } from 'https://deno.land/std@0.201.0/http/server.ts';
 
 // Edge Function: process unprocessed notifications and send emails via Resend or SendGrid
 // Environment variables required:
@@ -13,8 +13,11 @@ import { serve } from "https://deno.land/std@0.201.0/http/server.ts";
 
 // Use globalThis.Deno to be editor-safe when Deno types are not available
 const _Deno: any = (globalThis as any).Deno;
-const SUPABASE_URL = _Deno?.env?.get('SUPABASE_URL') as string | undefined;
-const SUPABASE_KEY = _Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY') as string | undefined;
+// Allow using SERVICE_ROLE_KEY / INTERNAL_SUPABASE_URL as alternate secret names
+const SUPABASE_URL = (_Deno?.env?.get('SUPABASE_URL') ||
+  _Deno?.env?.get('INTERNAL_SUPABASE_URL')) as string | undefined;
+const SUPABASE_KEY = (_Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY') ||
+  _Deno?.env?.get('SERVICE_ROLE_KEY')) as string | undefined;
 const RESEND_API_KEY = _Deno?.env?.get('RESEND_API_KEY') as string | undefined;
 const SENDGRID_API_KEY = _Deno?.env?.get('SENDGRID_API_KEY') as string | undefined;
 const FROM_EMAIL = _Deno?.env?.get('FROM_EMAIL') || 'no-reply@example.com';
@@ -27,7 +30,7 @@ async function fetchUnprocessed(): Promise<any[]> {
   if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Supabase URL or key not configured');
   const url = `${SUPABASE_URL}/rest/v1/system_notifications?processed=eq.false&select=*`;
   const res = await fetch(url, {
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
   });
   if (!res.ok) {
     const body = await res.text().catch(() => '<no body>');
@@ -41,8 +44,12 @@ async function markProcessed(id: string): Promise<any> {
   const url = `${SUPABASE_URL}/rest/v1/system_notifications?id=eq.${id}`;
   const res = await fetch(url, {
     method: 'PATCH',
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ processed: true, processed_at: new Date().toISOString() })
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ processed: true, processed_at: new Date().toISOString() }),
   });
   if (!res.ok) {
     const body = await res.text().catch(() => '<no body>');
@@ -59,7 +66,11 @@ async function sendEmail(to: string, subject: string, text: string): Promise<voi
       const payload = { event: 'system_notification', parent_email: to, subject, text };
       const res = await fetch(fnUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
         body: JSON.stringify(payload),
       });
       if (res.ok) return;
@@ -77,7 +88,7 @@ async function sendEmail(to: string, subject: string, text: string): Promise<voi
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       const body = await res.text().catch(() => '<no body>');
@@ -86,13 +97,18 @@ async function sendEmail(to: string, subject: string, text: string): Promise<voi
     return;
   }
   if (SENDGRID_API_KEY) {
-    const payload = { personalizations: [{ to: [{ email: to }] }], from: { email: FROM_EMAIL }, subject, content: [{ type: 'text/plain', value: text }] };
+    const payload = {
+      personalizations: [{ to: [{ email: to }] }],
+      from: { email: FROM_EMAIL },
+      subject,
+      content: [{ type: 'text/plain', value: text }],
+    };
     const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${SENDGRID_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      headers: { Authorization: `Bearer ${SENDGRID_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error('SendGrid send failed: ' + await res.text());
+    if (!res.ok) throw new Error('SendGrid send failed: ' + (await res.text()));
     return;
   }
   throw new Error('No mail provider configured');

@@ -1,5 +1,5 @@
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
 
 /**
  * Props interface for the GlassContainer component
@@ -21,14 +21,14 @@ interface GlassContainerProps {
 
 /**
  * Reusable glassmorphic container component for consistent page layouts
- * 
+ *
  * Features:
  * - Multiple variants for different use cases (page, card, overlay)
  * - Consistent glassmorphic styling across the application
  * - Optional entrance animations with configurable delay
  * - Mobile-optimized responsive design
  * - Backdrop blur effects with border styling
- * 
+ *
  * @param {GlassContainerProps} props - Component props
  * @returns {JSX.Element} Glassmorphic container with consistent styling
  */
@@ -38,7 +38,7 @@ const GlassContainer: React.FC<GlassContainerProps> = ({
   variant = 'card',
   animate = true,
   delay = 0,
-  onClick
+  onClick,
 }) => {
   // Variant-specific styles
   const variantClasses = {
@@ -71,50 +71,50 @@ const GlassContainer: React.FC<GlassContainerProps> = ({
       p-4 
       sm:p-6
       relative
-    `
+    `,
   };
 
   // Combine variant classes with custom classes
   const containerClasses = `
     ${variantClasses[variant]}
     ${className}
-  `.trim().replace(/\s+/g, ' ');
+  `
+    .trim()
+    .replace(/\s+/g, ' ');
 
   // Animation configurations
-  const animationProps = animate ? {
-    initial: { 
-      opacity: 0, 
-      y: 20,
-      scale: 0.95
-    },
-    animate: { 
-      opacity: 1, 
-      y: 0,
-      scale: 1
-    },
-    transition: {
-      duration: 0.6,
-      delay,
-      // cast type to any to satisfy framer-motion's Transition type in our conservative pass
-      type: 'spring' as any,
-      stiffness: 100,
-      damping: 20
-    }
-  } : {};
+  const animationProps = animate
+    ? {
+        initial: {
+          opacity: 0,
+          y: 20,
+          scale: 0.95,
+        },
+        animate: {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+        },
+        transition: {
+          duration: 0.6,
+          delay,
+          // cast type to any to satisfy framer-motion's Transition type in our conservative pass
+          type: 'spring' as any,
+          stiffness: 100,
+          damping: 20,
+        },
+      }
+    : {};
 
   // Render with or without animation
   if (animate) {
     return (
-      <motion.div
-        className={containerClasses}
-        onClick={onClick}
-        {...animationProps}
-      >
+      <motion.div className={containerClasses} onClick={onClick} {...animationProps}>
         {children}
-        
+
         {/* Decorative gradient border for card variant */}
         {variant === 'card' && (
-          <div className="absolute -inset-px bg-gradient-to-r from-electric-blue-400/30 via-neon-purple-400/30 to-cyber-green-400/30 rounded-2xl -z-10 blur-sm" />
+          <div className='absolute -inset-px bg-gradient-to-r from-electric-blue-400/30 via-neon-purple-400/30 to-cyber-green-400/30 rounded-2xl -z-10 blur-sm' />
         )}
       </motion.div>
     );
@@ -123,10 +123,10 @@ const GlassContainer: React.FC<GlassContainerProps> = ({
   return (
     <div className={containerClasses} onClick={onClick}>
       {children}
-      
+
       {/* Decorative gradient border for card variant */}
       {variant === 'card' && (
-        <div className="absolute -inset-px bg-gradient-to-r from-electric-blue-400/30 via-neon-purple-400/30 to-cyber-green-400/30 rounded-2xl -z-10 blur-sm" />
+        <div className='absolute -inset-px bg-gradient-to-r from-electric-blue-400/30 via-neon-purple-400/30 to-cyber-green-400/30 rounded-2xl -z-10 blur-sm' />
       )}
     </div>
   );

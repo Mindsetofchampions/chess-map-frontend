@@ -6,7 +6,7 @@
  * and documentation generation.
  */
 
-module.exports = {
+export default {
   // Stories location and file patterns
   stories: [
     '../src/**/*.stories.@(js|jsx|ts|tsx|mdx)',
@@ -16,24 +16,13 @@ module.exports = {
   // Essential addons for comprehensive testing and development
   addons: [
     // Essential Storybook addons providing core functionality
-    '@storybook/addon-essentials', // Includes: controls, actions, viewport, backgrounds
-    
-    // Documentation and controls for component props
-    '@storybook/addon-docs',
-    '@storybook/addon-controls',
-    
+    '@storybook/addon-essentials', // Includes: docs, controls, actions, backgrounds, viewport
     // Accessibility testing addon
     '@storybook/addon-a11y',
-    
     // Interaction testing for user flows
     '@storybook/addon-interactions',
-    
     // Links between stories for navigation
     '@storybook/addon-links',
-    
-    // Visual regression testing integration
-    'chromatic',
-    
     // Additional useful addons
     '@storybook/addon-storysource', // View story source code
   ],
@@ -73,20 +62,7 @@ module.exports = {
     defaultName: 'Documentation',
   },
   
-  // Features configuration
-  features: {
-    // Enable modern features
-    storyStoreV7: true, // Use the new story indexer
-    argTypesRegex: '^on[A-Z].*', // Auto-detect event handlers for controls
-  },
-  
-  // Build configuration
-  build: {
-    test: {
-      // Test-specific configuration
-      disableSourcemaps: false, // Keep sourcemaps for debugging
-    }
-  },
+  // Features configuration (removed deprecated flags for SB9)
   
   // Static file serving
   staticDirs: [
@@ -97,11 +73,7 @@ module.exports = {
     }
   ],
   
-  // Core configuration
-  core: {
-    builder: '@storybook/builder-vite', // Use Vite as the builder
-    disableTelemetry: false, // Allow telemetry for better tooling
-  },
+  // Core builder is implied by framework in SB9
   
   // Environment variables
   env: (config) => ({
@@ -117,6 +89,11 @@ module.exports = {
     
     return mergeConfig(config, {
       // Additional Vite configuration for Storybook
+      server: {
+        strictPort: true,
+        hmr: true,
+      },
+      logLevel: 'info',
       define: {
         global: 'globalThis', // Fix for some dependencies
       },
@@ -138,8 +115,5 @@ module.exports = {
     });
   },
   
-  // Prebuilt entries for faster startup
-  prebuilt: {
-    enable: true,
-  },
+  // Prebuilt entries not used in SB9
 };

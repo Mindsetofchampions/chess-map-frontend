@@ -1,11 +1,12 @@
 /**
  * Sprite Management for Mapbox Integration
- * 
+ *
  * Handles loading persona GIFs into Mapbox as symbols and creating
  * DOM-based animated markers for quest bubbles.
  */
 
 import mapboxgl from 'mapbox-gl';
+
 import { PERSONA_GIF, getPersonaInfo, type PersonaKey } from '@/assets/personas';
 import type { PersonaDef } from '@/types';
 
@@ -47,14 +48,14 @@ async function gifToImageBitmap(src: string, size: number = 36): Promise<ImageBi
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
-  
+
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas context unavailable');
-  
+
   // Crisp pixel art rendering
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(img, 0, 0, size, size);
-  
+
   return await createImageBitmap(canvas);
 }
 
@@ -64,31 +65,33 @@ async function gifToImageBitmap(src: string, size: number = 36): Promise<ImageBi
  */
 export async function registerPersonaSprites(map: mapboxgl.Map): Promise<void> {
   const registrationTasks: Promise<void>[] = [];
-  
+
   (Object.keys(PERSONA_GIF) as PersonaKey[]).forEach((key) => {
-    registrationTasks.push((async () => {
-      try {
-        const src = PERSONA_GIF[key];
-        
-        // Register normal size (36px)
-        const normal = await gifToImageBitmap(src, 36);
-        if (!map.hasImage(`${key}-normal`)) {
-          map.addImage(`${key}-normal`, normal, { pixelRatio: 1 });
+    registrationTasks.push(
+      (async () => {
+        try {
+          const src = PERSONA_GIF[key];
+
+          // Register normal size (36px)
+          const normal = await gifToImageBitmap(src, 36);
+          if (!map.hasImage(`${key}-normal`)) {
+            map.addImage(`${key}-normal`, normal, { pixelRatio: 1 });
+          }
+
+          // Register hover size (46px)
+          const hover = await gifToImageBitmap(src, 46);
+          if (!map.hasImage(`${key}-hover`)) {
+            map.addImage(`${key}-hover`, hover, { pixelRatio: 1 });
+          }
+
+          console.log(`✅ Registered sprites for ${key}`);
+        } catch (error) {
+          console.error(`❌ Failed to register sprite for ${key}:`, error);
         }
-        
-        // Register hover size (46px)
-        const hover = await gifToImageBitmap(src, 46);
-        if (!map.hasImage(`${key}-hover`)) {
-          map.addImage(`${key}-hover`, hover, { pixelRatio: 1 });
-        }
-        
-        console.log(`✅ Registered sprites for ${key}`);
-      } catch (error) {
-        console.error(`❌ Failed to register sprite for ${key}:`, error);
-      }
-    })());
+      })(),
+    );
   });
-  
+
   await Promise.all(registrationTasks);
 }
 
@@ -105,7 +108,7 @@ export function createPersonaMarker(options: {
   size?: number;
 }): mapboxgl.Marker {
   const { map, persona, lngLat, title, onClick, size = 48 } = options;
-  
+
   // Create marker element
   const element = document.createElement('div');
   element.className = 'persona-quest-marker';
@@ -123,7 +126,7 @@ export function createPersonaMarker(options: {
     align-items: center;
     justify-content: center;
   `;
-  
+
   // Add animated GIF
   const img = document.createElement('img');
   img.src = PERSONA_GIF[persona];
@@ -135,41 +138,39 @@ export function createPersonaMarker(options: {
     border-radius: 50%;
     pointer-events: none;
   `;
-  
+
   element.appendChild(img);
-  
+
   // Add hover effects
   element.addEventListener('mouseenter', () => {
     element.style.transform = 'scale(1.2)';
     element.style.zIndex = '1000';
     element.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.4)';
   });
-  
+
   element.addEventListener('mouseleave', () => {
     element.style.transform = 'scale(1)';
     element.style.zIndex = 'auto';
     element.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
   });
-  
+
   // Add click handler
   if (onClick) {
     element.addEventListener('click', onClick);
   }
-  
+
   // Add accessibility
   element.setAttribute('role', 'button');
   element.setAttribute('tabindex', '0');
   element.setAttribute('aria-label', title || `${persona} quest`);
-  
+
   if (title) {
     element.title = title;
   }
-  
+
   // Create and return Mapbox marker
-  const marker = new mapboxgl.Marker(element)
-    .setLngLat(lngLat)
-    .addTo(map);
-  
+  const marker = new mapboxgl.Marker(element).setLngLat(lngLat).addTo(map);
+
   return marker;
 }
 
@@ -180,7 +181,7 @@ export function createPersonaMarker(options: {
 export function addPersonaChipsToMap(
   map: mapboxgl.Map,
   organizations: OrganizationWithPersonas[],
-  onPersonaClick: (persona: PersonaDef) => void
+  onPersonaClick: (persona: PersonaDef) => void,
 ): PersonaChipMarker[] {
   const markers: mapboxgl.Marker[] = [];
 
@@ -191,8 +192,8 @@ export function addPersonaChipsToMap(
     org.activePersonas.forEach((personaKey, i) => {
       try {
         // small offset to avoid exact overlap
-        const offsetLng = baseLng + (i * 0.00025) * (orgIndex % 2 === 0 ? 1 : -1);
-        const offsetLat = baseLat + (i * 0.00018) * (orgIndex % 3 === 0 ? 1 : -1);
+        const offsetLng = baseLng + i * 0.00025 * (orgIndex % 2 === 0 ? 1 : -1);
+        const offsetLat = baseLat + i * 0.00018 * (orgIndex % 3 === 0 ? 1 : -1);
 
         const personaInfo = getPersonaInfo(personaKey as PersonaKey);
 
@@ -213,7 +214,7 @@ export function addPersonaChipsToMap(
               introPrompt: '',
               keywords: [],
               mcqTags: [],
-              icon: ''
+              icon: '',
             };
 
             try {
@@ -221,7 +222,7 @@ export function addPersonaChipsToMap(
             } catch (err) {
               console.error('onPersonaClick failed', err);
             }
-          }
+          },
         });
 
         markers.push(marker);
@@ -234,7 +235,13 @@ export function addPersonaChipsToMap(
   });
 
   // Return wrappers implementing PersonaChipMarker
-  return markers.map((m) => ({ remove: () => { try { m.remove(); } catch {} } }));
+  return markers.map((m) => ({
+    remove: () => {
+      try {
+        m.remove();
+      } catch {}
+    },
+  }));
 }
 
 /**

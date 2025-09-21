@@ -1,12 +1,13 @@
 /**
  * Authentication Context with Role Resolution
- * 
+ *
  * Manages Supabase authentication state with role-based permissions
  * from the public.profiles table.
  */
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -62,7 +63,7 @@ interface AuthProviderProps {
 
 /**
  * Authentication Provider Component
- * 
+ *
  * Wraps the application and provides authentication state management
  * with role resolution from the database.
  */
@@ -79,7 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const refreshRole = useCallback(async (): Promise<AppRole> => {
     // Start role fetch
     setRoleLoading(true);
-    
+
     try {
       if (!user) {
         setRole('unknown');
@@ -112,7 +113,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('Role access denied or not found, checking user metadata...');
         // Check user metadata as fallback before defaulting to student
         const metadataRole = user.user_metadata?.role as AppRole;
-        if (metadataRole && ['master_admin', 'org_admin', 'staff', 'student'].includes(metadataRole)) {
+        if (
+          metadataRole &&
+          ['master_admin', 'org_admin', 'staff', 'student'].includes(metadataRole)
+        ) {
           console.log(`Using role from user metadata: ${metadataRole}`);
           setRole(metadataRole);
           setRoleLoading(false);
@@ -122,7 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setRoleLoading(false);
           return 'student';
         }
-      } else if (data && data.role) {
+      } else if (data?.role) {
         // Cast database role to AppRole
         const dbRole = data.role as AppRole;
         setRole(dbRole);
@@ -131,7 +135,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         // No profile or user_roles entry found, check user metadata before defaulting to student
         const metadataRole = user.user_metadata?.role as AppRole;
-        if (metadataRole && ['master_admin', 'org_admin', 'staff', 'student'].includes(metadataRole)) {
+        if (
+          metadataRole &&
+          ['master_admin', 'org_admin', 'staff', 'student'].includes(metadataRole)
+        ) {
           console.log(`No profile found, using role from user metadata: ${metadataRole}`);
           setRole(metadataRole);
           setRoleLoading(false);
@@ -158,7 +165,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
-        password
+        password,
       });
 
       if (error) {
@@ -178,7 +185,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
-        password
+        password,
       });
 
       if (error) {
@@ -210,17 +217,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         if (mounted) {
           setUser(session?.user || null);
-            setLoading(false);
-            // Trigger initial role refresh if there's an active session
-            if (session?.user) {
-              setTimeout(() => {
-                refreshRole();
-              }, 50);
-            }
+          setLoading(false);
+          // Trigger initial role refresh if there's an active session
+          if (session?.user) {
+            setTimeout(() => {
+              refreshRole();
+            }, 50);
+          }
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -231,23 +240,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (mounted) {
-          setUser(session?.user || null);
-          setLoading(false);
-          // Only refresh role if user changes and not already loading
-          if (session?.user) {
-            setTimeout(() => {
-              refreshRole();
-            }, 100);
-          } else {
-            setRole('unknown');
-            setRoleLoading(false);
-          }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (mounted) {
+        setUser(session?.user || null);
+        setLoading(false);
+        // Only refresh role if user changes and not already loading
+        if (session?.user) {
+          setTimeout(() => {
+            refreshRole();
+          }, 100);
+        } else {
+          setRole('unknown');
+          setRoleLoading(false);
         }
       }
-    );
+    });
 
     initializeAuth();
 
@@ -275,12 +284,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signUp,
     signOut,
-    refreshRole
+    refreshRole,
   };
 
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };

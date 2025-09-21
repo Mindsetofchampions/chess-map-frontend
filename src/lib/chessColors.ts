@@ -5,7 +5,7 @@ const CHESS_COLORS = {
   exploration: 'bg-indigo-400',
   stem: 'bg-yellow-400',
   stewardship: 'bg-cyan-400',
-  safe_space: 'bg-violet-500'
+  safe_space: 'bg-violet-500',
 } as const;
 
 export default CHESS_COLORS;

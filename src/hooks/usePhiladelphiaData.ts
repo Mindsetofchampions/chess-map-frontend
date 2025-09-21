@@ -1,11 +1,12 @@
 /**
  * Philadelphia Map Data Hook
- * 
+ *
  * Provides quest bubble data and map interaction logic for the Philadelphia
  * demo implementation of the CHESS Quest system.
  */
 
 import { useState, useCallback } from 'react';
+
 import { PERSONA_GIF } from '@/assets/personas';
 
 /**
@@ -41,11 +42,11 @@ export interface QuestBubble {
  * CHESS Attribute Color System
  */
 export const CHESS_COLORS = {
-  character: '#8B5CF6',    // Purple - Wisdom & Character
-  health: '#10B981',       // Green - Health & Wellness  
-  exploration: '#F59E0B',  // Orange - Adventure & Discovery
-  stem: '#3B82F6',         // Blue - Technology & Innovation
-  stewardship: '#EF4444'   // Red - Leadership & Responsibility
+  character: '#8B5CF6', // Purple - Wisdom & Character
+  health: '#10B981', // Green - Health & Wellness
+  exploration: '#F59E0B', // Orange - Adventure & Discovery
+  stem: '#3B82F6', // Blue - Technology & Innovation
+  stewardship: '#EF4444', // Red - Leadership & Responsibility
 } as const;
 
 /**
@@ -196,7 +197,7 @@ export const PHILADELPHIA_BUBBLES: QuestBubble[] = [
 
 /**
  * Philadelphia Data Hook
- * 
+ *
  * Manages quest bubble data and provides interaction methods
  * for the Philadelphia demo map.
  */
@@ -210,10 +211,10 @@ export const usePhiladelphiaData = () => {
   const refreshData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       // In production, this would fetch fresh data from Supabase
     } catch (err: any) {
       setError(err.message || 'Failed to refresh data');
@@ -235,6 +236,6 @@ export const usePhiladelphiaData = () => {
     loading,
     error,
     refreshData,
-    addNewBubble
+    addNewBubble,
   };
 };

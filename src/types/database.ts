@@ -1,6 +1,6 @@
 /**
  * TypeScript interfaces for database entities
- * 
+ *
  * This file defines all the data structures used throughout the application
  * to ensure type safety when interacting with Supabase.
  */

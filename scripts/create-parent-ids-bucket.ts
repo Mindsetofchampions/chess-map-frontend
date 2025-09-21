@@ -2,11 +2,16 @@ import { createClient } from '@supabase/supabase-js';
 
 async function main() {
   const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY ||
+    process.env.SUPABASE_ANON_KEY;
 
   if (!url || !key) {
     console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables.');
-    console.error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (service role) before running this script.');
+    console.error(
+      'Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (service role) before running this script.',
+    );
     process.exit(1);
   }
 
@@ -18,7 +23,7 @@ async function main() {
     // Check existing buckets
     const { data: buckets, error: listErr } = await supabase.storage.listBuckets();
     if (listErr) throw listErr;
-    const exists = buckets?.some(b => b.name === bucketId);
+    const exists = buckets?.some((b) => b.name === bucketId);
     if (exists) {
       console.log(`Bucket '${bucketId}' already exists. No action taken.`);
       process.exit(0);

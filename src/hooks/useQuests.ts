@@ -1,13 +1,14 @@
 /**
  * useQuests Hook
- * 
+ *
  * Custom hook for managing quest data from Supabase with real-time updates
  * and user submission tracking.
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+
 import { useToast } from '@/components/ToastProvider';
+import { supabase } from '@/lib/supabase';
 import type { Quest, Submission } from '@/types/backend';
 
 /**
@@ -23,13 +24,13 @@ interface UseQuestsReturn {
 
 /**
  * useQuests Hook
- * 
+ *
  * Provides quest data management with Supabase integration.
  * Handles approved quest fetching and submission tracking.
  */
 export const useQuests = (gradeFilter?: 'ES' | 'MS' | 'HS'): UseQuestsReturn => {
   const { showError: _showError } = useToast();
-  
+
   const [mapQuests, setMapQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +46,9 @@ export const useQuests = (gradeFilter?: 'ES' | 'MS' | 'HS'): UseQuestsReturn => 
 
       let query = supabase
         .from('quests')
-        .select('id, title, description, status, active, reward_coins, qtype, config, attribute_id, created_at, grade_level');
+        .select(
+          'id, title, description, status, active, reward_coins, qtype, config, attribute_id, created_at, grade_level',
+        );
 
       query = query.eq('active', true).eq('status', 'approved');
 
@@ -81,7 +84,9 @@ export const useQuests = (gradeFilter?: 'ES' | 'MS' | 'HS'): UseQuestsReturn => 
     try {
       const { data, error: queryError } = await supabase
         .from('quest_submissions')
-        .select('id, quest_id, user_id, status, mcq_choice, text_answer, video_url, score, created_at')
+        .select(
+          'id, quest_id, user_id, status, mcq_choice, text_answer, video_url, score, created_at',
+        )
         .eq('quest_id', questId)
         .single();
 
@@ -117,13 +122,10 @@ export const useQuests = (gradeFilter?: 'ES' | 'MS' | 'HS'): UseQuestsReturn => 
     // Set up real-time subscription for quest changes
     const subscription = supabase
       .channel('quests_channel')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'quests' },
-        () => {
-          console.log('Quests updated, refreshing map quests...');
-          fetchMapQuests();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'quests' }, () => {
+        console.log('Quests updated, refreshing map quests...');
+        fetchMapQuests();
+      })
       .subscribe();
 
     return () => {
@@ -136,6 +138,6 @@ export const useQuests = (gradeFilter?: 'ES' | 'MS' | 'HS'): UseQuestsReturn => 
     loading,
     error,
     refreshMapQuests,
-    getUserSubmission
+    getUserSubmission,
   };
 };

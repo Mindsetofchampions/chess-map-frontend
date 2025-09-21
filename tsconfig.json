@@ -1,156 +1,156 @@
 {
   /**
    * TypeScript Configuration for React Project
-   * 
+   *
    * This configuration enables the strictest possible type checking
    * to catch errors early and ensure type safety throughout the project.
-   * 
+   *
    * Key features:
    * - Strict type checking enabled
    * - Modern ES target with full React support
    * - Optimized module resolution for React and modern bundlers
    * - Enhanced IDE experience with comprehensive type information
    */
-  
+
   "compilerOptions": {
     /* === Language and Environment === */
-    
+
     // Target modern browsers and Node.js environments
     "target": "ES2022",
-    
+
     // Use the latest standard library definitions
     "lib": [
-      "ES2023",           // Latest ECMAScript features
-      "DOM",              // Browser APIs
-      "DOM.Iterable",     // DOM iteration methods
-      "WebWorker"         // Web Worker APIs (if needed)
+      "ES2023", // Latest ECMAScript features
+      "DOM", // Browser APIs
+      "DOM.Iterable", // DOM iteration methods
+      "WebWorker" // Web Worker APIs (if needed)
     ],
-    
+
     // Allow experimental decorators (for future use or libraries that need them)
     "experimentalDecorators": false,
     "emitDecoratorMetadata": false,
-    
+
     /* === Modules === */
-    
+
     // Use ESNext modules for best tree-shaking and bundler compatibility
     "module": "ESNext",
-    
+
     // Use modern module resolution strategy (works with Vite, Webpack, etc.)
     "moduleResolution": "bundler",
-    
+
     // Allow importing TypeScript files without extensions
     "allowImportingTsExtensions": true,
-    
+
     // Resolve JSON modules (useful for config files and data)
     "resolveJsonModule": true,
-    
+
     // Each file is treated as a separate module (required for bundlers)
     "isolatedModules": true,
-    
+
     // Force consistent file detection
     "moduleDetection": "force",
-    
+
     /* === Emit === */
-    
+
     // Don't emit JavaScript files (handled by Vite/bundler)
     "noEmit": true,
-    
+
     // Enable source maps for debugging
     "sourceMap": true,
-    
+
     // Remove comments from emitted JavaScript
     "removeComments": false,
-    
+
     // Preserve const enums (better performance)
     "preserveConstEnums": true,
-    
+
     /* === JavaScript Support === */
-    
+
     // Allow importing JavaScript files
     "allowJs": true,
-    
+
     // Type-check JavaScript files
     "checkJs": false,
-    
+
     /* === Interop Constraints === */
-    
+
     // Ensure proper interop between CommonJS and ES modules
     "esModuleInterop": true,
-    
+
     // Force consistent casing in file names
     "forceConsistentCasingInFileNames": true,
-    
+
     // Allow synthetic default imports
     "allowSyntheticDefaultImports": true,
-    
+
     /* === Type Checking - STRICT MODE === */
-    
+
     // Enable all strict type checking options
     "strict": true,
-    
+
     // Individual strict options (enabled by "strict": true, but listed for clarity)
-    "noImplicitAny": true,                    // Error on expressions with implied 'any' type
-    "noImplicitThis": true,                   // Error on 'this' expressions with implied 'any' type
-    "strictBindCallApply": true,              // Enable strict checking of bind, call, and apply
-    "strictFunctionTypes": true,              // Enable strict checking of function types
-    "strictNullChecks": true,                 // Enable strict null checks
-    "strictPropertyInitialization": true,     // Enable strict checking of property initialization
-    "alwaysStrict": true,                     // Parse in strict mode and emit "use strict"
-    "useUnknownInCatchVariables": true,       // Use 'unknown' for catch clause variables
-    
+    "noImplicitAny": true, // Error on expressions with implied 'any' type
+    "noImplicitThis": true, // Error on 'this' expressions with implied 'any' type
+    "strictBindCallApply": true, // Enable strict checking of bind, call, and apply
+    "strictFunctionTypes": true, // Enable strict checking of function types
+    "strictNullChecks": true, // Enable strict null checks
+    "strictPropertyInitialization": true, // Enable strict checking of property initialization
+    "alwaysStrict": true, // Parse in strict mode and emit "use strict"
+    "useUnknownInCatchVariables": true, // Use 'unknown' for catch clause variables
+
     /* === Additional Checks === */
-    
+
     // Error on unused local variables
     "noUnusedLocals": true,
-    
+
     // Error on unused function parameters
     "noUnusedParameters": true,
-    
+
     // Error when not all code paths in function return a value
     "noImplicitReturns": true,
-    
+
     // Error on fallthrough cases in switch statements
     "noFallthroughCasesInSwitch": true,
-    
+
     // Error on unreachable code
     "allowUnreachableCode": false,
-    
+
     // Error on unused labels
     "allowUnusedLabels": false,
-    
+
     // Error on property access via string literals
     "noPropertyAccessFromIndexSignature": false,
-    
+
     // Error on uncalled function in conditional
     "noUncheckedIndexedAccess": false, // Can be too strict for arrays
-    
+
     // Require explicit types for exported functions/classes
     "noImplicitOverride": true,
-    
+
     /* === JSX === */
-    
+
     // JSX factory configuration for React 17+
     "jsx": "react-jsx",
-    
+
     // JSX import source (React 17+)
     "jsxImportSource": "react",
-    
+
     /* === Advanced === */
-    
+
     // Skip type checking of declaration files (faster compilation)
     "skipLibCheck": true,
-    
+
     // Enable incremental compilation
     "incremental": true,
-    
+
     // Directory for incremental compilation cache
     "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo",
-    
+
     /* === Path Mapping === */
-    
+
     // Base URL for relative imports
     "baseUrl": ".",
-    
+
     // Path mapping for cleaner imports
     "paths": {
       "@/*": ["src/*"],
@@ -161,67 +161,63 @@
       "@/services/*": ["src/services/*"],
       "@/assets/*": ["src/assets/*"]
     },
-    
+
     /* === Output Formatting === */
-    
+
     // Pretty print emitted files
     "pretty": true,
-    
+
     /* === Watch Options === */
-    
+
     // Assume changes only affect direct dependencies
     "assumeChangesOnlyAffectDirectDependencies": true
   },
-  
+
   /* === Include/Exclude Patterns === */
-  
+
   // Files to include in compilation
   "include": [
-    "src/**/*",              // All source files
-    "src/**/*.ts",           // TypeScript files
-    "src/**/*.tsx",          // TypeScript React files
-    "src/**/*.js",           // JavaScript files (if any)
-    "src/**/*.jsx",          // JavaScript React files (if any)
-    "vite.config.ts",        // Vite configuration
-    "vitest.config.ts",      // Vitest configuration (if exists)
-    "*.d.ts"                 // Type declaration files
+    "src/**/*", // All source files
+    "src/**/*.ts", // TypeScript files
+    "src/**/*.tsx", // TypeScript React files
+    "src/**/*.js", // JavaScript files (if any)
+    "src/**/*.jsx", // JavaScript React files (if any)
+    "vite.config.ts", // Vite configuration
+    "vitest.config.ts", // Vitest configuration (if exists)
+    "*.d.ts" // Type declaration files
   ],
-  
+
   // Files and patterns to exclude from compilation
   "exclude": [
-    "node_modules",          // Dependencies
-    "dist",                  // Build output
-    "build",                 // Alternative build output
-    "coverage",              // Test coverage reports
-    "**/*.test.ts",          // Test files (optional - can include for type checking)
-    "**/*.test.tsx",         // React test files
-    "**/*.spec.ts",          // Spec files
-    "**/*.spec.tsx",         // React spec files
-    "public",                // Static assets
-    "*.config.js",           // JavaScript config files
-    "**/*.stories.ts",       // Storybook stories (optional)
-    "**/*.stories.tsx"       // React Storybook stories (optional)
+    "node_modules", // Dependencies
+    "dist", // Build output
+    "build", // Alternative build output
+    "coverage", // Test coverage reports
+    "**/*.test.ts", // Test files (optional - can include for type checking)
+    "**/*.test.tsx", // React test files
+    "**/*.spec.ts", // Spec files
+    "**/*.spec.tsx", // React spec files
+    "public", // Static assets
+    "*.config.js", // JavaScript config files
+    "**/*.stories.ts", // Storybook stories (optional)
+    "**/*.stories.tsx" // React Storybook stories (optional)
   ],
-  
+
   /* === Type Acquisition === */
-  
+
   "typeAcquisition": {
     // Automatically include type definitions for detected libraries
     "enable": true,
-    
+
     // Additional packages to include type definitions for
-    "include": [
-      "react",
-      "react-dom",
-      "node"
-    ],
-    
+    "include": ["react", "react-dom", "node"],
+
     // Packages to exclude from automatic type acquisition
     "exclude": []
   },
-  
+
   /* === References (for monorepos) === */
-  
+
   // Project references for composite projects
   "references": [
     // Add references to other TypeScript projects if needed

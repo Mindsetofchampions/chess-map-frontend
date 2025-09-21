@@ -1,14 +1,14 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import { within, userEvent } from '@storybook/testing-library';
 import { expect } from '@storybook/jest';
+import type { Meta, StoryObj } from '@storybook/react';
+import { within, userEvent } from '@storybook/testing-library';
 import React from 'react';
 
 import FloatingBubbles from '../components/FloatingBubbles';
 
 /**
  * Floating Bubbles Animation Story
- * 
+ *
  * This story showcases the CHESS attribute floating bubbles animation
  * that represents the five educational pillars of the platform.
  */
@@ -71,14 +71,14 @@ type Story = StoryObj<typeof FloatingBubbles>;
  */
 export const Default: Story = {
   render: () => (
-    <div className="relative h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary overflow-hidden">
+    <div className='relative h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary overflow-hidden'>
       <FloatingBubbles />
-      
+
       {/* Background content to show layering */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="text-center text-gray-400">
-          <h2 className="text-3xl font-bold mb-4">Background Content</h2>
-          <p className="text-lg">Floating bubbles appear above this content</p>
+      <div className='absolute inset-0 flex items-center justify-center pointer-events-none'>
+        <div className='text-center text-gray-400'>
+          <h2 className='text-3xl font-bold mb-4'>Background Content</h2>
+          <p className='text-lg'>Floating bubbles appear above this content</p>
         </div>
       </div>
     </div>
@@ -90,35 +90,35 @@ export const Default: Story = {
  */
 export const WithInteractions: Story = {
   render: () => (
-    <div className="relative h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary overflow-hidden">
+    <div className='relative h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary overflow-hidden'>
       <FloatingBubbles />
     </div>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // Wait for bubbles to render
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     // Test that all CHESS attribute bubbles are present
     const characterBubble = canvas.getByLabelText(/Hootie.*Character/);
     const healthBubble = canvas.getByLabelText(/Brenda.*Health/);
     const explorationBubble = canvas.getByLabelText(/Gino.*Exploration/);
     const stemBubble = canvas.getByLabelText(/Hammer.*STEM/);
     const stewardshipBubble = canvas.getByLabelText(/MOC Badge.*Stewardship/);
-    
+
     await expect(characterBubble).toBeInTheDocument();
     await expect(healthBubble).toBeInTheDocument();
     await expect(explorationBubble).toBeInTheDocument();
     await expect(stemBubble).toBeInTheDocument();
     await expect(stewardshipBubble).toBeInTheDocument();
-    
+
     // Test hover interaction
     await userEvent.hover(characterBubble);
-    
+
     // Test click interaction to open tooltip
     await userEvent.click(characterBubble);
-    
+
     // Verify tooltip appears
     await expect(canvas.getByText(/Hootie the Owl – Character/)).toBeInTheDocument();
   },
@@ -129,20 +129,20 @@ export const WithInteractions: Story = {
  */
 export const BubbleShowcase: Story = {
   render: () => (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-8 p-8 bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary min-h-screen">
+    <div className='grid grid-cols-1 md:grid-cols-5 gap-8 p-8 bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary min-h-screen'>
       {[
         { name: 'Character', character: 'Hootie the Owl', color: '#8B5CF6' },
         { name: 'Health', character: 'Brenda the Cat', color: '#10B981' },
         { name: 'Exploration', character: 'Gino the Dog', color: '#F59E0B' },
         { name: 'STEM', character: 'Hammer the Robot', color: '#3B82F6' },
-        { name: 'Stewardship', character: 'MOC Badge', color: '#EF4444' }
+        { name: 'Stewardship', character: 'MOC Badge', color: '#EF4444' },
       ].map((attribute) => (
-        <div key={attribute.name} className="text-center">
-          <div 
-            className="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl border-2"
-            style={{ 
+        <div key={attribute.name} className='text-center'>
+          <div
+            className='w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl border-2'
+            style={{
               backgroundColor: `${attribute.color}20`,
-              borderColor: `${attribute.color}60`
+              borderColor: `${attribute.color}60`,
             }}
           >
             {attribute.name === 'Character' && '🦉'}
@@ -151,10 +151,10 @@ export const BubbleShowcase: Story = {
             {attribute.name === 'STEM' && '🤖'}
             {attribute.name === 'Stewardship' && '🏛️'}
           </div>
-          <h3 className="text-xl font-bold text-white mb-2">{attribute.name}</h3>
-          <p className="text-gray-300 text-sm">{attribute.character}</p>
-          <div 
-            className="w-4 h-4 rounded-full mx-auto mt-2"
+          <h3 className='text-xl font-bold text-white mb-2'>{attribute.name}</h3>
+          <p className='text-gray-300 text-sm'>{attribute.character}</p>
+          <div
+            className='w-4 h-4 rounded-full mx-auto mt-2'
             style={{ backgroundColor: attribute.color }}
           />
         </div>
@@ -175,7 +175,7 @@ export const BubbleShowcase: Story = {
  */
 export const MobileView: Story = {
   render: () => (
-    <div className="relative h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary overflow-hidden">
+    <div className='relative h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary overflow-hidden'>
       <FloatingBubbles />
     </div>
   ),
@@ -196,7 +196,7 @@ export const MobileView: Story = {
  */
 export const TabletView: Story = {
   render: () => (
-    <div className="relative h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary overflow-hidden">
+    <div className='relative h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary overflow-hidden'>
       <FloatingBubbles />
     </div>
   ),
@@ -212,7 +212,7 @@ export const TabletView: Story = {
  */
 export const AccessibilityTest: Story = {
   render: () => (
-    <div className="relative h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary overflow-hidden">
+    <div className='relative h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary overflow-hidden'>
       <FloatingBubbles />
     </div>
   ),
@@ -243,12 +243,12 @@ export const AccessibilityTest: Story = {
  */
 export const ReducedMotion: Story = {
   render: () => (
-    <div className="relative h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary overflow-hidden">
-      <div className="motion-reduce:opacity-50">
+    <div className='relative h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary overflow-hidden'>
+      <div className='motion-reduce:opacity-50'>
         <FloatingBubbles />
       </div>
-      <div className="absolute top-4 left-4 bg-glass border-glass rounded-lg p-4 text-white">
-        <p className="text-sm">Animations respect user's motion preferences</p>
+      <div className='absolute top-4 left-4 bg-glass border-glass rounded-lg p-4 text-white'>
+        <p className='text-sm'>Animations respect user's motion preferences</p>
       </div>
     </div>
   ),
@@ -266,7 +266,7 @@ export const ReducedMotion: Story = {
  */
 export const VisualRegression: Story = {
   render: () => (
-    <div className="relative h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary overflow-hidden">
+    <div className='relative h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary overflow-hidden'>
       <FloatingBubbles />
     </div>
   ),

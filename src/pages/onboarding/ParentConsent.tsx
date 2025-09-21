@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { notifyOnboarding } from '@/lib/notifyOnboarding';
-import { useAuth } from '@/contexts/AuthContext';
 import SignaturePad from 'signature_pad';
+
+import { useAuth } from '@/contexts/AuthContext';
+import { notifyOnboarding } from '@/lib/notifyOnboarding';
+import { supabase } from '@/lib/supabase';
 
 export default function ParentConsent() {
   const { user, role } = useAuth() as any;
@@ -21,7 +22,10 @@ export default function ParentConsent() {
 
   useEffect(() => {
     if (canvasRef.current && !sigPad) {
-      const pad = new SignaturePad(canvasRef.current, { backgroundColor: 'rgba(255,255,255,0)', penColor: '#22C55E' });
+      const pad = new SignaturePad(canvasRef.current, {
+        backgroundColor: 'rgba(255,255,255,0)',
+        penColor: '#22C55E',
+      });
       setSigPad(pad);
     }
   }, [canvasRef, sigPad]);
@@ -78,7 +82,8 @@ export default function ParentConsent() {
     } catch (err: any) {
       // Provide clearer guidance when the storage bucket doesn't exist
       if (err?.message?.toLowerCase()?.includes('bucket not found') || err?.status === 404) {
-        const guidance = "Storage bucket 'parent_ids' not found. Create a private bucket named 'parent_ids' in your Supabase project (Storage → New bucket) and re-run this action.";
+        const guidance =
+          "Storage bucket 'parent_ids' not found. Create a private bucket named 'parent_ids' in your Supabase project (Storage → New bucket) and re-run this action.";
         console.error(guidance, err);
         throw new Error(guidance);
       }
@@ -99,7 +104,9 @@ export default function ParentConsent() {
       const res = await fetch(signatureDataUrl);
       const blob = await res.blob();
       const sigPath = `${studentId}/${Date.now()}_signature.png`;
-      const { error: sigErr } = await supabase.storage.from('parent_ids').upload(sigPath, blob, { upsert: false });
+      const { error: sigErr } = await supabase.storage
+        .from('parent_ids')
+        .upload(sigPath, blob, { upsert: false });
       if (sigErr) throw sigErr;
       const { data: sigPub } = await supabase.storage.from('parent_ids').getPublicUrl(sigPath);
 
@@ -135,14 +142,17 @@ export default function ParentConsent() {
 
       // best-effort notification to parent/admin
       try {
-        await notifyOnboarding('consent_submitted', { parent_email: parentEmail, student_id: studentId });
+        await notifyOnboarding('consent_submitted', {
+          parent_email: parentEmail,
+          student_id: studentId,
+        });
       } catch (e) {
         // swallow notify failures
         console.warn('notify failed', e);
       }
 
-  alert('Consent submitted. Awaiting review.');
-  navigate('/dashboard');
+      alert('Consent submitted. Awaiting review.');
+      navigate('/dashboard');
     } catch (e: any) {
       alert(e.message);
     } finally {
@@ -151,42 +161,53 @@ export default function ParentConsent() {
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-bold text-white">Parent/Guardian Consent</h1>
+    <div className='max-w-xl mx-auto p-6 space-y-4'>
+      <h1 className='text-2xl font-bold text-white'>Parent/Guardian Consent</h1>
 
-      <div className="bg-glass border-glass rounded-xl p-4 space-y-3">
+      <div className='bg-glass border-glass rounded-xl p-4 space-y-3'>
         <input
-          className="w-full bg-glass border-glass rounded-lg px-3 py-2 text-white"
-          placeholder="Parent/Guardian Full Name"
+          className='w-full bg-glass border-glass rounded-lg px-3 py-2 text-white'
+          placeholder='Parent/Guardian Full Name'
           value={parentName}
-          onChange={e => setParentName(e.target.value)}
+          onChange={(e) => setParentName(e.target.value)}
         />
         <input
-          className="w-full bg-glass border-glass rounded-lg px-3 py-2 text-white"
-          placeholder="Parent/Guardian Email"
-          type="email"
+          className='w-full bg-glass border-glass rounded-lg px-3 py-2 text-white'
+          placeholder='Parent/Guardian Email'
+          type='email'
           value={parentEmail}
-          onChange={e => setParentEmail(e.target.value)}
+          onChange={(e) => setParentEmail(e.target.value)}
         />
-        <div className="space-y-2">
-          <div className="text-white">Signature (draw in box):</div>
-          <div className="bg-black/30 border border-glass rounded-lg">
+        <div className='space-y-2'>
+          <div className='text-white'>Signature (draw in box):</div>
+          <div className='bg-black/30 border border-glass rounded-lg'>
             <canvas ref={canvasRef} width={600} height={200} />
           </div>
-          <button onClick={clearSig} className="bg-glass border-glass rounded px-3 py-1 text-gray-200">Clear</button>
+          <button
+            onClick={clearSig}
+            className='bg-glass border-glass rounded px-3 py-1 text-gray-200'
+          >
+            Clear
+          </button>
         </div>
 
-        <div className="space-y-2">
-          <div className="text-white">Upload Photo ID (front):</div>
-          <input type="file" accept="image/*,application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-          <p className="text-gray-400 text-sm">Only you (the student account) and admins can access this file.</p>
+        <div className='space-y-2'>
+          <div className='text-white'>Upload Photo ID (front):</div>
+          <input
+            type='file'
+            accept='image/*,application/pdf'
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+          <p className='text-gray-400 text-sm'>
+            Only you (the student account) and admins can access this file.
+          </p>
         </div>
       </div>
 
       <button
         onClick={submit}
         disabled={submitting}
-        className="bg-cyber-green-500/20 border border-cyber-green-500/30 text-cyber-green-300 hover:bg-cyber-green-500/30 rounded-lg px-4 py-2"
+        className='bg-cyber-green-500/20 border border-cyber-green-500/30 text-cyber-green-300 hover:bg-cyber-green-500/30 rounded-lg px-4 py-2'
       >
         {submitting ? 'Submitting…' : 'Submit Consent'}
       </button>

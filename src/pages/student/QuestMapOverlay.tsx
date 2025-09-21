@@ -1,16 +1,17 @@
 /**
  * Quest Map Overlay Component
- * 
+ *
  * Provides an interactive overlay for students to view and interact
  * with quest markers on the map interface.
  */
 
-import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useQuests } from '@/hooks/useQuests';
-import { supabase } from '@/lib/supabase';
-import CHESS_COLORS from '@/lib/chessColors';
+import React, { useEffect, useState } from 'react';
+
 import { useAuth } from '@/contexts/AuthContext';
+import { useQuests } from '@/hooks/useQuests';
+import CHESS_COLORS from '@/lib/chessColors';
+import { supabase } from '@/lib/supabase';
 
 /**
  * Quest Map Overlay Props
@@ -21,7 +22,7 @@ interface QuestMapOverlayProps {
 
 /**
  * Quest Map Overlay Component
- * 
+ *
  * Features:
  * - Real-time quest marker updates
  * - Student-specific quest interactions
@@ -31,7 +32,11 @@ interface QuestMapOverlayProps {
 const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
   const { user } = useAuth();
   // determine grade from user metadata (expect 'ES'|'MS'|'HS')
-  const grade = (user?.user_metadata?.grade_level || user?.user_metadata?.grade || null) as 'ES' | 'MS' | 'HS' | null;
+  const grade = (user?.user_metadata?.grade_level || user?.user_metadata?.grade || null) as
+    | 'ES'
+    | 'MS'
+    | 'HS'
+    | null;
   const { mapQuests, loading, error } = useQuests(grade ?? undefined);
   const [markersAdded, setMarkersAdded] = useState(false);
   const [safeSpaces, setSafeSpaces] = useState<any[]>([]);
@@ -45,10 +50,7 @@ const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
     // fetch approved safe spaces for this grade
     (async () => {
       try {
-        const q = supabase
-          .from('safe_spaces')
-          .select('*')
-          .eq('approved', true);
+        const q = supabase.from('safe_spaces').select('*').eq('approved', true);
         if (grade) q.or(`grade_level.eq.${grade}`);
         const { data: ssData } = await q;
         setSafeSpaces(ssData || []);
@@ -57,17 +59,27 @@ const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
       }
     })();
 
-        // Add quest markers to the map
-  mapQuests.forEach(quest => {
+    // Add quest markers to the map
+    mapQuests.forEach((quest) => {
       if (quest.lng && quest.lat) {
         // Create marker element
         const markerElement = document.createElement('div');
         markerElement.className = 'quest-marker';
-  const attr = String(quest.attribute_id || 'character').toLowerCase();
-  const colorKey = attr in CHESS_COLORS ? (attr as keyof typeof CHESS_COLORS) : 'character';
-  const colorClass = CHESS_COLORS[colorKey];
+        const attr = String(quest.attribute_id || 'character').toLowerCase();
+        const colorKey = attr in CHESS_COLORS ? (attr as keyof typeof CHESS_COLORS) : 'character';
+        const colorClass = CHESS_COLORS[colorKey];
         // Very small inline color variant fallback (tailwind class not available in DOM style)
-        const color = colorClass.includes('emerald') ? '#34D399' : colorClass.includes('pink') ? '#FB7185' : colorClass.includes('indigo') ? '#6366F1' : colorClass.includes('yellow') ? '#FBBF24' : colorClass.includes('cyan') ? '#06B6D4' : '#8B5CF6';
+        const color = colorClass.includes('emerald')
+          ? '#34D399'
+          : colorClass.includes('pink')
+            ? '#FB7185'
+            : colorClass.includes('indigo')
+              ? '#6366F1'
+              : colorClass.includes('yellow')
+                ? '#FBBF24'
+                : colorClass.includes('cyan')
+                  ? '#06B6D4'
+                  : '#8B5CF6';
 
         markerElement.style.cssText = `
           width: 34px;
@@ -95,27 +107,25 @@ const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
 
         // Create Mapbox marker
         if (window.mapboxgl) {
-          new window.mapboxgl.Marker(markerElement)
-            .setLngLat([quest.lng, quest.lat])
-            .addTo(map);
+          new window.mapboxgl.Marker(markerElement).setLngLat([quest.lng, quest.lat]).addTo(map);
         }
       }
-      });
+    });
 
-      // add safe space markers
-      safeSpaces.forEach(space => {
-        if (space.lng && space.lat) {
-          const el = document.createElement('div');
-          el.className = 'safe-space-marker';
-          const color = '#8B5CF6'; // violet fallback from CHESS_COLORS.safe_space
-          el.style.cssText = `width:34px;height:34px;background:${color}66;border:2px solid white;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.2);`;
-          el.title = space.name || 'Safe Space';
-          el.addEventListener('click', () => console.log('Safe Space clicked', space.id));
-          if (window.mapboxgl) {
-            new window.mapboxgl.Marker(el).setLngLat([space.lng, space.lat]).addTo(map);
-          }
+    // add safe space markers
+    safeSpaces.forEach((space) => {
+      if (space.lng && space.lat) {
+        const el = document.createElement('div');
+        el.className = 'safe-space-marker';
+        const color = '#8B5CF6'; // violet fallback from CHESS_COLORS.safe_space
+        el.style.cssText = `width:34px;height:34px;background:${color}66;border:2px solid white;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.2);`;
+        el.title = space.name || 'Safe Space';
+        el.addEventListener('click', () => console.log('Safe Space clicked', space.id));
+        if (window.mapboxgl) {
+          new window.mapboxgl.Marker(el).setLngLat([space.lng, space.lat]).addTo(map);
         }
-      });
+      }
+    });
 
     setMarkersAdded(true);
   }, [map, mapQuests, markersAdded]);
@@ -123,9 +133,9 @@ const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
   // Show loading or error states if needed
   if (loading) {
     return (
-      <div className="absolute top-4 left-4 bg-glass border-glass rounded-lg px-3 py-2 z-30">
-        <div className="flex items-center gap-2 text-white text-sm">
-          <div className="animate-spin rounded-full h-4 w-4 border-b border-white"></div>
+      <div className='absolute top-4 left-4 bg-glass border-glass rounded-lg px-3 py-2 z-30'>
+        <div className='flex items-center gap-2 text-white text-sm'>
+          <div className='animate-spin rounded-full h-4 w-4 border-b border-white'></div>
           <span>Loading quests...</span>
         </div>
       </div>
@@ -134,8 +144,8 @@ const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
 
   if (error) {
     return (
-      <div className="absolute top-4 left-4 bg-red-500/20 border border-red-500/30 rounded-lg px-3 py-2 z-30">
-        <div className="flex items-center gap-2 text-red-200 text-sm">
+      <div className='absolute top-4 left-4 bg-red-500/20 border border-red-500/30 rounded-lg px-3 py-2 z-30'>
+        <div className='flex items-center gap-2 text-red-200 text-sm'>
           <span>⚠️</span>
           <span>Quest load error</span>
         </div>
@@ -150,13 +160,13 @@ const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
 
   return (
     <motion.div
-      className="absolute top-4 right-4 bg-glass border-glass rounded-lg px-3 py-2 z-30"
+      className='absolute top-4 right-4 bg-glass border-glass rounded-lg px-3 py-2 z-30'
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.5 }}
     >
-      <div className="flex items-center gap-2 text-white text-sm">
-        <div className="w-2 h-2 bg-cyber-green-400 rounded-full animate-pulse"></div>
+      <div className='flex items-center gap-2 text-white text-sm'>
+        <div className='w-2 h-2 bg-cyber-green-400 rounded-full animate-pulse'></div>
         <span>{mapQuests.length} quests available</span>
       </div>
     </motion.div>

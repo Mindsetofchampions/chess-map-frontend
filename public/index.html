@@ -2,9 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+  </head>
   <body>
     <div id="root"></div>
-    <script>if (window.self && !window.self.frameElement) {Object.defineProperty(window.self, 'frameElement', {get: function () {return null;}});}</script>
+    <script>
+      if (window.self && !window.self.frameElement) {
+        Object.defineProperty(window.self, 'frameElement', {
+          get: function () {
+            return null;
+          },
+        });
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

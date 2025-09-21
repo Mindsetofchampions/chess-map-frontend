@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const CANDIDATE_DIRS = ['supabase/migrations','db/migrations','migrations'];
+const CANDIDATE_DIRS = ['supabase/migrations', 'db/migrations', 'migrations'];
 
 function findRoot(): string {
   for (const d of CANDIDATE_DIRS) {
@@ -12,13 +12,13 @@ function findRoot(): string {
   throw new Error(`No migrations folder found in: ${CANDIDATE_DIRS.join(', ')}`);
 }
 
-function fail(msg: string) { 
-  console.error('❌', msg); 
-  process.exitCode = 1; 
+function fail(msg: string) {
+  console.error('❌', msg);
+  process.exitCode = 1;
 }
 
-function warn(msg: string) { 
-  console.warn('⚠️ ', msg); 
+function warn(msg: string) {
+  console.warn('⚠️ ', msg);
 }
 
 function check(content: string, file: string) {
@@ -29,9 +29,9 @@ function check(content: string, file: string) {
   }
 
   // Check 2: Statements missing semicolons (basic check for CREATE/ALTER lines)
-  const statements = content.split('\n').filter(line => 
-    /^\s*(create|alter|drop|insert|update|delete)\s/i.test(line.trim())
-  );
+  const statements = content
+    .split('\n')
+    .filter((line) => /^\s*(create|alter|drop|insert|update|delete)\s/i.test(line.trim()));
   for (const stmt of statements) {
     if (!stmt.trim().endsWith(';') && !stmt.includes('$$')) {
       warn(`${file}: statement may be missing semicolon: ${stmt.trim().slice(0, 50)}...`);
@@ -77,7 +77,8 @@ function check(content: string, file: string) {
   }
 
   // Check 10: Functions without search_path (security check)
-  const securityDefinerFunctions = content.match(/create\s+or\s+replace\s+function[\s\S]*?security\s+definer[\s\S]*?\$\$/gi) || [];
+  const securityDefinerFunctions =
+    content.match(/create\s+or\s+replace\s+function[\s\S]*?security\s+definer[\s\S]*?\$\$/gi) || [];
   for (const func of securityDefinerFunctions) {
     if (!/set\s+search_path/i.test(func)) {
       warn(`${file}: SECURITY DEFINER function missing 'set search_path = public'`);
@@ -89,23 +90,25 @@ function run() {
   try {
     const root = findRoot();
     console.log(`📁 Found migrations directory: ${root}`);
-    
-    const files = fs.readdirSync(root).filter(f => f.endsWith('.sql')).sort();
+
+    const files = fs
+      .readdirSync(root)
+      .filter((f) => f.endsWith('.sql'))
+      .sort();
     console.log(`🔍 Checking ${files.length} migration files...`);
-    
+
     for (const f of files) {
       const p = path.join(root, f);
       const raw = fs.readFileSync(p, 'utf8');
       check(raw, f);
     }
-    
+
     if (process.exitCode) {
       console.error('\n❌ Static checks found issues. Run `npm run mig:fix` to fix them.');
       process.exit(process.exitCode);
     } else {
       console.log('\n✅ All static migration checks passed.');
     }
-    
   } catch (error: any) {
     console.error('❌ Static check failed:', error.message);
     process.exit(1);

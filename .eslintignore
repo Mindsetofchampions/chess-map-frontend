@@ -1,0 +1,23 @@
+node_modules
+dist
+build
+coverage
+**/*.d.ts
+
+# Exclude server/edge scripts and tooling from frontend lint gate
+scripts/**
+supabase/functions/**
+supabase/**/*.md
+**/*.cjs
+vite.config.ts
+tailwind.config.js
+postcss.config.js
+babel.config.cjs
+jest.config.cjs
+prettier.config.*
+*.config.js
+*.config.cjs
+*.config.ts
+index.html
+public/**
+chess-map-frontend/**
