@@ -4,6 +4,7 @@ import OnboardingGate from '@/components/auth/OnboardingGate';
 import GlassContainer from '@/components/GlassContainer';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useToast } from '@/components/ToastProvider';
+import Tabs from '@/components/ui/Tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   createOrgEngagement,
@@ -19,6 +20,11 @@ import {
   removeEngagementRecipient,
   upsertEngagementRecipient,
 } from '@/lib/supabase';
+import AttendanceTab from '@/pages/org/tabs/AttendanceTab';
+import ReportsTab from '@/pages/org/tabs/ReportsTab';
+import ServicesTab from '@/pages/org/tabs/ServicesTab';
+import StaffTab from '@/pages/org/tabs/StaffTab';
+import StudentsTab from '@/pages/org/tabs/StudentsTab';
 
 const OrgDashboard: React.FC = () => {
   const { showSuccess, showError } = useToast();
@@ -57,6 +63,7 @@ const OrgDashboard: React.FC = () => {
   // Distribute
   const [distributingId, setDistributingId] = useState<string | null>(null);
   const [distributing, setDistributing] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('students');
 
   const selectedEngagement = useMemo(
     () =>
@@ -343,6 +350,33 @@ const OrgDashboard: React.FC = () => {
               </div>
             )}
           </GlassContainer>
+
+          {/* CAMS Org Tabs */}
+          <div className='mt-8'>
+            <GlassContainer>
+              <div className='mb-4'>
+                <h2 className='text-lg font-semibold text-white'>C.A.M.S.</h2>
+              </div>
+              <Tabs
+                tabs={[
+                  { key: 'students', label: 'Students' },
+                  { key: 'services', label: 'Services' },
+                  { key: 'attendance', label: 'Attendance' },
+                  { key: 'staff', label: 'Staff' },
+                  { key: 'reports', label: 'Reports' },
+                ]}
+                active={activeTab}
+                onChange={setActiveTab}
+              />
+              <div className='mt-4'>
+                {activeTab === 'students' && <StudentsTab />}
+                {activeTab === 'services' && <ServicesTab />}
+                {activeTab === 'attendance' && <AttendanceTab />}
+                {activeTab === 'staff' && <StaffTab />}
+                {activeTab === 'reports' && <ReportsTab />}
+              </div>
+            </GlassContainer>
+          </div>
 
           {/* Funding Modal */}
           {fundingId && (

@@ -26,6 +26,7 @@ import DiagnosticsWidget from '@/components/DiagnosticsWidget';
 import GlassContainer from '@/components/GlassContainer';
 import LogoutButton from '@/components/LogoutButton';
 import { useToast } from '@/components/ToastProvider';
+import Tabs from '@/components/ui/Tabs';
 import LedgerTable from '@/components/wallet/LedgerTable';
 import WalletChip from '@/components/wallet/WalletChip';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,6 +43,10 @@ import {
   topUpPlatformBalance,
   type OrgBalance,
 } from '@/lib/supabase';
+import MasterLedger from '@/pages/master/tabs/MasterLedger';
+import MasterOrganizations from '@/pages/master/tabs/MasterOrganizations';
+import MasterReports from '@/pages/master/tabs/MasterReports';
+import MasterRewards from '@/pages/master/tabs/MasterRewards';
 import type { Quest } from '@/types/backend';
 import { formatDateTime } from '@/utils/format';
 import { mapPgError } from '@/utils/mapPgError';
@@ -125,6 +130,7 @@ const MasterDashboard: React.FC = () => {
   const [userReason, setUserReason] = useState('Direct user allocation');
   const [allocatingUser, setAllocatingUser] = useState(false);
   const [pendingOrgOnboardings, setPendingOrgOnboardings] = useState<number>(0);
+  const [activeTab, setActiveTab] = useState<string>('orgs');
 
   /**
    * Fetch pending quests for approval
@@ -852,6 +858,36 @@ const MasterDashboard: React.FC = () => {
                   <p className='text-gray-300 text-sm'>Check system health</p>
                 </div>
               </Link>
+            </div>
+          </GlassContainer>
+        </motion.div>
+
+        {/* CAMS Admin Tabs */}
+        <motion.div
+          className='mt-8'
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.75 }}
+        >
+          <GlassContainer variant='card'>
+            <div className='flex items-center justify-between mb-4'>
+              <h3 className='text-xl font-semibold text-white'>C.A.M.S. Admin</h3>
+            </div>
+            <Tabs
+              tabs={[
+                { key: 'orgs', label: 'Organizations' },
+                { key: 'ledger', label: 'Ledger' },
+                { key: 'reports', label: 'Reports' },
+                { key: 'rewards', label: 'Rewards' },
+              ]}
+              active={activeTab}
+              onChange={setActiveTab}
+            />
+            <div className='mt-4'>
+              {activeTab === 'orgs' && <MasterOrganizations />}
+              {activeTab === 'ledger' && <MasterLedger />}
+              {activeTab === 'reports' && <MasterReports />}
+              {activeTab === 'rewards' && <MasterRewards />}
             </div>
           </GlassContainer>
         </motion.div>
