@@ -11,8 +11,12 @@ export default function OnboardingStart() {
   useEffect(() => {
     (async () => {
       // If a master/org_admin lands on the onboarding start page, send them to approvals
-      if (role === 'master_admin' || role === 'org_admin') {
-        navigate('/master/quests/approvals');
+      if (role === 'master_admin') {
+        navigate('/master/dashboard');
+        return;
+      }
+      if (role === 'org_admin' || role === 'staff') {
+        navigate('/org/dashboard');
         return;
       }
       if (!user?.id) return;

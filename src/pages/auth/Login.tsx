@@ -119,37 +119,20 @@ const Login: React.FC = () => {
 
         // Determine role-aware default next path
         const next =
-          resolvedRole === 'master_admin' ||
-          resolvedRole === 'org_admin' ||
-          resolvedRole === 'staff'
+          resolvedRole === 'master_admin'
             ? '/master/dashboard'
+            : resolvedRole === 'org_admin' || resolvedRole === 'staff'
+            ? '/org/dashboard'
             : '/dashboard';
 
-        // If the user originally attempted to visit a protected admin route, only honor it
-        // when the resolved role is an admin-level role. Otherwise fall back to next.
-        const attempted = location.state?.from?.pathname;
+        const attempted = location.state?.from?.pathname as string | undefined;
 
-        // If the resolved role is org_admin, check whether the org is approved.
-        // If not approved, send them to the org onboarding page. Otherwise
-        // send them to the main org dashboard (not specific sub-pages) to avoid
-        // surprising routing like going directly to approvals.
-        if (resolvedRole === 'org_admin') {
-          await refreshRole();
-          // read from user metadata via auth client; if not approved, route to onboarding
-          const session = await (await import('@/lib/supabase')).supabase.auth.getSession();
-          const currentUser = session.data.session?.user;
-          const orgApproved = currentUser?.user_metadata?.org_approved;
-          if (!orgApproved) {
-            navigate('/onboarding/org', { replace: true });
-          } else {
-            navigate('/master/dashboard', { replace: true });
-          }
+        if (resolvedRole === 'org_admin' || resolvedRole === 'staff') {
+          navigate('/org/dashboard', { replace: true });
+        } else if (resolvedRole === 'master_admin') {
+          navigate('/master/dashboard', { replace: true });
         } else {
-          const from =
-            attempted?.startsWith('/master') &&
-            !(resolvedRole === 'master_admin' || resolvedRole === 'staff')
-              ? next
-              : attempted || next;
+          const from = attempted || next;
           navigate(from, { replace: true });
         }
       } else {

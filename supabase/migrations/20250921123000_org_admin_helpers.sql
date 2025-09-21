@@ -10,7 +10,7 @@ declare v_org uuid; v_balance bigint; begin
 
   -- Ensure caller is org_admin or master_admin within this org
   if not exists (
-    select 1 from public.profiles p where p.user_id = auth.uid() and p.org_id = v_org and p.role in ('org_admin','master_admin')
+    select 1 from public.profiles p where p.user_id = auth.uid() and p.org_id = v_org and p.role in ('org_admin','master_admin','staff')
   ) then
     raise exception 'forbidden';
   end if;

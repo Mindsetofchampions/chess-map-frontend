@@ -25,9 +25,13 @@ export default function StudentOnboarding() {
 
   useEffect(() => {
     if (!studentId) return;
-    // redirect master/org_admin users to approvals UI
-    if (role === 'master_admin' || role === 'org_admin') {
-      navigate('/master/quests/approvals');
+    // redirect master/org_admin users to appropriate dashboards
+    if (role === 'master_admin') {
+      navigate('/master/dashboard');
+      return;
+    }
+    if (role === 'org_admin' || role === 'staff') {
+      navigate('/org/dashboard');
       return;
     }
 

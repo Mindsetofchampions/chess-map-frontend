@@ -30,10 +30,14 @@ export default function ParentConsent() {
     }
   }, [canvasRef, sigPad]);
 
-  // If this is a master/org admin, redirect them to approvals UI
+  // If this is a master/org admin, redirect them to appropriate dashboards
   useEffect(() => {
-    if (role === 'master_admin' || role === 'org_admin') {
-      navigate('/master/quests/approvals');
+    if (role === 'master_admin') {
+      navigate('/master/dashboard');
+      return;
+    }
+    if (role === 'org_admin' || role === 'staff') {
+      navigate('/org/dashboard');
       return;
     }
   }, [role, navigate]);

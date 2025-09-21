@@ -199,7 +199,7 @@ const OrgDashboard: React.FC = () => {
   }
 
   return (
-    <ProtectedRoute requiredRole={'org_admin'}>
+    <ProtectedRoute requiredRole={'staff'}>
       <OnboardingGate>
         <div className='container mx-auto p-6 max-w-6xl'>
           <h1 className='text-2xl font-bold text-white mb-6'>Organization Dashboard</h1>
