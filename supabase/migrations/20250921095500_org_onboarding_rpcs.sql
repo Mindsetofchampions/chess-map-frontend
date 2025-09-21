@@ -21,7 +21,7 @@ grant execute on function public.list_org_onboardings(text) to anon, authenticat
 
 -- Approve org onboarding
 create or replace function public.approve_org_onboarding(p_id uuid, p_notes text default null)
-returns json language plpgsql security definer as $$
+returns json language plpgsql security definer set search_path = public$$
 declare v_email text; v_org text; begin
   if not public.is_master_admin() then
     raise exception 'forbidden';
@@ -37,7 +37,7 @@ grant execute on function public.approve_org_onboarding(uuid, text) to anon, aut
 
 -- Reject org onboarding
 create or replace function public.reject_org_onboarding(p_id uuid, p_notes text)
-returns json language plpgsql security definer as $$
+returns json language plpgsql security definer set search_path = public$$
 declare v_email text; v_org text; begin
   if not public.is_master_admin() then
     raise exception 'forbidden';

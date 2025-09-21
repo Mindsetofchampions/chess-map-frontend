@@ -96,8 +96,12 @@ BEGIN
 END $$;
 
 -- Recreate policies after type change
-CREATE POLICY "Admin and staff can update any quest"
-  ON public.quests
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='quests' and policyname='Admin and staff can update any quest') then
+    execute 'drop policy "Admin and staff can update any quest" on public.quests';
+  end if;
+end $plpgsql$;
+create policy "Admin and staff can update any quest" on public.quests 
   FOR UPDATE
   TO authenticated
   USING (EXISTS (
@@ -111,8 +115,12 @@ CREATE POLICY "Admin and staff can update any quest"
     AND p.role IN ('master_admin', 'org_admin', 'staff')
   ));
 
-CREATE POLICY "Master admin only platform ledger"
-  ON public.platform_ledger
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='platform_ledger' and policyname='Master admin only platform ledger') then
+    execute 'drop policy "Master admin only platform ledger" on public.platform_ledger';
+  end if;
+end $plpgsql$;
+create policy "Master admin only platform ledger" on public.platform_ledger 
   FOR ALL
   TO authenticated
   USING (EXISTS (
@@ -124,8 +132,12 @@ CREATE POLICY "Master admin only platform ledger"
     WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ));
 
-CREATE POLICY "Master admin only platform balance"
-  ON public.platform_balance
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='platform_balance' and policyname='Master admin only platform balance') then
+    execute 'drop policy "Master admin only platform balance" on public.platform_balance';
+  end if;
+end $plpgsql$;
+create policy "Master admin only platform balance" on public.platform_balance 
   FOR ALL
   TO authenticated
   USING (EXISTS (
@@ -137,7 +149,12 @@ CREATE POLICY "Master admin only platform balance"
     WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ));
 
-CREATE POLICY "platform_balance_master_only" ON public.platform_balance
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='platform_balance' and policyname='platform_balance_master_only') then
+    execute 'drop policy "platform_balance_master_only" on public.platform_balance';
+  end if;
+end $plpgsql$;
+create policy "platform_balance_master_only" on public.platform_balance 
   FOR ALL USING (
     EXISTS (
       SELECT 1 FROM public.profiles p 
@@ -151,8 +168,12 @@ CREATE POLICY "platform_balance_master_only" ON public.platform_balance
     )
   );
 
-CREATE POLICY "Master admin can read all roles"
-  ON public.user_roles
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='user_roles' and policyname='Master admin can read all roles') then
+    execute 'drop policy "Master admin can read all roles" on public.user_roles';
+  end if;
+end $plpgsql$;
+create policy "Master admin can read all roles" on public.user_roles 
   FOR SELECT
   TO authenticated
   USING (EXISTS (
@@ -160,8 +181,12 @@ CREATE POLICY "Master admin can read all roles"
     WHERE p.user_id = auth.uid() AND p.role = 'master_admin'
   ));
 
-CREATE POLICY "Master admin can insert/update roles"
-  ON public.user_roles
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='user_roles' and policyname='Master admin can insert/update roles') then
+    execute 'drop policy "Master admin can insert/update roles" on public.user_roles';
+  end if;
+end $plpgsql$;
+create policy "Master admin can insert/update roles" on public.user_roles 
   FOR ALL
   TO authenticated
   USING (EXISTS (

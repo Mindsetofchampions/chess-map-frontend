@@ -31,7 +31,7 @@ function escapeSqlLiteral(s: string): string {
 
 function fixContent(
   raw: string,
-  file: string,
+  _file: string,
 ): { out: string; rules: number[]; warnings: string[] } {
   let out = raw;
   const rules: number[] = [];
@@ -96,7 +96,7 @@ function fixContent(
   );
 
   // Rule 5: Add drop-if-exists before create policy
-  out = out.replace(/create\s+policy\s+"([^"]+)"\s+on\s+([.\w]+)\s/gi, (m, pname, tbl) => {
+  out = out.replace(/create\s+policy\s+"([^"]+)"\s+on\s+([.\w]+)\s/gi, (_m, pname, tbl) => {
     rules.push(5);
     const [schema, table] = tbl.includes('.') ? tbl.split('.') : ['public', tbl];
     const dropBlock = [
@@ -139,13 +139,13 @@ function fixContent(
   // Rule 7: Ensure SECURITY DEFINER functions have search_path
   out = out.replace(
     /(create\s+or\s+replace\s+function[\s\S]*?language\s+plpgsql)([\s\S]*?)(\$\$[\s\S]*?\$\$)/gi,
-    (m, head, middle, body) => {
-      if (!/security\s+definer/i.test(middle)) return m;
+    (_m, head, middle, body) => {
+      if (!/security\s+definer/i.test(middle)) return _m;
       if (!/set\s+search_path/i.test(middle)) {
         rules.push(7);
         return `${head} security definer set search_path = public${body}`;
       }
-      return m;
+      return _m;
     },
   );
 
@@ -157,8 +157,7 @@ function fixContent(
 
   // Rule 9: Remove verification selects
   const verifySelectPattern = /(^|\n)\s*select\s+'(MISSING|COIN)[\s\S]*?;\s*/gi;
-  const originalVerifyCount = (out.match(verifySelectPattern) || []).length;
-  out = out.replace(verifySelectPattern, (m) => {
+  out = out.replace(verifySelectPattern, (_m) => {
     rules.push(9);
     return '\n-- removed verification select\n';
   });

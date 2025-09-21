@@ -28,9 +28,7 @@ RETURNS TABLE (
   created_by uuid,
   created_at timestamptz
 )
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+LANGUAGE plpgsql security definer set search_path = public$$
 BEGIN
   -- Return ledger entries for the current user
   RETURN QUERY

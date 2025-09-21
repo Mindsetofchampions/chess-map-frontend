@@ -19,9 +19,7 @@ RETURNS TABLE (
   created_by uuid,
   created_at timestamptz
 )
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+LANGUAGE plpgsql security definer set search_path = public$$
 BEGIN
   RETURN QUERY
   SELECT 
@@ -45,9 +43,7 @@ RETURNS TABLE (
   balance integer,
   updated_at timestamptz
 )
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+LANGUAGE plpgsql security definer set search_path = public$$
 DECLARE
   current_user_id uuid := auth.uid();
 BEGIN

@@ -51,15 +51,23 @@ ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for user_roles (idempotent)
 drop policy if exists "Users can read own role" on public.user_roles;
-CREATE POLICY "Users can read own role"
-  ON public.user_roles
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='user_roles' and policyname='Users can read own role') then
+    execute 'drop policy "Users can read own role" on public.user_roles';
+  end if;
+end $plpgsql$;
+create policy "Users can read own role" on public.user_roles 
   FOR SELECT
   TO authenticated
   USING (auth.uid() = user_id);
 
 drop policy if exists "Master admin can read all roles" on public.user_roles;
-CREATE POLICY "Master admin can read all roles"
-  ON public.user_roles
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='user_roles' and policyname='Master admin can read all roles') then
+    execute 'drop policy "Master admin can read all roles" on public.user_roles';
+  end if;
+end $plpgsql$;
+create policy "Master admin can read all roles" on public.user_roles 
   FOR SELECT
   TO authenticated
   USING (EXISTS (
@@ -68,8 +76,12 @@ CREATE POLICY "Master admin can read all roles"
   ));
 
 drop policy if exists "Master admin can insert/update roles" on public.user_roles;
-CREATE POLICY "Master admin can insert/update roles"
-  ON public.user_roles
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='user_roles' and policyname='Master admin can insert/update roles') then
+    execute 'drop policy "Master admin can insert/update roles" on public.user_roles';
+  end if;
+end $plpgsql$;
+create policy "Master admin can insert/update roles" on public.user_roles 
   FOR ALL
   TO authenticated
   USING (EXISTS (
@@ -93,8 +105,12 @@ ALTER TABLE public.platform_balance ENABLE ROW LEVEL SECURITY;
 
 -- Only master_admin can access platform_balance
 DROP POLICY IF EXISTS "Master admin only platform balance" ON public.platform_balance;
-CREATE POLICY "Master admin only platform balance"
-  ON public.platform_balance
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='platform_balance' and policyname='Master admin only platform balance') then
+    execute 'drop policy "Master admin only platform balance" on public.platform_balance';
+  end if;
+end $plpgsql$;
+create policy "Master admin only platform balance" on public.platform_balance 
   FOR ALL
   TO authenticated
   USING (EXISTS (
@@ -125,8 +141,12 @@ ALTER TABLE public.platform_ledger ENABLE ROW LEVEL SECURITY;
 
 -- Only master_admin can access platform ledger
 DROP POLICY IF EXISTS "Master admin only platform ledger" ON public.platform_ledger;
-CREATE POLICY "Master admin only platform ledger"
-  ON public.platform_ledger
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='platform_ledger' and policyname='Master admin only platform ledger') then
+    execute 'drop policy "Master admin only platform ledger" on public.platform_ledger';
+  end if;
+end $plpgsql$;
+create policy "Master admin only platform ledger" on public.platform_ledger 
   FOR ALL
   TO authenticated
   USING (EXISTS (
@@ -364,8 +384,12 @@ BEGIN
 END $$;
 
 
-CREATE POLICY "Creators can update own draft/rejected quests"
-  ON public.quests
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='quests' and policyname='Creators can update own draft/rejected quests') then
+    execute 'drop policy "Creators can update own draft/rejected quests" on public.quests';
+  end if;
+end $plpgsql$;
+create policy "Creators can update own draft/rejected quests" on public.quests 
   FOR UPDATE
   TO authenticated
   USING (
