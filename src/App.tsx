@@ -34,6 +34,7 @@ import Approvals from './pages/master/Approvals';
 import MasterDashboard from './pages/master/MasterDashboard';
 import ParentConsentsPage from './pages/master/ParentConsents';
 import MasterUsersPage from './pages/master/Users';
+import OrgOnboardingApprovals from './pages/master/OrgOnboardingApprovals';
 import OrgOnboarding from './pages/onboarding/OrgOnboarding';
 import ParentConsent from './pages/onboarding/ParentConsent';
 import OnboardingStart from './pages/onboarding/Start';
@@ -732,6 +733,16 @@ const AppRouter: React.FC = () => {
               <ErrorBoundary>
                 <ProtectedRoute requireMaster>
                   <Approvals />
+                </ProtectedRoute>
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path='/master/org-onboarding'
+            element={
+              <ErrorBoundary>
+                <ProtectedRoute requireMaster>
+                  <OrgOnboardingApprovals />
                 </ProtectedRoute>
               </ErrorBoundary>
             }

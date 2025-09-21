@@ -403,3 +403,58 @@ export async function adminDeleteUser(email: string) {
     throw new Error(error?.message || String(error));
   }
 }
+
+// Org onboarding admin RPCs
+export interface OrgOnboardingRow {
+  id: string;
+  org_name: string;
+  org_logo_path: string;
+  admin_id_path: string;
+  submitted_by: string;
+  submitter_email?: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_notes?: string | null;
+  created_at: string;
+}
+
+export async function listOrgOnboardings(status?: 'pending' | 'approved' | 'rejected') {
+  const { data, error } = await supabase.rpc('list_org_onboardings', { p_status: status ?? null });
+  if (error) throw new Error(mapPgError(error).message);
+  return (data as OrgOnboardingRow[]) || [];
+}
+
+export async function approveOrgOnboarding(id: string, notes?: string) {
+  const { data, error } = await supabase.rpc('approve_org_onboarding', {
+    p_id: id,
+    p_notes: notes ?? null,
+  });
+  if (error) throw new Error(mapPgError(error).message);
+  return data;
+}
+
+export async function rejectOrgOnboarding(id: string, notes: string) {
+  const { data, error } = await supabase.rpc('reject_org_onboarding', {
+    p_id: id,
+    p_notes: notes,
+  });
+  if (error) throw new Error(mapPgError(error).message);
+  return data;
+}
+
+export async function sendSystemNotification(to: string, subject: string, text: string) {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
+  const resp = await fetch(`${supabaseUrl}/functions/v1/send_onboarding_notification`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ event: 'system_notification', parent_email: to, subject, text }),
+  });
+  if (!resp.ok) {
+    try {
+      const body = await resp.text();
+      throw new Error(body || 'send_onboarding_notification failed');
+    } catch (e) {
+      // swallow, best-effort only
+    }
+  }
+}

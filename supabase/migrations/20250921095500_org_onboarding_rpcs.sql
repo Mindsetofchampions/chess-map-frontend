@@ -1,0 +1,52 @@
+-- List org onboardings for master admins
+create or replace function public.list_org_onboardings(p_status text default null)
+returns table (
+  id uuid,
+  org_name text,
+  org_logo_path text,
+  admin_id_path text,
+  submitted_by uuid,
+  submitter_email text,
+  status text,
+  admin_notes text,
+  created_at timestamptz
+) language sql security definer as $$
+  select o.id, o.org_name, o.org_logo_path, o.admin_id_path, o.submitted_by, o.submitter_email, o.status, o.admin_notes, o.created_at
+  from public.org_onboardings o
+  where public.is_master_admin() and (p_status is null or o.status = p_status)
+  order by o.created_at desc
+$$;
+alter function public.list_org_onboardings(text) owner to postgres;
+grant execute on function public.list_org_onboardings(text) to anon, authenticated;
+
+-- Approve org onboarding
+create or replace function public.approve_org_onboarding(p_id uuid, p_notes text default null)
+returns json language plpgsql security definer as $$
+declare v_email text; v_org text; begin
+  if not public.is_master_admin() then
+    raise exception 'forbidden';
+  end if;
+  select submitter_email, org_name into v_email, v_org from public.org_onboardings where id = p_id;
+  update public.org_onboardings
+    set status = 'approved', admin_notes = p_notes, reviewed_by = auth.uid(), reviewed_at = now()
+    where id = p_id;
+  return json_build_object('ok', true, 'email', v_email, 'org', v_org);
+end $$;
+alter function public.approve_org_onboarding(uuid, text) owner to postgres;
+grant execute on function public.approve_org_onboarding(uuid, text) to anon, authenticated;
+
+-- Reject org onboarding
+create or replace function public.reject_org_onboarding(p_id uuid, p_notes text)
+returns json language plpgsql security definer as $$
+declare v_email text; v_org text; begin
+  if not public.is_master_admin() then
+    raise exception 'forbidden';
+  end if;
+  select submitter_email, org_name into v_email, v_org from public.org_onboardings where id = p_id;
+  update public.org_onboardings
+    set status = 'rejected', admin_notes = p_notes, reviewed_by = auth.uid(), reviewed_at = now()
+    where id = p_id;
+  return json_build_object('ok', true, 'email', v_email, 'org', v_org);
+end $$;
+alter function public.reject_org_onboarding(uuid, text) owner to postgres;
+grant execute on function public.reject_org_onboarding(uuid, text) to anon, authenticated;

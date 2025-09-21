@@ -15,21 +15,11 @@ export default function OrgOnboarding() {
   const [idFile, setIdFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const checkBucket = async (bucket: string) => {
-    try {
-      const { data, error } = await supabase.storage.getBucket(bucket);
-      if (error) return false;
-      return !!data;
-    } catch (e) {
-      return false;
-    }
-  };
-
+  // Upload to private buckets (no public URL). The returned path is what we persist.
   const uploadFile = async (bucket: string, path: string, file: File) => {
     const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: false });
     if (error) throw error;
-    const { data } = await supabase.storage.from(bucket).getPublicUrl(path);
-    return data.publicUrl;
+    return path;
   };
 
   const submit = async () => {
@@ -41,28 +31,16 @@ export default function OrgOnboarding() {
 
     setSubmitting(true);
     try {
-      // Ensure buckets exist
+      // Private buckets and RLS are provisioned via migrations; just use them.
       const logoBucket = 'org_logos';
       const idBucket = 'org_admin_ids';
-
-      const logoExists = await checkBucket(logoBucket);
-      const idExists = await checkBucket(idBucket);
-
-      if (!logoExists || !idExists) {
-        showError(
-          'Storage Buckets Missing',
-          `Please create private buckets: '${logoBucket}' and '${idBucket}' in your Supabase project (Storage → New bucket).`,
-        );
-        setSubmitting(false);
-        return;
-      }
 
       // Upload files
       const logoPath = `orgs/${user.id}/${Date.now()}_${logoFile.name}`;
       const idPath = `orgs/${user.id}/${Date.now()}_${idFile.name}`;
 
-      await uploadFile(logoBucket, logoPath, logoFile);
-      await uploadFile(idBucket, idPath, idFile);
+  await uploadFile(logoBucket, logoPath, logoFile);
+  await uploadFile(idBucket, idPath, idFile);
 
       // Insert onboarding row
       const { error: insertErr } = await supabase.from('org_onboardings').insert({
@@ -70,6 +48,7 @@ export default function OrgOnboarding() {
         org_logo_path: logoPath,
         admin_id_path: idPath,
         submitted_by: user.id,
+        submitter_email: user.email,
         status: 'pending',
       });
 
@@ -88,13 +67,32 @@ export default function OrgOnboarding() {
       const { error: updErr } = await supabase.auth.updateUser(updates);
       if (updErr) throw updErr;
 
+      // Send a notification email (best-effort)
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        const token = session.session?.access_token;
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send_onboarding_notification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            event: 'system_notification',
+            parent_email: user.email,
+            subject: 'Organization onboarding submitted',
+            text: `We received your organization onboarding for ${orgName}. An admin will review it shortly.`,
+          }),
+        });
+      } catch (_) {
+        // non-fatal
+      }
+
       // Refresh role/metadata and navigate to a pending page
       await refreshRole();
       showSuccess(
         'Submitted',
         'Organization onboarding submitted. An admin will review and approve.',
       );
-      navigate('/master/quests/approvals');
+  // Send org_admin to a pending approvals page; others back to dashboard safely
+  navigate('/master/quests/approvals');
     } catch (err: any) {
       console.error('Org onboarding failed', err);
       showError('Submission Failed', err?.message || 'Unable to submit onboarding');
