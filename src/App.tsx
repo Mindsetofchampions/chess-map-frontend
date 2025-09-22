@@ -820,6 +820,7 @@ const AppRouter: React.FC = () => {
           {/* Catch-all redirect */}
           <Route path='*' element={<Navigate to='/' replace />} />
         </Routes>
+        <MobileNav />
       </BrowserRouter>
     </ErrorBoundary>
   );
@@ -838,7 +839,6 @@ function App(): JSX.Element {
         <AuthProvider>
           <div className='relative min-h-dvh pb-safe'>
             <AppRouter />
-            <MobileNav />
           </div>
         </AuthProvider>
       ) : (
