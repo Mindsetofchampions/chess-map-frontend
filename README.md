@@ -2,7 +2,11 @@
 
 A modern React-based frontend plugin for the CHESS Map application, featuring glassmorphic UI design and interactive Mapbox integration. This plugin provides an intuitive interface for exploring virtual quests and safe spaces through an immersive mapping experience.
 
-## 🌟 Features
+## � Production
+
+- Live site: https://chesscompanions.app
+
+## �🌟 Features
 
 - **Interactive Mapbox Integration**: Custom map styles with quest markers and safe space indicators
 - **Glassmorphic UI Design**: Modern, translucent interface elements with backdrop blur effects

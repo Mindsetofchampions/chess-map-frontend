@@ -16,6 +16,7 @@ This folder stores session handoff notes to help switch agents or machines smoot
 ## What to include (essentials)
 
 - Date, branch, repo
+- What’s Live (production URL, deploy target)
 - Context summary (stack, deployment, roles)
 - What changed (code + infra)
 - DB migrations and RPCs added/changed
@@ -42,6 +43,9 @@ This folder stores session handoff notes to help switch agents or machines smoot
 Date: YYYY-MM-DD
 Branch: dev
 Repo: chess-map-frontend
+
+## What’s Live
+- Production: https://chesscompanions.app (update if changed)
 
 ## Context Summary
 
