@@ -11,19 +11,19 @@ import type { Quest, Submission, Wallet, Ledger } from '@/types/backend';
 import { mapPgError } from '@/utils/mapPgError';
 
 // Environment validation
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-export const SUPABASE_ENV_VALID = Boolean(supabaseUrl && supabaseAnonKey);
-if (!SUPABASE_ENV_VALID && typeof window !== 'undefined') {
-  // Avoid crashing dev server; surface UI instead
-  // eslint-disable-next-line no-console
-  console.warn('[Supabase] Missing env: VITE_SUPABASE_URL and/or VITE_SUPABASE_ANON_KEY');
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl) {
+  throw new Error('Missing VITE_SUPABASE_URL environment variable');
+}
+
+if (!supabaseAnonKey) {
+  throw new Error('Missing VITE_SUPABASE_ANON_KEY environment variable');
 }
 
 // Single Supabase client instance
-const clientUrl = supabaseUrl || 'http://127.0.0.1:54321';
-const clientKey = supabaseAnonKey || 'dev-placeholder-key';
-export const supabase = createClient(clientUrl, clientKey, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     flowType: 'pkce',
@@ -302,7 +302,8 @@ export async function allocateUserCoins(
   email: string,
   amount: number,
   reason: string,
-): Promise<{ ok: boolean; user_id: string; amount: number }> {
+): Promise<{ ok: boolean; user_id: string; amount: number }>
+{
   try {
     const { data, error } = await supabase.rpc('allocate_user_coins', {
       p_email: email,
@@ -488,10 +489,7 @@ export async function sendSystemNotification(to: string, subject: string, text: 
 }
 
 // Org admin: org and engagement flows
-export interface MyOrg {
-  org_id: string;
-  name: string;
-}
+export interface MyOrg { org_id: string; name: string }
 export interface OrgEngagement {
   id: string;
   org_id: string;
@@ -540,11 +538,7 @@ export async function fundOrgEngagement(engagementId: string, amount: number, re
   return data as { ok: boolean; remaining: number };
 }
 
-export async function upsertEngagementRecipient(
-  engagementId: string,
-  email: string,
-  amount: number,
-) {
+export async function upsertEngagementRecipient(engagementId: string, email: string, amount: number) {
   const { data, error } = await supabase.rpc('upsert_engagement_recipient', {
     p_engagement_id: engagementId,
     p_user_email: email,
@@ -571,15 +565,8 @@ export async function distributeEngagement(engagementId: string) {
   return data as { ok: boolean; distributed: number };
 }
 
-export interface OrgWallet {
-  org_id: string;
-  balance: number;
-}
-export interface EngagementRecipient {
-  user_id: string;
-  email: string;
-  planned_amount: number;
-}
+export interface OrgWallet { org_id: string; balance: number }
+export interface EngagementRecipient { user_id: string; email: string; planned_amount: number }
 
 export async function getMyOrgWallet(): Promise<OrgWallet> {
   const { data, error } = await supabase.rpc('get_my_org_wallet');
@@ -588,16 +575,63 @@ export async function getMyOrgWallet(): Promise<OrgWallet> {
   return { org_id: obj.org_id, balance: Number(obj.balance ?? 0) };
 }
 
-export async function listEngagementRecipients(
-  engagementId: string,
-): Promise<EngagementRecipient[]> {
-  const { data, error } = await supabase.rpc('list_engagement_recipients', {
-    p_engagement_id: engagementId,
+export async function listEngagementRecipients(engagementId: string): Promise<EngagementRecipient[]> {
+  const { data, error } = await supabase.rpc('list_engagement_recipients', { p_engagement_id: engagementId });
+  if (error) throw new Error(mapPgError(error).message);
+  return (data as any[]).map((r: any) => ({ user_id: r.user_id, email: r.email, planned_amount: Number(r.planned_amount ?? 0) }));
+}
+
+// Quests: creation and participation helpers
+export async function rpcCreateQuest(payload: {
+  title: string;
+  description?: string;
+  attribute_id: string; // persona/attribute
+  reward_coins: number;
+  qtype: 'mcq' | 'text' | 'numeric' | 'video';
+  grade_bands?: string[]; // ['ES','MS','HS']
+  seats_total?: number | null;
+  lat?: number | null;
+  lng?: number | null;
+  config?: any;
+}) {
+  const { data, error } = await supabase.rpc('create_quest', {
+    p_title: payload.title,
+    p_description: payload.description ?? null,
+    p_attribute_id: payload.attribute_id,
+    p_reward_coins: payload.reward_coins,
+    p_qtype: payload.qtype,
+    p_grade_bands: payload.grade_bands ?? [],
+    p_seats_total: payload.seats_total ?? null,
+    p_lat: payload.lat ?? null,
+    p_lng: payload.lng ?? null,
+    p_config: payload.config ?? {},
   });
   if (error) throw new Error(mapPgError(error).message);
-  return (data as any[]).map((r: any) => ({
-    user_id: r.user_id,
-    email: r.email,
-    planned_amount: Number(r.planned_amount ?? 0),
-  }));
+  return data as Quest;
+}
+
+export async function rpcReserveSeat(questId: string) {
+  const { data, error } = await supabase.rpc('reserve_seat', { p_quest_id: questId });
+  if (error) throw new Error(mapPgError(error).message);
+  const row = Array.isArray(data) ? data[0] : data;
+  return { reserved: !!row?.reserved, seats_taken: Number(row?.seats_taken ?? 0), seats_total: row?.seats_total != null ? Number(row.seats_total) : null };
+}
+
+export async function rpcCancelSeat(questId: string) {
+  const { data, error } = await supabase.rpc('cancel_seat', { p_quest_id: questId });
+  if (error) throw new Error(mapPgError(error).message);
+  const row = Array.isArray(data) ? data[0] : data;
+  return { canceled: !!row?.canceled, seats_taken: Number(row?.seats_taken ?? 0), seats_total: row?.seats_total != null ? Number(row.seats_total) : null };
+}
+
+export async function rpcSubmitText(questId: string, text: string) {
+  const { data, error } = await supabase.rpc('submit_text', { p_quest_id: questId, p_text: text });
+  if (error) throw new Error(mapPgError(error).message);
+  return data as Submission;
+}
+
+export async function rpcSubmitNumeric(questId: string, value: number) {
+  const { data, error } = await supabase.rpc('submit_numeric', { p_quest_id: questId, p_value: value });
+  if (error) throw new Error(mapPgError(error).message);
+  return data as Submission;
 }

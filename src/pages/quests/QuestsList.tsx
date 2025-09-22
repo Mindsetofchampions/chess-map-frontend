@@ -23,6 +23,8 @@ import { PERSONA_GIF, getPersonaInfo } from '@/assets/personas';
 import GlassContainer from '@/components/GlassContainer';
 import { useToast } from '@/components/ToastProvider';
 import { supabase } from '@/lib/supabase';
+import { rpcReserveSeat, rpcCancelSeat } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Quest } from '@/types/backend';
 
 /**
@@ -37,10 +39,13 @@ import type { Quest } from '@/types/backend';
  */
 const QuestsList: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { showError } = useToast();
 
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [enrollments, setEnrollments] = useState<Record<string, boolean>>({});
+  const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPersona, setFilterPersona] = useState<string>('all');
 
@@ -55,7 +60,7 @@ const QuestsList: React.FC = () => {
       const { data, error } = await supabase
         .from('quests')
         .select(
-          'id, title, description, status, active, reward_coins, qtype, config, attribute_id, created_at',
+          'id, title, description, status, active, reward_coins, qtype, config, attribute_id, created_at, seats_total, seats_taken, grade_bands, lat, lng',
         )
         .eq('qtype', 'mcq') // Only MCQ quests for now
         .order('created_at', { ascending: false });
@@ -72,6 +77,27 @@ const QuestsList: React.FC = () => {
       setLoading(false);
     }
   }, [showError]);
+
+  /**
+   * Load current user's quest_enrollments to know reservations
+   */
+  const fetchEnrollments = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const { data, error } = await supabase
+        .from('quest_enrollments')
+        .select('quest_id')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      const map: Record<string, boolean> = {};
+      (data || []).forEach((row: any) => {
+        map[row.quest_id] = true;
+      });
+      setEnrollments(map);
+    } catch (e: any) {
+      console.warn('Failed to load enrollments', e?.message || e);
+    }
+  }, [user?.id]);
 
   /**
    * Filter quests based on search and persona
@@ -107,8 +133,22 @@ const QuestsList: React.FC = () => {
   /**
    * Handle quest play
    */
-  const handlePlayQuest = (questId: string) => {
-    navigate(`/quests/${questId}`);
+  const handlePlayQuest = async (quest: Quest) => {
+    if (typeof quest.seats_total === 'number' && quest.seats_total > 0) {
+      if (!isReserved(quest.id)) {
+        // Try to reserve if seats are available
+        if (seatsAvailable(quest) === 0) {
+          showError('Quest is full', 'No seats are available for this quest');
+          return;
+        }
+        try {
+          await handleReserve(quest);
+        } catch {
+          return; // error already shown by reserve handler
+        }
+      }
+    }
+    navigate(`/quests/${quest.id}`);
   };
 
   /**
@@ -116,6 +156,7 @@ const QuestsList: React.FC = () => {
    */
   useEffect(() => {
     fetchQuests();
+    fetchEnrollments();
 
     // Set up real-time subscription for quest updates
     const subscription = supabase
@@ -129,7 +170,67 @@ const QuestsList: React.FC = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchQuests]);
+  }, [fetchQuests, fetchEnrollments]);
+
+  // Seats available per quest
+  const seatsAvailable = useCallback((q: Quest) => {
+    if (typeof q.seats_total !== 'number' || q.seats_total <= 0) return Infinity;
+    const taken = Number((q as any).seats_taken ?? 0);
+    return Math.max(0, Number(q.seats_total) - taken);
+  }, []);
+
+  const isReserved = useCallback((id: string) => !!enrollments[id], [enrollments]);
+
+  const handleReserve = useCallback(
+    async (q: Quest) => {
+      if (!user?.id) return;
+      const id = q.id;
+      try {
+        setBusy((b) => ({ ...b, [id]: true }));
+        // optimistic: mark reserved
+        setEnrollments((m) => ({ ...m, [id]: true }));
+  await rpcReserveSeat(id);
+        // Optionally refresh quests to get updated seats_taken
+        await fetchQuests();
+      } catch (e: any) {
+        // revert optimistic
+        setEnrollments((m) => {
+          const copy = { ...m };
+          delete copy[id];
+          return copy;
+        });
+        showError('Could not reserve seat', e?.message || 'Unknown error');
+      } finally {
+        setBusy((b) => ({ ...b, [id]: false }));
+      }
+    },
+    [user?.id, fetchQuests, showError],
+  );
+
+  const handleCancel = useCallback(
+    async (q: Quest) => {
+      if (!user?.id) return;
+      const id = q.id;
+      try {
+        setBusy((b) => ({ ...b, [id]: true }));
+        // optimistic: unmark reserved
+        setEnrollments((m) => {
+          const copy = { ...m };
+          delete copy[id];
+          return copy;
+        });
+  await rpcCancelSeat(id);
+        await fetchQuests();
+      } catch (e: any) {
+        // revert optimistic
+        setEnrollments((m) => ({ ...m, [id]: true }));
+        showError('Could not cancel reservation', e?.message || 'Unknown error');
+      } finally {
+        setBusy((b) => ({ ...b, [id]: false }));
+      }
+    },
+    [user?.id, fetchQuests, showError],
+  );
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary'>
@@ -342,23 +443,74 @@ const QuestsList: React.FC = () => {
                           <span className='font-semibold'>{quest.reward_coins} coins</span>
                         </div>
 
-                        <div className='flex items-center gap-1 text-gray-300'>
-                          <HelpCircle className='w-4 h-4' />
-                          <span className='text-sm'>MCQ</span>
+                        <div className='flex items-center gap-2 text-gray-300'>
+                          {/* Grade badges */}
+                          {Array.isArray(quest.grade_bands) && quest.grade_bands.length > 0 && (
+                            <div className='flex items-center gap-1'>
+                              {quest.grade_bands.map((g) => (
+                                <span
+                                  key={g}
+                                  className='px-2 py-0.5 rounded text-xs bg-glass border border-white/10 text-white'
+                                  title='Grade band'
+                                >
+                                  {g}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <div className='flex items-center gap-1'>
+                            <HelpCircle className='w-4 h-4' />
+                            <span className='text-sm'>MCQ</span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Play Button */}
-                      <motion.button
-                        onClick={() => handlePlayQuest(quest.id)}
-                        className='w-full btn-esports flex items-center justify-center gap-2'
-                        data-testid={`btn-play-${quest.id}`}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Play className='w-4 h-4' />
-                        Start Quest
-                      </motion.button>
+                      {/* Seats info */}
+                      {typeof quest.seats_total === 'number' && quest.seats_total > 0 && (
+                        <div className='mb-4 text-sm text-gray-200'>
+                          Seats: <span className='font-semibold'>{Math.max(0, Number(quest.seats_total) - Number((quest as any).seats_taken ?? 0))}</span>
+                          {' / '}
+                          <span>{Number(quest.seats_total)}</span>
+                        </div>
+                      )}
+
+                      {/* Reservation + Play Controls */}
+                      <div className='mt-auto flex gap-2'>
+                        {typeof quest.seats_total === 'number' && quest.seats_total > 0 ? (
+                          isReserved(quest.id) ? (
+                            <motion.button
+                              onClick={() => handleCancel(quest)}
+                              disabled={busy[quest.id]}
+                              className='flex-1 bg-red-600/70 hover:bg-red-600 text-white rounded-lg px-3 py-2 disabled:opacity-50'
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              Cancel Reservation
+                            </motion.button>
+                          ) : (
+                            <motion.button
+                              onClick={() => handleReserve(quest)}
+                              disabled={busy[quest.id] || seatsAvailable(quest) === 0}
+                              className='flex-1 bg-cyber-green-600/70 hover:bg-cyber-green-600 text-white rounded-lg px-3 py-2 disabled:opacity-50'
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              {seatsAvailable(quest) > 0 ? 'Reserve Seat' : 'Full'}
+                            </motion.button>
+                          )
+                        ) : null}
+                        <motion.button
+                          onClick={() => handlePlayQuest(quest)}
+                          className='flex-1 btn-esports flex items-center justify-center gap-2'
+                          data-testid={`btn-play-${quest.id}`}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          disabled={busy[quest.id]}
+                        >
+                          <Play className='w-4 h-4' />
+                          Start
+                        </motion.button>
+                      </div>
                     </GlassContainer>
                   </motion.div>
                 );
