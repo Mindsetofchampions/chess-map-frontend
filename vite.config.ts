@@ -1,12 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import os from 'os';
 
 export default defineConfig({
   plugins: [react()],
 
-  // Use a cache directory outside node_modules to avoid EPERM on Windows/OneDrive
-  cacheDir: path.resolve(__dirname, '.vite-cache'),
+  // Use a cache directory in OS temp to avoid OneDrive file locks on Windows
+  cacheDir: path.join(os.tmpdir(), 'vite-cache-chess-map-frontend'),
 
   // Path resolution
   resolve: {
