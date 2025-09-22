@@ -27,6 +27,8 @@ import { ToastProvider } from './components/ToastProvider';
 import MobileNav from './components/ui/MobileNav';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { routeForRole } from './lib/routes';
+import EnvMissing from './components/EnvMissing';
+import { SUPABASE_ENV_VALID } from './lib/supabase';
 import SystemDiagnostics from './pages/admin/SystemDiagnostics';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
@@ -832,12 +834,18 @@ const AppRouter: React.FC = () => {
 function App(): JSX.Element {
   return (
     <ToastProvider>
-      <AuthProvider>
-        <div className='relative min-h-dvh pb-safe'>
-          <AppRouter />
-          <MobileNav />
+      {SUPABASE_ENV_VALID ? (
+        <AuthProvider>
+          <div className='relative min-h-dvh pb-safe'>
+            <AppRouter />
+            <MobileNav />
+          </div>
+        </AuthProvider>
+      ) : (
+        <div className='relative min-h-dvh pb-safe flex items-center justify-center p-6'>
+          <EnvMissing error={'Missing Supabase environment variables'} />
         </div>
-      </AuthProvider>
+      )}
     </ToastProvider>
   );
 }

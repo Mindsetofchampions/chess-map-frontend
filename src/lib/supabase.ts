@@ -15,16 +15,35 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const SUPABASE_ENV_VALID = Boolean(supabaseUrl && supabaseAnonKey);
 
-if (!supabaseUrl) {
-  throw new Error('Missing VITE_SUPABASE_URL environment variable');
+// Provide a no-op client shape to avoid hard crashes when env is missing
+function createNoopClient(): any {
+  const notConfigured = async () => {
+    throw new Error('Supabase is not configured: missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
+  };
+  return {
+    auth: {
+      getSession: async () => ({ data: { session: null }, error: new Error('Supabase not configured') }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      signInWithPassword: notConfigured,
+      signUp: notConfigured,
+      signOut: async () => {},
+    },
+    from: () => ({
+      select: async () => ({ data: null, error: new Error('Supabase not configured') }),
+      insert: async () => ({ data: null, error: new Error('Supabase not configured') }),
+      update: async () => ({ data: null, error: new Error('Supabase not configured') }),
+      delete: async () => ({ data: null, error: new Error('Supabase not configured') }),
+      order: () => ({ range: async () => ({ data: null, error: new Error('Supabase not configured') }) }),
+      maybeSingle: async () => ({ data: null, error: new Error('Supabase not configured') }),
+      eq: () => ({ maybeSingle: async () => ({ data: null, error: new Error('Supabase not configured') }) }),
+    }),
+    rpc: async () => ({ data: null, error: new Error('Supabase not configured') }),
+  };
 }
 
-if (!supabaseAnonKey) {
-  throw new Error('Missing VITE_SUPABASE_ANON_KEY environment variable');
-}
-
-// Single Supabase client instance
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Single Supabase client instance (real when env is valid, noop otherwise)
+export const supabase: any = SUPABASE_ENV_VALID
+  ? createClient(supabaseUrl as string, supabaseAnonKey as string, {
   auth: {
     persistSession: true,
     flowType: 'pkce',
@@ -35,7 +54,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       eventsPerSecond: 10,
     },
   },
-});
+    })
+  : createNoopClient();
 
 /**
  * Submit MCQ answer via RPC
