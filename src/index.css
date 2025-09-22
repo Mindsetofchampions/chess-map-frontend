@@ -32,6 +32,28 @@
     box-sizing: border-box;
   }
 }
+/* Mobile viewport height and safe-area helpers */
+@layer utilities {
+  .h-dvh {
+    height: 100dvh;
+  }
+  .min-h-dvh {
+    min-height: 100dvh;
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .fixed-bottom-safe {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: env(safe-area-inset-bottom);
+  }
+}
+
 
 /* Custom component styles */
 @layer components {

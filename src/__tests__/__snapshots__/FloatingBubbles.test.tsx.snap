@@ -2,7 +2,7 @@
 
 exports[`FloatingBubbles contains all expected CHESS attribute bubbles: floating-bubbles-complete 1`] = `
 <div
-  class="absolute inset-0 pointer-events-none overflow-hidden"
+  class="absolute inset-0 pointer-events-none overflow-hidden z-50"
 >
   <div
     animate="[object Object]"
@@ -149,7 +149,7 @@ exports[`FloatingBubbles contains all expected CHESS attribute bubbles: floating
 
 exports[`FloatingBubbles has proper accessibility attributes: accessibility-structure 1`] = `
 <div
-  class="absolute inset-0 pointer-events-none overflow-hidden"
+  class="absolute inset-0 pointer-events-none overflow-hidden z-50"
 >
   <div
     animate="[object Object]"
@@ -296,7 +296,7 @@ exports[`FloatingBubbles has proper accessibility attributes: accessibility-stru
 
 exports[`FloatingBubbles renders all CHESS attribute bubbles correctly 1`] = `
 <div
-  class="absolute inset-0 pointer-events-none overflow-hidden"
+  class="absolute inset-0 pointer-events-none overflow-hidden z-50"
 >
   <div
     animate="[object Object]"

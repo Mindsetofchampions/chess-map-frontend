@@ -11,6 +11,8 @@ const stripMotionProps = (props: Record<string, any>) => {
     whileTap,
     drag,
     dragConstraints,
+    dragElastic,
+    dragTransition,
     layout,
     layoutId,
     onAnimationStart,

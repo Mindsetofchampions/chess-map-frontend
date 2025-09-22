@@ -24,6 +24,7 @@ import GlassContainer from './components/GlassContainer';
 import MapView from './components/MapView';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ToastProvider } from './components/ToastProvider';
+import MobileNav from './components/ui/MobileNav';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { routeForRole } from './lib/routes';
 import SystemDiagnostics from './pages/admin/SystemDiagnostics';
@@ -832,7 +833,10 @@ function App(): JSX.Element {
   return (
     <ToastProvider>
       <AuthProvider>
-        <AppRouter />
+        <div className='relative min-h-dvh pb-safe'>
+          <AppRouter />
+          <MobileNav />
+        </div>
       </AuthProvider>
     </ToastProvider>
   );

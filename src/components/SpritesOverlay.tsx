@@ -42,7 +42,7 @@ const SpritesOverlay: React.FC<Props> = ({ onSpriteClick, showModal = true }) =>
   };
 
   return (
-    <div className='absolute inset-0 pointer-events-none z-30'>
+    <div className='absolute inset-0 pointer-events-none z-[60]'>
       {SPRITES.map((s, i) => {
         const left = `${8 + ((i * 18) % 80)}%`;
         const top = `${12 + ((i * 13) % 70)}%`;
@@ -53,6 +53,7 @@ const SpritesOverlay: React.FC<Props> = ({ onSpriteClick, showModal = true }) =>
             style={{ left, top, position: 'absolute', zIndex: 40 }}
             initial={{ scale: 0 }}
             animate={{ scale: [1, 1.05, 1], y: [0, -6, 0] }}
+            whileTap={{ scale: 0.9 }}
             transition={{ delay: i * 0.2, duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             onClick={() => handleClick(s.key)}
             aria-label={`${s.label} sprite`}

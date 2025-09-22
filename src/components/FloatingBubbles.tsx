@@ -226,8 +226,8 @@ const FloatingBubbles: React.FC = () => {
 
   return (
     <>
-      {/* Floating Bubbles Container */}
-      <div className='absolute inset-0 pointer-events-none overflow-hidden'>
+      {/* Floating Bubbles Container (high z-index to stay above text) */}
+      <div className='absolute inset-0 pointer-events-none overflow-hidden z-50'>
         {CHESS_ATTRIBUTES.map((attribute) => (
           <motion.div
             key={attribute.id}
@@ -286,6 +286,12 @@ const FloatingBubbles: React.FC = () => {
               }}
               onClick={(e) => handleBubbleClick(attribute, e)}
               aria-label={`${attribute.character} - ${attribute.name} attribute bubble`}
+              // Mobile-friendly bounce drag
+              drag
+              dragConstraints={{ left: -24, right: 24, top: -24, bottom: 24 }}
+              dragElastic={0.4}
+              dragTransition={{ bounceStiffness: 600, bounceDamping: 18 }}
+              whileTap={{ scale: 0.92 }}
             >
               {/* Character Sprite */}
               <motion.img

@@ -1020,11 +1020,11 @@ const MapView: React.FC<MapViewProps> = ({
         ref={mapContainer}
         id={mapContainerId.current}
         className='w-full h-full bg-gradient-to-br from-dark-secondary to-dark-tertiary rounded-xl overflow-hidden'
-        style={{ height: '100%', minHeight: isMobile ? '60vh' : '500px' }}
+        style={{ height: '100%', minHeight: isMobile ? '70dvh' : '500px' }}
       />
 
       {/* Quest Bubbles Overlay */}
-      <div className='absolute inset-0 pointer-events-none overflow-hidden z-20'>
+      <div className='absolute inset-0 pointer-events-none overflow-hidden z-[55]'>
         {PHILADELPHIA_BUBBLES.filter((b) => enabledCategories[b.category]).map((bubble) => (
           <QuestBubbleComponent
             key={bubble.id}
