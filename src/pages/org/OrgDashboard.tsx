@@ -25,12 +25,15 @@ import ReportsTab from '@/pages/org/tabs/ReportsTab';
 import ServicesTab from '@/pages/org/tabs/ServicesTab';
 import StaffTab from '@/pages/org/tabs/StaffTab';
 import StudentsTab from '@/pages/org/tabs/StudentsTab';
+import QuestBuilder from '@/components/QuestBuilder';
 
 const OrgDashboard: React.FC = () => {
   const { showSuccess, showError } = useToast();
-  const { user } = useAuth();
-  const orgApproved =
-    user?.user_metadata?.org_approved === true || user?.user_metadata?.org_approved === 'true';
+  useAuth();
+  const [orgStatus, setOrgStatus] = useState<'approved' | 'active' | 'pending' | 'rejected' | null>(
+    null,
+  );
+  const orgApproved = orgStatus === 'approved' || orgStatus === 'active';
 
   // Wallet and org state
   const [org, setOrg] = useState<{ org_id: string; name: string } | null>(null);
@@ -64,6 +67,7 @@ const OrgDashboard: React.FC = () => {
   const [distributingId, setDistributingId] = useState<string | null>(null);
   const [distributing, setDistributing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('students');
+  const [showQuestBuilder, setShowQuestBuilder] = useState(false);
 
   const selectedEngagement = useMemo(
     () =>
@@ -87,6 +91,15 @@ const OrgDashboard: React.FC = () => {
         setOrg(orgRes);
         setWallet(walletRes);
         setEngagements(engRes);
+        // Fetch organization status for gating/banner
+        if (orgRes?.org_id) {
+          const { data } = await (await import('@/lib/supabase')).supabase
+            .from('organizations')
+            .select('status')
+            .eq('id', orgRes.org_id)
+            .maybeSingle();
+          setOrgStatus((data?.status as any) ?? null);
+        }
       } catch (e: any) {
         showError('Load failed', e?.message || 'Could not load org data');
       } finally {
@@ -95,6 +108,27 @@ const OrgDashboard: React.FC = () => {
       }
     })();
   }, []);
+
+  // Subscribe to organization status changes to refresh banner/actions
+  useEffect(() => {
+    let sub: any;
+    (async () => {
+      const { supabase } = await import('@/lib/supabase');
+      sub = supabase
+        .channel('org_status_channel')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'organizations' }, (p) => {
+          if ((p.new as any)?.id && org?.org_id && (p.new as any).id === org.org_id) {
+            setOrgStatus(((p.new as any).status as any) ?? null);
+          }
+        })
+        .subscribe();
+    })();
+    return () => {
+      try {
+        sub?.unsubscribe?.();
+      } catch {}
+    };
+  }, [org?.org_id]);
 
   async function refreshEngagements() {
     try {
@@ -220,7 +254,7 @@ const OrgDashboard: React.FC = () => {
           <h1 className='text-2xl font-bold text-white mb-6'>Organization Dashboard</h1>
 
           {/* Pending Approval Banner */}
-          {!orgApproved && (
+          {orgStatus === 'pending' && (
             <GlassContainer className='mb-4 bg-yellow-500/10 border-yellow-400/30'>
               <div className='flex items-start justify-between gap-4'>
                 <div>
@@ -234,6 +268,11 @@ const OrgDashboard: React.FC = () => {
                   View Onboarding
                 </a>
               </div>
+            </GlassContainer>
+          )}
+          {orgStatus === 'rejected' && (
+            <GlassContainer className='mb-4 bg-red-500/10 border-red-400/30'>
+              <div className='text-red-300'>Organization onboarding was rejected. Please update your submission.</div>
             </GlassContainer>
           )}
 
@@ -260,7 +299,12 @@ const OrgDashboard: React.FC = () => {
 
           {/* Create Engagement */}
           <GlassContainer className='mb-6'>
-            <h2 className='text-lg font-semibold text-white mb-3'>Create Engagement</h2>
+            <div className='flex items-center justify-between mb-3'>
+              <h2 className='text-lg font-semibold text-white'>Create Engagement</h2>
+              <button className='btn-esports' onClick={() => setShowQuestBuilder(true)}>
+                New Quest
+              </button>
+            </div>
             <div className='grid md:grid-cols-3 gap-3'>
               <input
                 value={newName}
@@ -279,6 +323,10 @@ const OrgDashboard: React.FC = () => {
               </button>
             </div>
           </GlassContainer>
+
+          {showQuestBuilder && (
+            <QuestBuilder open={showQuestBuilder} onClose={() => setShowQuestBuilder(false)} />
+          )}
 
           {/* Engagements List */}
           <GlassContainer>

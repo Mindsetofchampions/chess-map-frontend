@@ -222,3 +222,15 @@
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Print styles */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .print\:hidden { display: none !important; }
+  .print\:overflow-visible { overflow: visible !important; }
+  table { border-collapse: collapse !important; }
+  th, td { border: 1px solid #000 !important; color: #000 !important; }
+}

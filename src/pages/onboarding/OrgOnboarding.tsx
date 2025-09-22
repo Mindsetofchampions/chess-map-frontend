@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useToast } from '@/components/ToastProvider';
@@ -15,6 +15,15 @@ export default function OrgOnboarding() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [idFile, setIdFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [idPreview, setIdPreview] = useState<string | null>(null);
+
+  const step = useMemo(() => {
+    if (!orgName.trim()) return 1;
+    if (!logoFile) return 2;
+    if (!idFile) return 3;
+    return 4; // review
+  }, [orgName, logoFile, idFile]);
 
   // Upload to private buckets (no public URL). The returned path is what we persist.
   const uploadFile = async (bucket: string, path: string, file: File) => {
@@ -115,6 +124,23 @@ export default function OrgOnboarding() {
     <div className='min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary p-8'>
       <div className='max-w-3xl mx-auto bg-glass border-glass rounded-2xl p-6'>
         <h1 className='text-2xl font-bold text-white mb-4'>Organization Onboarding</h1>
+
+        {/* Stepper */}
+        <div className='flex items-center gap-3 mb-6'>
+          {[1, 2, 3, 4].map((n) => (
+            <div key={n} className={`flex items-center gap-2 ${n === step ? 'opacity-100' : 'opacity-70'}`}>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold ${n <= step ? 'bg-electric-blue-500 text-white' : 'bg-white/10 text-gray-300'}`}>
+                {n}
+              </div>
+              <div className='text-sm text-gray-200'>
+                {n === 1 && 'Org details'}
+                {n === 2 && 'Upload logo'}
+                {n === 3 && 'Admin ID'}
+                {n === 4 && 'Review & submit'}
+              </div>
+            </div>
+          ))}
+        </div>
         <p className='text-gray-300 mb-4'>
           Please provide your organization details, upload your logo, and a photo ID for the admin.
           Your organization will remain in pending status until approved by a master admin.
@@ -131,25 +157,54 @@ export default function OrgOnboarding() {
         <input
           type='file'
           accept='image/*'
-          onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+          onChange={(e) => {
+            const file = e.target.files?.[0] || null;
+            setLogoFile(file);
+            if (file) {
+              const url = URL.createObjectURL(file);
+              setLogoPreview(url);
+            } else setLogoPreview(null);
+          }}
           className='w-full text-sm text-gray-300 mb-3'
         />
+        {logoPreview && (
+          <div className='mb-3'>
+            <img src={logoPreview} alt='Logo preview' className='h-20 rounded border border-white/10' />
+          </div>
+        )}
 
         <label className='block text-sm text-gray-200 mb-1'>Admin Photo ID (PNG/JPG)</label>
         <input
           type='file'
           accept='image/*'
-          onChange={(e) => setIdFile(e.target.files?.[0] || null)}
-          className='w-full text-sm text-gray-300 mb-6'
+          onChange={(e) => {
+            const file = e.target.files?.[0] || null;
+            setIdFile(file);
+            if (file) {
+              const url = URL.createObjectURL(file);
+              setIdPreview(url);
+            } else setIdPreview(null);
+          }}
+          className='w-full text-sm text-gray-300 mb-3'
         />
+        {idPreview && (
+          <div className='mb-6'>
+            <img src={idPreview} alt='ID preview' className='h-20 rounded border border-white/10' />
+          </div>
+        )}
 
         <div className='flex gap-3'>
           <button
             onClick={submit}
             disabled={submitting}
             className='px-4 py-2 rounded bg-electric-blue-500 text-white disabled:opacity-50'
+            title={
+              step !== 4
+                ? 'Complete required steps before submitting'
+                : undefined
+            }
           >
-            Submit Onboarding
+            {submitting ? 'Submitting…' : step === 4 ? 'Submit Onboarding' : 'Continue'}
           </button>
           <button
             onClick={() => navigate('/master/dashboard')}

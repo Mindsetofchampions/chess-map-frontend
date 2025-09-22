@@ -12,26 +12,35 @@ export default function OnboardingGate({ children }: { children: React.ReactNode
     (async () => {
       if (!user?.id) return setOk(false);
 
-      // Org roles (org_admin, staff): use org onboarding gate instead of student flow
+      // Org roles (org_admin, staff): use org onboarding gate that relies on organization.status
       if (role === 'org_admin' || role === 'staff') {
-        const metadataApproved =
-          user?.user_metadata?.org_approved === true ||
-          user?.user_metadata?.org_approved === 'true';
-        const metadataSubmitted =
-          user?.user_metadata?.org_onboarding_submitted === true ||
-          user?.user_metadata?.org_onboarding_submitted === 'true';
-
-        if (metadataApproved) {
-          setOk(true);
-          return;
-        }
-        if (metadataSubmitted) {
-          // Treat as pending; allow dashboard access with banner
-          setOk(true);
-          return;
+        // Try to determine org id
+        let orgId = user?.user_metadata?.org_id as string | undefined;
+        if (!orgId) {
+          const { data: myOrg } = await supabase.rpc('get_my_org');
+          const row = Array.isArray(myOrg) ? myOrg?.[0] : myOrg;
+          orgId = row?.id || row?.org_id;
         }
 
-        // If not approved/submitted, check if an onboarding submission exists (pending or rejected)
+        if (orgId) {
+          const { data: orgRow } = await supabase
+            .from('organizations')
+            .select('status')
+            .eq('id', orgId)
+            .maybeSingle();
+          const status = orgRow?.status as string | undefined;
+          if (status === 'approved' || status === 'active') {
+            setOk(true);
+            return;
+          }
+          if (status === 'pending') {
+            // Allow access; dashboard can show pending banner
+            setOk(true);
+            return;
+          }
+        }
+
+        // Fallback: check last onboarding submission for this user
         const { data: lastOnb } = await supabase
           .from('org_onboardings')
           .select('status')
@@ -41,12 +50,11 @@ export default function OnboardingGate({ children }: { children: React.ReactNode
           .maybeSingle();
 
         if (lastOnb?.status === 'pending') {
-          // Allow access to dashboard; UI can show a pending banner
           setOk(true);
           return;
         }
 
-        // No submission or rejected: force org onboarding page
+        // No org or rejected/no submission: force onboarding
         setOk(false);
         return;
       }

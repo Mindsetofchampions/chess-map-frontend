@@ -21,15 +21,29 @@ export default function ReportsTab() {
   );
   return (
     <div className='space-y-3'>
-      <div className='flex gap-2 justify-end'>
+      <div className='flex gap-2 justify-end print:hidden'>
         <button
           className='px-3 py-2 rounded bg-white/10'
-          onClick={() => exportCSV(agg, 'org_attendance.csv')}
+          onClick={() => {
+            const rows = agg.map((r: any) => ({
+              service_category: labelById[r.service_id] ?? r.service_id,
+              present: r.present,
+              absent: r.absent,
+              tardy: r.tardy,
+            }));
+            exportCSV(rows, 'org_attendance.csv');
+          }}
         >
           Export CSV
         </button>
+        <button
+          className='px-3 py-2 rounded bg-white/10'
+          onClick={() => window.print()}
+        >
+          Download PDF
+        </button>
       </div>
-      <div className='overflow-x-auto'>
+      <div className='overflow-x-auto print:overflow-visible print:bg-white print:text-black'>
         <table className='w-full text-sm'>
           <thead>
             <tr>
