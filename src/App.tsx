@@ -721,6 +721,17 @@ const AppRouter: React.FC = () => {
               </ErrorBoundary>
             }
           />
+          {/* Route alias for compatibility with /quests/:id checks */}
+          <Route
+            path='/quests/:id'
+            element={
+              <ErrorBoundary>
+                <ProtectedRoute>
+                  <QuestPlay />
+                </ProtectedRoute>
+              </ErrorBoundary>
+            }
+          />
           <Route
             path='/master/quests/approvals'
             element={

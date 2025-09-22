@@ -84,7 +84,10 @@ async function testDatabase() {
     // Dynamic import for pg (may not be installed)
     const { Client } = await import('pg');
 
-    const client = new Client({ connectionString: dbUrl });
+    const client = new Client({
+      connectionString: dbUrl,
+      ssl: { rejectUnauthorized: false },
+    });
     await client.connect();
 
     console.log('🔗 Connected to database');

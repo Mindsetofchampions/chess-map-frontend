@@ -5,6 +5,9 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
 
+  // Use a cache directory outside node_modules to avoid EPERM on Windows/OneDrive
+  cacheDir: path.resolve(__dirname, '.vite-cache'),
+
   // Path resolution
   resolve: {
     alias: {

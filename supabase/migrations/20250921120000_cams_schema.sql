@@ -112,43 +112,111 @@ alter table public.attendance enable row level security;
 alter table public.credits_rewards enable row level security;
 
 -- Master policies
-create policy org_master_all on public.organizations for all using (jwt_role() = 'master_admin') with check (true);
-create policy students_master_all on public.students for all using (jwt_role() = 'master_admin') with check (true);
-create policy parents_master_all on public.parents for all using (jwt_role() = 'master_admin') with check (true);
-create policy staff_master_all on public.staff for all using (jwt_role() = 'master_admin') with check (true);
-create policy services_master_all on public.services for all using (jwt_role() = 'master_admin') with check (true);
-create policy service_plans_master_all on public.service_plans for all using (jwt_role() = 'master_admin') with check (true);
-create policy attendance_master_all on public.attendance for all using (jwt_role() = 'master_admin') with check (true);
-create policy credits_rewards_master_all on public.credits_rewards for all using (jwt_role() = 'master_admin') with check (true);
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='organizations' AND policyname='org_master_all') THEN
+    EXECUTE 'CREATE POLICY org_master_all ON public.organizations FOR ALL USING (jwt_role() = ''master_admin'') WITH CHECK (true)';
+  END IF;
+END $do$;
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='students' AND policyname='students_master_all') THEN
+    EXECUTE 'CREATE POLICY students_master_all ON public.students FOR ALL USING (jwt_role() = ''master_admin'') WITH CHECK (true)';
+  END IF;
+END $do$;
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='parents' AND policyname='parents_master_all') THEN
+    EXECUTE 'CREATE POLICY parents_master_all ON public.parents FOR ALL USING (jwt_role() = ''master_admin'') WITH CHECK (true)';
+  END IF;
+END $do$;
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='staff' AND policyname='staff_master_all') THEN
+    EXECUTE 'CREATE POLICY staff_master_all ON public.staff FOR ALL USING (jwt_role() = ''master_admin'') WITH CHECK (true)';
+  END IF;
+END $do$;
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='services' AND policyname='services_master_all') THEN
+    EXECUTE 'CREATE POLICY services_master_all ON public.services FOR ALL USING (jwt_role() = ''master_admin'') WITH CHECK (true)';
+  END IF;
+END $do$;
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='service_plans' AND policyname='service_plans_master_all') THEN
+    EXECUTE 'CREATE POLICY service_plans_master_all ON public.service_plans FOR ALL USING (jwt_role() = ''master_admin'') WITH CHECK (true)';
+  END IF;
+END $do$;
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='attendance' AND policyname='attendance_master_all') THEN
+    EXECUTE 'CREATE POLICY attendance_master_all ON public.attendance FOR ALL USING (jwt_role() = ''master_admin'') WITH CHECK (true)';
+  END IF;
+END $do$;
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='credits_rewards' AND policyname='credits_rewards_master_all') THEN
+    EXECUTE 'CREATE POLICY credits_rewards_master_all ON public.credits_rewards FOR ALL USING (jwt_role() = ''master_admin'') WITH CHECK (true)';
+  END IF;
+END $do$;
 
 -- Org policies
-create policy org_org_read on public.organizations for select using (jwt_role() in ('org_admin','staff') and id = jwt_org_id());
-create policy org_org_update on public.organizations for update using (jwt_role() in ('org_admin') and id = jwt_org_id()) with check (id = jwt_org_id());
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='organizations' AND policyname='org_org_read') THEN
+    EXECUTE 'CREATE POLICY org_org_read ON public.organizations FOR SELECT USING (jwt_role() IN (''org_admin'',''staff'') AND id = jwt_org_id())';
+  END IF;
+END $do$;
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='organizations' AND policyname='org_org_update') THEN
+    EXECUTE 'CREATE POLICY org_org_update ON public.organizations FOR UPDATE USING (jwt_role() IN (''org_admin'') AND id = jwt_org_id()) WITH CHECK (id = jwt_org_id())';
+  END IF;
+END $do$;
 
-create policy students_org_scope on public.students for all using (jwt_role() in ('org_admin','staff') and org_id = jwt_org_id()) with check (org_id = jwt_org_id());
-create policy parents_org_scope on public.parents for all using (
-  jwt_role() in ('org_admin','staff') and exists (
-    select 1 from public.students st where st.id = parents.student_id and st.org_id = jwt_org_id()
-  )
-) with check (exists (select 1 from public.students st where st.id = parents.student_id and st.org_id = jwt_org_id()));
-create policy staff_org_scope on public.staff for all using (jwt_role() in ('org_admin','staff') and org_id = jwt_org_id()) with check (org_id = jwt_org_id());
-create policy services_org_scope on public.services for all using (jwt_role() in ('org_admin','staff') and org_id = jwt_org_id()) with check (org_id = jwt_org_id());
-create policy service_plans_org_scope on public.service_plans for all using (
-  jwt_role() in ('org_admin','staff') and exists (
-    select 1 from public.students st
-    join public.services sv on sv.id = service_plans.service_id
-    where st.id = service_plans.student_id and st.org_id = jwt_org_id() and sv.org_id = jwt_org_id()
-  )
-) with check (true);
-create policy attendance_org_scope on public.attendance for all using (
-  jwt_role() in ('org_admin','staff') and exists (
-    select 1 from public.students st
-    join public.services sv on sv.id = attendance.service_id
-    where st.id = attendance.student_id and st.org_id = jwt_org_id() and sv.org_id = jwt_org_id()
-  )
-) with check (true);
-create policy credits_rewards_org_scope on public.credits_rewards for all using (
-  jwt_role() in ('org_admin','staff') and exists (
-    select 1 from public.students st where st.id = credits_rewards.student_id and st.org_id = jwt_org_id()
-  )
-) with check (true);
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='students' AND policyname='students_org_scope') THEN
+    EXECUTE 'CREATE POLICY students_org_scope ON public.students FOR ALL USING (jwt_role() IN (''org_admin'',''staff'') AND org_id = jwt_org_id()) WITH CHECK (org_id = jwt_org_id())';
+  END IF;
+END $do$;
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='parents' AND policyname='parents_org_scope') THEN
+    EXECUTE 'CREATE POLICY parents_org_scope ON public.parents FOR ALL USING (
+      jwt_role() IN (''org_admin'',''staff'') AND EXISTS (
+        SELECT 1 FROM public.students st WHERE st.id = parents.student_id AND st.org_id = jwt_org_id()
+      )
+    ) WITH CHECK (EXISTS (SELECT 1 FROM public.students st WHERE st.id = parents.student_id AND st.org_id = jwt_org_id()))';
+  END IF;
+END $do$;
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='staff' AND policyname='staff_org_scope') THEN
+    EXECUTE 'CREATE POLICY staff_org_scope ON public.staff FOR ALL USING (jwt_role() IN (''org_admin'',''staff'') AND org_id = jwt_org_id()) WITH CHECK (org_id = jwt_org_id())';
+  END IF;
+END $do$;
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='services' AND policyname='services_org_scope') THEN
+    EXECUTE 'CREATE POLICY services_org_scope ON public.services FOR ALL USING (jwt_role() IN (''org_admin'',''staff'') AND org_id = jwt_org_id()) WITH CHECK (org_id = jwt_org_id())';
+  END IF;
+END $do$;
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='service_plans' AND policyname='service_plans_org_scope') THEN
+    EXECUTE 'CREATE POLICY service_plans_org_scope ON public.service_plans FOR ALL USING (
+      jwt_role() IN (''org_admin'',''staff'') AND EXISTS (
+        SELECT 1 FROM public.students st
+        JOIN public.services sv ON sv.id = service_plans.service_id
+        WHERE st.id = service_plans.student_id AND st.org_id = jwt_org_id() AND sv.org_id = jwt_org_id()
+      )
+    ) WITH CHECK (true)';
+  END IF;
+END $do$;
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='attendance' AND policyname='attendance_org_scope') THEN
+    EXECUTE 'CREATE POLICY attendance_org_scope ON public.attendance FOR ALL USING (
+      jwt_role() IN (''org_admin'',''staff'') AND EXISTS (
+        SELECT 1 FROM public.students st
+        JOIN public.services sv ON sv.id = attendance.service_id
+        WHERE st.id = attendance.student_id AND st.org_id = jwt_org_id() AND sv.org_id = jwt_org_id()
+      )
+    ) WITH CHECK (true)';
+  END IF;
+END $do$;
+DO $do$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='credits_rewards' AND policyname='credits_rewards_org_scope') THEN
+    EXECUTE 'CREATE POLICY credits_rewards_org_scope ON public.credits_rewards FOR ALL USING (
+      jwt_role() IN (''org_admin'',''staff'') AND EXISTS (
+        SELECT 1 FROM public.students st WHERE st.id = credits_rewards.student_id AND st.org_id = jwt_org_id()
+      )
+    ) WITH CHECK (true)';
+  END IF;
+END $do$;

@@ -21,32 +21,42 @@ grant execute on function public.list_org_onboardings(text) to anon, authenticat
 
 -- Approve org onboarding
 create or replace function public.approve_org_onboarding(p_id uuid, p_notes text default null)
-returns json language plpgsql security definer set search_path = public$$
-declare v_email text; v_org text; begin
-  if not public.is_master_admin() then
-    raise exception 'forbidden';
-  end if;
-  select submitter_email, org_name into v_email, v_org from public.org_onboardings where id = p_id;
-  update public.org_onboardings
-    set status = 'approved', admin_notes = p_notes, reviewed_by = auth.uid(), reviewed_at = now()
-    where id = p_id;
-  return json_build_object('ok', true, 'email', v_email, 'org', v_org);
-end $$;
+returns json
+AS $$
+DECLARE
+  v_email text;
+  v_org text;
+BEGIN
+  IF NOT public.is_master_admin() THEN
+    RAISE EXCEPTION 'forbidden';
+  END IF;
+  SELECT submitter_email, org_name INTO v_email, v_org FROM public.org_onboardings WHERE id = p_id;
+  UPDATE public.org_onboardings
+    SET status = 'approved', admin_notes = p_notes, reviewed_by = auth.uid(), reviewed_at = now()
+    WHERE id = p_id;
+  RETURN json_build_object('ok', true, 'email', v_email, 'org', v_org);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 alter function public.approve_org_onboarding(uuid, text) owner to postgres;
 grant execute on function public.approve_org_onboarding(uuid, text) to anon, authenticated;
 
 -- Reject org onboarding
 create or replace function public.reject_org_onboarding(p_id uuid, p_notes text)
-returns json language plpgsql security definer set search_path = public$$
-declare v_email text; v_org text; begin
-  if not public.is_master_admin() then
-    raise exception 'forbidden';
-  end if;
-  select submitter_email, org_name into v_email, v_org from public.org_onboardings where id = p_id;
-  update public.org_onboardings
-    set status = 'rejected', admin_notes = p_notes, reviewed_by = auth.uid(), reviewed_at = now()
-    where id = p_id;
-  return json_build_object('ok', true, 'email', v_email, 'org', v_org);
-end $$;
+returns json
+AS $$
+DECLARE
+  v_email text;
+  v_org text;
+BEGIN
+  IF NOT public.is_master_admin() THEN
+    RAISE EXCEPTION 'forbidden';
+  END IF;
+  SELECT submitter_email, org_name INTO v_email, v_org FROM public.org_onboardings WHERE id = p_id;
+  UPDATE public.org_onboardings
+    SET status = 'rejected', admin_notes = p_notes, reviewed_by = auth.uid(), reviewed_at = now()
+    WHERE id = p_id;
+  RETURN json_build_object('ok', true, 'email', v_email, 'org', v_org);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 alter function public.reject_org_onboarding(uuid, text) owner to postgres;
 grant execute on function public.reject_org_onboarding(uuid, text) to anon, authenticated;

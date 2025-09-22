@@ -277,27 +277,34 @@ console.log(`\n${colors.blue}${colors.bold}7. Preview Check${colors.reset}`);
 if (buildResult.success) {
   try {
     console.log('Starting preview server...');
-    const previewProcess = execCommand('timeout 20s npm run preview -- --port 4173 &');
+    // Run preview in background within the same shell, wait for readiness, probe, then kill
+    const compositeCmd = [
+      // start vite preview on 127.0.0.1:4173
+      'nohup npm run preview -- --port 4173 --host 127.0.0.1 --strictPort >/dev/null 2>&1 & pid=$!',
+      // wait up to ~10s for readiness
+      'for i in {1..40}; do sleep 0.25; if curl -sSf -o /dev/null http://127.0.0.1:4173/ >/dev/null 2>&1; then break; fi; done',
+      // capture http code for diagnostics route
+      'code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:4173/admin/diagnostics || echo 000)',
+      // capture page to check for test id
+      'page=$(curl -s http://127.0.0.1:4173/admin/diagnostics || true)',
+      // print markers for parsing
+      'echo CODE:$code',
+      "if echo \"$page\" | grep -q 'data-testid=\"btn-run-all\"'; then echo HASBTN:yes; else echo HASBTN:no; fi",
+      // cleanup
+      'kill $pid >/dev/null 2>&1 || true',
+    ].join('; ');
 
-    // Wait for server to start (CJS-safe, no top-level await)
-    execCommand('node -e "setTimeout(()=>{},5000)"');
+    const compositeResult = execCommand(compositeCmd);
+    const output = compositeResult.output || '';
+    const codeMatch = output.match(/CODE:(\d{3})/);
+    const btnMatch = output.match(/HASBTN:(yes|no)/);
+    const httpCode = codeMatch ? codeMatch[1] : '000';
+    const hasTestId = btnMatch ? btnMatch[1] === 'yes' : false;
 
-    // Test diagnostics route
-    const curlResult = execCommand(
-      'curl -s -o /dev/null -w "%{http_code}" http://localhost:4173/admin/diagnostics',
-    );
-    const httpCode = curlResult.output;
-
-    if (httpCode === '200') {
-      // Check if page contains expected test ID
-      const pageContent = execCommand('curl -s http://localhost:4173/admin/diagnostics');
-      const hasTestId = pageContent.output.includes('data-testid="btn-run-all"');
-
-      results.preview.status = hasTestId ? 'PASS' : 'FAIL';
+    if (httpCode === '200' && hasTestId) {
+      results.preview.status = 'PASS';
       results.preview.httpCode = httpCode;
-      console.log(
-        `Preview /admin/diagnostics: ${hasTestId ? '✅ PASS' : '❌ FAIL'} (HTTP ${httpCode})`,
-      );
+      console.log(`Preview /admin/diagnostics: ✅ PASS (HTTP ${httpCode})`);
     } else {
       results.preview.status = 'FAIL';
       results.preview.httpCode = httpCode;

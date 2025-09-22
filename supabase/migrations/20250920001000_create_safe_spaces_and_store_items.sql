@@ -39,7 +39,11 @@ create index if not exists idx_store_items_org on store_items(org_id);
 
 -- Function: org submits safe_space for approval (sets approved = false)
 create or replace function public.submit_safe_space(p_org_id uuid, p_name text, p_description text, p_address text, p_lat double precision, p_lng double precision, p_grade_level text, p_contact jsonb)
-returns uuid language plpgsql security definer set search_path = public$$
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
 declare
   new_id uuid;
 begin
@@ -52,7 +56,11 @@ $$;
 
 -- Function: master_admin approves safe_space
 create or replace function public.approve_safe_space(p_safe_space_id uuid)
-returns boolean language plpgsql security definer set search_path = public$$
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
 begin
   update safe_spaces set approved = true, approved_by = auth.uid(), approved_at = now() where id = p_safe_space_id;
   return true;

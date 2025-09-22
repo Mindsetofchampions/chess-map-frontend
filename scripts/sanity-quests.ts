@@ -17,6 +17,17 @@ async function main() {
   }
   const supabase = createClient(url, key, { auth: { persistSession: false } });
 
+  // Optional: sign in using MASTER_EMAIL/PASSWORD if present
+  const MASTER_EMAIL = process.env.MASTER_EMAIL;
+  const MASTER_PASSWORD = process.env.MASTER_PASSWORD;
+  if (MASTER_EMAIL && MASTER_PASSWORD && (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || key)) {
+    try {
+      await supabase.auth.signInWithPassword({ email: MASTER_EMAIL, password: MASTER_PASSWORD });
+    } catch (e) {
+      // ignore; continue unauthenticated
+    }
+  }
+
   const out: any = { columns: {}, rpcs: {} };
 
   // Verify quests new columns are selectable
@@ -50,10 +61,23 @@ async function main() {
     return { exists: true, ok: true };
   }
 
-  out.rpcs.reserve_seat = await checkRpc('reserve_seat', { p_quest_id: '00000000-0000-0000-0000-000000000000' });
-  out.rpcs.cancel_seat = await checkRpc('cancel_seat', { p_quest_id: '00000000-0000-0000-0000-000000000000' });
-  out.rpcs.submit_text = await checkRpc('submit_text', { p_quest_id: '00000000-0000-0000-0000-000000000000', p_text: 'test' });
-  out.rpcs.submit_numeric = await checkRpc('submit_numeric', { p_quest_id: '00000000-0000-0000-0000-000000000000', p_value: 1 });
+  // Find a real quest id to exercise RPCs if available
+  let questId = '00000000-0000-0000-0000-000000000000';
+  try {
+    const qPick = await supabase
+      .from('quests')
+      .select('id,seats_total,seats_taken,status')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (!qPick.error && qPick.data && qPick.data.length > 0) {
+      questId = qPick.data[0].id as string;
+    }
+  } catch {}
+
+  out.rpcs.reserve_seat = await checkRpc('reserve_seat', { p_quest_id: questId });
+  out.rpcs.cancel_seat = await checkRpc('cancel_seat', { p_quest_id: questId });
+  out.rpcs.submit_text = await checkRpc('submit_text', { p_quest_id: questId, p_text: 'test' });
+  out.rpcs.submit_numeric = await checkRpc('submit_numeric', { p_quest_id: questId, p_value: 1 });
 
   console.log(JSON.stringify(out, null, 2));
 }

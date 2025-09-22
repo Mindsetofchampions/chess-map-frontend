@@ -19,11 +19,15 @@ BEGIN
   VALUES (p_org_id, p_user_id)
   ON CONFLICT DO NOTHING;
 END;
-$$ LANGUAGE plpgsql security definer set search_path = public$$
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Helper function: revoke an organization admin mapping (idempotent)
+CREATE OR REPLACE FUNCTION public.revoke_organization_admin(p_org_id uuid, p_user_id uuid)
+RETURNS void AS $$
 BEGIN
   DELETE FROM public.organization_admins WHERE org_id = p_org_id AND user_id = p_user_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- ==============================================================
 -- Storage policies for org_admin_ids and org_logos (applied to storage.objects)

@@ -6,28 +6,48 @@ insert into storage.buckets (id, name, public) values ('signatures','signatures'
 on conflict (id) do nothing;
 
 -- Allow master full access
-create policy if not exists "master all parent_ids" on storage.objects
-for all using (public.jwt_role() = 'master_admin') with check (true);
+DO $do$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'master all parent_ids'
+  ) THEN
+    EXECUTE 'CREATE POLICY "master all parent_ids" ON storage.objects FOR ALL USING (public.jwt_role() = ''master_admin'') WITH CHECK (true)';
+  END IF;
+END $do$;
 
-create policy if not exists "org read/write parent_ids" on storage.objects
-for all using (
-  public.jwt_role() in ('org_admin','staff')
-  and bucket_id = 'parent_ids'
-  and (storage.foldername(name))[1] = coalesce(public.jwt_org_id()::text, '')
-) with check (
-  bucket_id = 'parent_ids'
-  and (storage.foldername(name))[1] = coalesce(public.jwt_org_id()::text, '')
-);
+DO $do$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'org read/write parent_ids'
+  ) THEN
+    EXECUTE 'CREATE POLICY "org read/write parent_ids" ON storage.objects FOR ALL USING (
+      public.jwt_role() IN (''org_admin'',''staff'')
+      AND bucket_id = ''parent_ids''
+      AND (storage.foldername(name))[1] = coalesce(public.jwt_org_id()::text, '''')
+    ) WITH CHECK (
+      bucket_id = ''parent_ids''
+      AND (storage.foldername(name))[1] = coalesce(public.jwt_org_id()::text, '''')
+    )';
+  END IF;
+END $do$;
 
-create policy if not exists "master all signatures" on storage.objects
-for all using (public.jwt_role() = 'master_admin') with check (true);
+DO $do$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'master all signatures'
+  ) THEN
+    EXECUTE 'CREATE POLICY "master all signatures" ON storage.objects FOR ALL USING (public.jwt_role() = ''master_admin'') WITH CHECK (true)';
+  END IF;
+END $do$;
 
-create policy if not exists "org read/write signatures" on storage.objects
-for all using (
-  public.jwt_role() in ('org_admin','staff')
-  and bucket_id = 'signatures'
-  and (storage.foldername(name))[1] = coalesce(public.jwt_org_id()::text, '')
-) with check (
-  bucket_id = 'signatures'
-  and (storage.foldername(name))[1] = coalesce(public.jwt_org_id()::text, '')
-);
+DO $do$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'org read/write signatures'
+  ) THEN
+    EXECUTE 'CREATE POLICY "org read/write signatures" ON storage.objects FOR ALL USING (
+      public.jwt_role() IN (''org_admin'',''staff'')
+      AND bucket_id = ''signatures''
+      AND (storage.foldername(name))[1] = coalesce(public.jwt_org_id()::text, '''')
+    ) WITH CHECK (
+      bucket_id = ''signatures''
+      AND (storage.foldername(name))[1] = coalesce(public.jwt_org_id()::text, '''')
+    )';
+  END IF;
+END $do$;

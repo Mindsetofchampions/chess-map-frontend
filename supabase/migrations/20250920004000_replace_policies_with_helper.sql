@@ -1,6 +1,6 @@
 -- Migration: Replace policies that reference public.user_roles inline with helper calls
 
-DO $$ BEGIN
+DO $do$ BEGIN
   -- Drop and recreate policies on user_roles to ensure they don't reference user_roles inline
   -- proceed to drop and recreate user_roles policies
 
@@ -17,18 +17,8 @@ DO $$ BEGIN
   EXCEPTION WHEN OTHERS THEN NULL; END;
 
   -- Recreate policies on user_roles using helper
-  EXECUTE 'do $plpgsql$ begin
-  if exists (select 1 from pg_policies where schemaname='public' and tablename='user_roles' and policyname='Master admin can read all roles') then
-    execute 'drop policy "Master admin can read all roles" on public.user_roles';
-  end if;
-end $plpgsql$;
-create policy "Master admin can read all roles" on public.user_roles FOR SELECT TO authenticated USING (public.is_user_in_roles(auth.uid()::uuid, ARRAY[''master_admin'']))';
-  EXECUTE 'do $plpgsql$ begin
-  if exists (select 1 from pg_policies where schemaname='public' and tablename='user_roles' and policyname='Master admin can insert/update roles') then
-    execute 'drop policy "Master admin can insert/update roles" on public.user_roles';
-  end if;
-end $plpgsql$;
-create policy "Master admin can insert/update roles" on public.user_roles FOR ALL TO authenticated USING (public.is_user_in_roles(auth.uid()::uuid, ARRAY[''master_admin''])) WITH CHECK (public.is_user_in_roles(auth.uid()::uuid, ARRAY[''master_admin'']))';
+  EXECUTE 'CREATE POLICY "Master admin can read all roles" ON public.user_roles FOR SELECT TO authenticated USING (public.is_user_in_roles(auth.uid()::uuid, ARRAY[''master_admin'']))';
+  EXECUTE 'CREATE POLICY "Master admin can insert/update roles" ON public.user_roles FOR ALL TO authenticated USING (public.is_user_in_roles(auth.uid()::uuid, ARRAY[''master_admin''])) WITH CHECK (public.is_user_in_roles(auth.uid()::uuid, ARRAY[''master_admin'']))';
   EXECUTE 'CREATE POLICY user_roles_master_rw ON public.user_roles FOR ALL TO authenticated USING (public.is_user_in_roles(auth.uid()::uuid, ARRAY[''master_admin''])) WITH CHECK (public.is_user_in_roles(auth.uid()::uuid, ARRAY[''master_admin'']))';
 
   -- Replace onboarding/admin policies that used inline exists(... user_roles ...)
@@ -48,4 +38,4 @@ create policy "Master admin can insert/update roles" on public.user_roles FOR AL
   EXCEPTION WHEN OTHERS THEN NULL; END;
   EXECUTE 'CREATE POLICY sp_parent_ids_admin_read ON storage.objects FOR SELECT TO authenticated USING (bucket_id = ''parent_ids'' AND public.is_user_in_roles(auth.uid()::uuid, ARRAY[''org_admin'',''master_admin'']))';
 
-END $$;
+END $do$ LANGUAGE plpgsql;

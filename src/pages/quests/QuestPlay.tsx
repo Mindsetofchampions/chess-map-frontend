@@ -27,7 +27,8 @@ import type { Quest, MCQConfig, MCQOption } from '@/types/backend';
  * - Timer tracking and progress indicators
  */
 const QuestPlay: React.FC = () => {
-  const { questId } = useParams<{ questId: string }>();
+  const { questId: questIdParam, id: idParam } = useParams<{ questId?: string; id?: string }>();
+  const questId = questIdParam || idParam || undefined;
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
   const { refreshWallet } = useWallet();

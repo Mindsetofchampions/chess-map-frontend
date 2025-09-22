@@ -29,7 +29,8 @@ import { PERSONA_GIF } from '@/assets/personas';
 import GlassContainer from '@/components/GlassContainer';
 import { useToast } from '@/components/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase, rpcSubmitMcq, rpcApproveQuest, getMyWallet, getMyLedger } from '@/lib/supabase';
+import { supabase, rpcSubmitMcq, rpcApproveQuest } from '@/lib/supabase';
+import { getErrorMessage, getErrorDetails } from '@/utils/mapPgError';
 import type { Quest } from '@/types/backend';
 
 /**
@@ -41,6 +42,7 @@ interface CheckResult {
   details?: string;
   timestamp?: string;
   data?: any;
+  verbose?: string;
 }
 
 /**
@@ -73,6 +75,29 @@ const DiagnosticCard: React.FC<DiagnosticCardProps> = ({
   testId,
   disabled = false,
 }) => {
+  const buildVerbose = () => {
+    if (!result) return '';
+    const env: any = {
+      VITE_SUPABASE_URL: Boolean((import.meta as any).env?.VITE_SUPABASE_URL),
+      VITE_SUPABASE_ANON_KEY: Boolean((import.meta as any).env?.VITE_SUPABASE_ANON_KEY),
+      VITE_MAPBOX_TOKEN: Boolean((import.meta as any).env?.VITE_MAPBOX_TOKEN),
+    };
+    const payload = {
+      check: title,
+      status: result.status,
+      message: result.message,
+      timestamp: result.timestamp,
+      details: result.details,
+      data: result.data,
+      location: typeof window !== 'undefined' ? window.location.href : undefined,
+      env,
+    };
+    try {
+      return JSON.stringify(payload, null, 2);
+    } catch {
+      return String(payload);
+    }
+  };
   const getStatusIcon = () => {
     if (!result) return null;
 
@@ -128,6 +153,31 @@ const DiagnosticCard: React.FC<DiagnosticCardProps> = ({
           >
             {result?.status === 'running' ? 'Running...' : 'Run'}
           </button>
+          <button
+            onClick={async () => {
+              if (!result) return;
+              const text = [
+                `Check: ${title}`,
+                `Status: ${result.status.toUpperCase()}`,
+                `Message: ${result.message}`,
+                result.details ? `Details:\n${result.details}` : '',
+                result.data ? `Data:\n${JSON.stringify(result.data, null, 2)}` : '',
+                'Verbose:',
+                buildVerbose(),
+              ]
+                .filter(Boolean)
+                .join('\n\n');
+              try {
+                await navigator.clipboard.writeText(text);
+              } catch {}
+            }}
+            disabled={!result}
+            className='btn-esports-secondary px-3 py-2 text-sm disabled:opacity-50'
+            data-testid={`${testId}-copy`}
+            title='Copy status'
+          >
+            Copy
+          </button>
         </div>
       </div>
 
@@ -169,6 +219,14 @@ const DiagnosticCard: React.FC<DiagnosticCardProps> = ({
               </pre>
             </div>
           )}
+
+          {/* Verbose output collapsible */}
+          <details className='bg-glass-dark border-glass rounded-lg p-3'>
+            <summary className='text-gray-200 text-sm cursor-pointer'>Verbose Output</summary>
+            <pre className='mt-2 text-xs text-gray-200 whitespace-pre-wrap overflow-auto max-h-48'>
+              {result.verbose || buildVerbose()}
+            </pre>
+          </details>
         </motion.div>
       )}
     </GlassContainer>
@@ -223,17 +281,30 @@ const SystemDiagnostics: React.FC = () => {
     const present = requiredVars.filter((varName) => import.meta.env[varName]);
     const optional = optionalVars.filter((varName) => import.meta.env[varName]);
 
+    const verbose = JSON.stringify(
+      {
+        present,
+        optional,
+        missing,
+        location: typeof window !== 'undefined' ? window.location.href : undefined,
+      },
+      null,
+      2,
+    );
+
     if (missing.length > 0) {
       updateResult('env', {
         status: 'fail',
         message: `Missing required variables: ${missing.join(', ')}`,
         details: `Required: ${present.join(', ')}\nOptional: ${optional.join(', ')}\nMissing: ${missing.join(', ')}`,
+        verbose,
       });
     } else {
       updateResult('env', {
         status: 'pass',
         message: 'All required environment variables present',
         details: `Required: ${present.join(', ')}\nOptional: ${optional.join(', ')}`,
+        verbose,
       });
     }
   }, [updateResult]);
@@ -255,12 +326,14 @@ const SystemDiagnostics: React.FC = () => {
         status: 'pass',
         message: 'Supabase connection successful',
         details: `Connected to database. Query returned ${(data || []).length} row(s).`,
+  verbose: JSON.stringify({ rows: data?.length || 0 }, null, 2),
       });
     } catch (error: any) {
       updateResult('conn', {
         status: 'fail',
         message: 'Supabase connection failed',
         details: error.message,
+        verbose: JSON.stringify({ error: String(error) }, null, 2),
       });
     }
   }, [updateResult]);
@@ -279,15 +352,32 @@ const SystemDiagnostics: React.FC = () => {
         status: 'skip',
         message: 'Not authenticated',
         details: 'User must be logged in to test auth-dependent features.',
+        verbose: JSON.stringify({ session: null }, null, 2),
       });
     } else {
       updateResult('auth', {
         status: 'pass',
         message: 'User authenticated',
         details: `User ID: ${user.id}\nEmail: ${user.email}\nRole: ${user.user_metadata?.role || 'unknown'}`,
+        verbose: JSON.stringify({ user }, null, 2),
       });
     }
   }, [user, authLoading, updateResult]);
+
+  // Auto-run Env and Connection checks on initial load
+  React.useEffect(() => {
+    // Fire and forget; results update banner
+    checkEnvironment();
+    checkConnection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-run Auth check once auth state resolves
+  React.useEffect(() => {
+    if (!authLoading) {
+      checkAuth();
+    }
+  }, [authLoading, checkAuth]);
 
   /**
    * Wallet & Ledger Check
@@ -305,23 +395,43 @@ const SystemDiagnostics: React.FC = () => {
     updateResult('wallet', { status: 'running', message: 'Testing wallet and ledger RPCs...' });
 
     try {
-      // Test wallet RPC
-      const walletData = await getMyWallet();
+      // Call RPCs directly to retain full error info
+      const { data: walletData, error: walletErr } = await supabase.rpc('get_my_wallet');
+      if (walletErr) throw walletErr;
 
-      // Test ledger RPC
-      const ledgerData = await getMyLedger(5, 0);
+      const { data: ledgerData, error: ledgerErr } = await supabase.rpc('get_my_ledger', {
+        p_limit: 5,
+        p_offset: 0,
+      });
+      if (ledgerErr) throw ledgerErr;
 
       updateResult('wallet', {
         status: 'pass',
         message: 'Wallet and ledger RPCs working',
         details: `Wallet balance: ${walletData?.balance || 0} coins\nLedger entries: ${(ledgerData || []).length} recent transactions`,
         data: { wallet: walletData, ledger: ledgerData },
+        verbose: JSON.stringify({ wallet: walletData, ledger: ledgerData }, null, 2),
       });
     } catch (error: any) {
+      const msg = error?.message || getErrorMessage(error) || 'Wallet/ledger RPC failed';
+      const detailsParts = [
+        error?.details,
+        error?.hint,
+        error?.code ? `Code: ${error.code}` : undefined,
+      ].filter(Boolean);
+      const det = detailsParts.join('\n') || getErrorDetails(error) || 'Unknown error';
+      const raw = (() => {
+        try {
+          return JSON.stringify(error, null, 2);
+        } catch {
+          return String(error);
+        }
+      })();
       updateResult('wallet', {
         status: 'fail',
-        message: 'Wallet/ledger RPC failed',
-        details: error.message,
+        message: msg,
+        details: det,
+        verbose: raw,
       });
     }
   }, [user, updateResult]);

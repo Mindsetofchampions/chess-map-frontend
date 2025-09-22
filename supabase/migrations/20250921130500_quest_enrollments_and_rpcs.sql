@@ -46,7 +46,7 @@ begin
   ) then execute 'drop policy "enroll: select own or staff+" on public.quest_enrollments'; end if;
   create policy "enroll: select own or staff+" on public.quest_enrollments
     for select to authenticated using (
-      user_id = auth.uid() or public.is_user_in_roles(auth.uid()::uuid, array[''master_admin'',''org_admin'',''staff''])
+      user_id = auth.uid() or public.is_user_in_roles(auth.uid()::uuid, array['master_admin','org_admin','staff'])
     );
 
   if exists (
@@ -54,7 +54,7 @@ begin
   ) then execute 'drop policy "enroll: delete own or staff+" on public.quest_enrollments'; end if;
   create policy "enroll: delete own or staff+" on public.quest_enrollments
     for delete to authenticated using (
-      user_id = auth.uid() or public.is_user_in_roles(auth.uid()::uuid, array[''master_admin'',''org_admin'',''staff''])
+      user_id = auth.uid() or public.is_user_in_roles(auth.uid()::uuid, array['master_admin','org_admin','staff'])
     );
 end$$;
 
@@ -109,13 +109,15 @@ set search_path = public
 as $$
 declare
   v_ins boolean := false;
+  v_rc int;
   v_q public.quests;
 begin
   -- Try to insert enrollment first (idempotent for same user)
   insert into public.quest_enrollments(quest_id, user_id)
   values (p_quest_id, auth.uid())
   on conflict do nothing;
-  get diagnostics v_ins = row_count > 0;
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  v_ins := v_rc > 0;
 
   if not v_ins then
     -- Already enrolled; return current counts
@@ -160,10 +162,12 @@ set search_path = public
 as $$
 declare
   v_del boolean := false;
+  v_rc int;
   v_q public.quests;
 begin
   delete from public.quest_enrollments where quest_id = p_quest_id and user_id = auth.uid();
-  get diagnostics v_del = row_count > 0;
+  GET DIAGNOSTICS v_rc = ROW_COUNT;
+  v_del := v_rc > 0;
 
   if not v_del then
     select seats_taken, seats_total into seats_taken, seats_total from public.quests where id = p_quest_id;
