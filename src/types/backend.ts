@@ -13,7 +13,7 @@ export type QuestStatus = 'draft' | 'submitted' | 'approved' | 'rejected' | 'arc
 /**
  * Quest type from database enum
  */
-export type QuestType = 'mcq' | 'text' | 'video';
+export type QuestType = 'mcq' | 'text' | 'numeric' | 'video';
 
 /**
  * Submission status from database enum
@@ -45,6 +45,8 @@ export interface Quest {
   approved_by?: string;
   lng?: number | null;
   lat?: number | null;
+  seats_total?: number | null;
+  grade_bands?: string[] | null;
 }
 
 /**

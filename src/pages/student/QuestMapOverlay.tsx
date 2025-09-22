@@ -11,6 +11,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuests } from '@/hooks/useQuests';
 import CHESS_COLORS from '@/lib/chessColors';
+import { PERSONA_GIF } from '@/assets/personas';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -82,21 +83,24 @@ const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
                   : '#8B5CF6';
 
         markerElement.style.cssText = `
-          width: 34px;
-          height: 34px;
-          background: ${color}66;
+          width: 40px;
+          height: 40px;
+          background: ${color}33;
           border: 2px solid white;
           border-radius: 50%;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 16px;
-          color: white;
-          font-weight: bold;
           box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          overflow: hidden;
         `;
-        markerElement.textContent = '?';
+        const img = document.createElement('img');
+        const attrKey = attr as keyof typeof PERSONA_GIF;
+        img.src = PERSONA_GIF[attrKey] || PERSONA_GIF.hootie;
+        img.alt = attr;
+        img.style.cssText = 'width: 100%; height: 100%; object-fit: contain;';
+        markerElement.appendChild(img);
         markerElement.title = quest.title;
 
         // Add click handler
