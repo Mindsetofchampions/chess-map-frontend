@@ -95,7 +95,8 @@
     font-family: inherit;
     /* Prevent flashing during initialization */
     background-color: #0a0a0f;
-    transition: opacity 0.3s ease-in-out;
+  /* Remove opacity transitions to avoid periodic flicker when style/layers update */
+  transition: none !important;
   }
 }
 
@@ -174,18 +175,7 @@
   isolation: isolate;
 }
 
-/* Fix map initialization flicker */
-.mapboxgl-map {
-  transition: opacity 0.3s ease-in-out;
-}
-
-.mapboxgl-map.mapboxgl-map-loading {
-  opacity: 0;
-}
-
-.mapboxgl-map.mapboxgl-map-loaded {
-  opacity: 1;
-}
+/* Remove custom fade classes to prevent unintended opacity toggles that cause flicker */
 
 /* Custom Mapbox popup styling */
 .mapbox-popup-glass .mapboxgl-popup-content {

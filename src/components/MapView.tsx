@@ -1,7 +1,7 @@
 // filepath: src/components/MapView.tsx
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, MapPin, Sparkles, X } from 'lucide-react';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 import { type PersonaKey } from '@/assets/personas';
 import { useAuth } from '@/contexts/AuthContext';
@@ -147,6 +147,7 @@ interface QuestBubbleProps {
   mousePosition: { x: number; y: number };
   containerRect: DOMRect | null;
   onClick: (bubble: QuestBubble, position: { x: number; y: number }) => void;
+  onHoverChange?: (hovered: boolean) => void;
 }
 
 const QuestBubbleComponent: React.FC<QuestBubbleProps> = ({
@@ -154,31 +155,36 @@ const QuestBubbleComponent: React.FC<QuestBubbleProps> = ({
   mousePosition,
   containerRect,
   onClick,
+  onHoverChange,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [followPosition, setFollowPosition] = useState({ x: 0, y: 0 });
   const style = QUEST_STYLES[bubble.category];
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-  const absolutePosition = containerRect
-    ? {
-        x: (bubble.position.x / 100) * containerRect.width,
-        y: (bubble.position.y / 100) * containerRect.height,
-      }
-    : { x: 0, y: 0 };
+  const absolutePosition = useMemo(() => {
+    if (!containerRect) return { x: 0, y: 0 };
+    return {
+      x: (bubble.position.x / 100) * containerRect.width,
+      y: (bubble.position.y / 100) * containerRect.height,
+    };
+    // Memoize by dimensions and bubble position only
+  }, [containerRect?.width, containerRect?.height, bubble.position.x, bubble.position.y]);
 
   useEffect(() => {
     if (isHovered && containerRect) {
       const deltaX = mousePosition.x - absolutePosition.x;
       const deltaY = mousePosition.y - absolutePosition.y;
-      setFollowPosition({
+      const next = {
         x: deltaX * (isMobile ? 0.05 : 0.1),
         y: deltaY * (isMobile ? 0.05 : 0.1),
-      });
+      };
+      setFollowPosition((prev) => (prev.x !== next.x || prev.y !== next.y ? next : prev));
     } else {
-      setFollowPosition({ x: 0, y: 0 });
+      setFollowPosition((prev) => (prev.x !== 0 || prev.y !== 0 ? { x: 0, y: 0 } : prev));
     }
-  }, [isHovered, mousePosition, absolutePosition, containerRect, isMobile]);
+    // Depend on primitives to avoid effect churn, exclude followPosition to prevent self-loops
+  }, [isHovered, mousePosition.x, mousePosition.y, absolutePosition.x, absolutePosition.y, containerRect?.width, containerRect?.height, isMobile]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -211,8 +217,14 @@ const QuestBubbleComponent: React.FC<QuestBubbleProps> = ({
         damping: 15,
         delay: PHILADELPHIA_BUBBLES.indexOf(bubble) * (isMobile ? 0.1 : 0.2),
       }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        onHoverChange?.(true);
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        onHoverChange?.(false);
+      }}
       onClick={handleClick}
       whileTap={{ scale: 0.9 }}
     >
@@ -284,6 +296,9 @@ const MapView: React.FC<MapViewProps> = ({
   const mapInstance = useRef<any>(null);
   const glNSRef = useRef<any>(null); // Map GL namespace (Mapbox or MapLibre)
   const engineRef = useRef<'none' | 'mapbox' | 'maplibre' | 'osm-raster'>('none');
+  // Prevent repeated fallbacks/re-inits that cause flicker
+  const didFallbackToMapLibreRef = useRef(false);
+  const didFallbackToOsmRef = useRef(false);
   const [engine, setEngine] = useState<'none' | 'mapbox' | 'maplibre' | 'osm-raster'>('none');
   const personaMarkersRef = useRef<PersonaChipMarker[]>([]);
   const clusterSourceId = useRef(`org-personas-${Math.random().toString(36).slice(2)}`);
@@ -326,11 +341,11 @@ const MapView: React.FC<MapViewProps> = ({
     bubble: QuestBubble;
     position: { x: number; y: number };
   } | null>(null);
-  const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({
-    x: 0,
-    y: 0,
-  });
+  const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [containerRect, setContainerRect] = useState<DOMRect | null>(null);
+  const containerRectRef = useRef<DOMRect | null>(null);
+  const [hoveredCount, setHoveredCount] = useState(0);
+  const anyBubbleHovered = hoveredCount > 0;
 
   const handleBubbleClick = useCallback(
     (bubble: QuestBubble, clickPosition: { x: number; y: number }) => {
@@ -353,29 +368,70 @@ const MapView: React.FC<MapViewProps> = ({
 
   const closeTooltip = useCallback(() => setTooltip(null), []);
 
-  /** WHY: keep mouse & rect in sync for bubble follow */
+  /** WHY: measure container rect with ResizeObserver (independent of mouse tracking) */
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!mapContainer.current) return;
-      const rect = mapContainer.current.getBoundingClientRect();
-      setContainerRect(rect);
-      setMousePosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    if (!mapContainer.current) return;
+    const measureRect = () => {
+      try {
+        const rect = mapContainer.current!.getBoundingClientRect();
+        containerRectRef.current = rect;
+        setContainerRect(rect);
+      } catch {}
     };
-    const handleResize = () => {
-      if (!mapContainer.current) return;
-      setContainerRect(mapContainer.current.getBoundingClientRect());
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('resize', handleResize);
-    if (mapContainer.current) {
-      setContainerRect(mapContainer.current.getBoundingClientRect());
-    }
+    // initial measure
+    measureRect();
+    // observe size changes
+    let ro: ResizeObserver | null = null;
+    try {
+      ro = new ResizeObserver(() => measureRect());
+      ro.observe(mapContainer.current);
+    } catch {}
+    const onWinResize = () => measureRect();
+    window.addEventListener('resize', onWinResize);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', onWinResize);
+      if (ro) ro.disconnect();
     };
   }, []);
+
+  /** WHY: track mouse only when any bubble is hovered, and throttle updates to reduce re-renders */
+  useEffect(() => {
+    const el = mapContainer.current;
+    if (!el || !anyBubbleHovered) return;
+
+    let rafId: number | null = null;
+    let lastX = 0;
+    let lastY = 0;
+    let ticking = false;
+    let lastEmit = 0;
+    const minIntervalMs = 60; // ~16 fps; adjust if needed
+
+    const updateMouse = () => {
+      const now = performance.now();
+      if (now - lastEmit >= minIntervalMs) {
+        const rect = containerRectRef.current;
+        if (rect) setMousePosition({ x: lastX - rect.left, y: lastY - rect.top });
+        lastEmit = now;
+      }
+      ticking = false;
+      rafId = null;
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      lastX = e.clientX;
+      lastY = e.clientY;
+      if (!ticking) {
+        ticking = true;
+        rafId = requestAnimationFrame(updateMouse);
+      }
+    };
+
+    el.addEventListener('pointermove', onPointerMove, { passive: true });
+    return () => {
+      el.removeEventListener('pointermove', onPointerMove as any);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [anyBubbleHovered]);
 
   /** WHY: initialize map with robust engine fallback to prevent white basemap */
   useEffect(() => {
@@ -417,16 +473,28 @@ const MapView: React.FC<MapViewProps> = ({
       // No-op reference to satisfy TS when tree-shaken in certain branches
       void attachCommonHandlers;
 
-      const tryFallbackToMapLibre = async () => {
-        if (engineRef.current === 'mapbox') {
-          await initMapLibre();
+      // Safer engine state setter to avoid redundant setState loops
+      const setEngineOnce = (next: 'mapbox' | 'maplibre' | 'osm-raster') => {
+        if (engineRef.current !== next) {
+          engineRef.current = next;
+          setEngine(next);
         }
       };
 
+      const tryFallbackToMapLibre = async () => {
+        if (engineRef.current !== 'mapbox') return;
+        if (didFallbackToMapLibreRef.current) return;
+        didFallbackToMapLibreRef.current = true;
+        clearTimeout(loadingTimeout);
+        await initMapLibre();
+      };
+
       const tryFallbackToOsmRaster = async () => {
-        if (engineRef.current === 'maplibre') {
-          await initOsmRaster();
-        }
+        if (engineRef.current !== 'maplibre') return;
+        if (didFallbackToOsmRef.current) return;
+        didFallbackToOsmRef.current = true;
+        clearTimeout(loadingTimeout);
+        await initOsmRaster();
       };
 
       // Define in outer scope; bodies assigned later after imports
@@ -444,7 +512,7 @@ const MapView: React.FC<MapViewProps> = ({
           setIsLoading(false);
           setError('Map timed out — showing bubbles only');
         }
-      }, 2500);
+      }, 1800);
 
       try {
         const mapboxToken =
@@ -452,12 +520,31 @@ const MapView: React.FC<MapViewProps> = ({
           import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
           import.meta.env.VITE_MAPBOX_TOKEN_PK;
 
+        // Allow forcing engine via env for local dev or restricted domains
+        const forcedEngine = (import.meta.env.VITE_MAP_ENGINE || '').toLowerCase();
+        const forceMapLibre =
+          forcedEngine === 'maplibre' || String(import.meta.env.VITE_FORCE_MAPLIBRE).toLowerCase() === 'true';
+
         initMapbox = async () => {
           const mapboxgl = await import('mapbox-gl');
+          // Disable telemetry/events to avoid ad-blocker noise and potential flicker from retries
+          try {
+            // mapbox-gl v3 exposes a config object
+            // @ts-ignore - config may be missing in some builds
+            if (mapboxgl.default?.config) {
+              // @ts-ignore
+              mapboxgl.default.config.EVENTS_URL = '';
+            }
+            // Also explicitly disable telemetry so SDK doesn't enqueue events
+            // @ts-ignore - method exists on mapbox-gl but TS types may vary
+            if (typeof mapboxgl.default.setTelemetryEnabled === 'function') {
+              // @ts-ignore
+              mapboxgl.default.setTelemetryEnabled(false);
+            }
+          } catch {}
           mapboxgl.default.accessToken = mapboxToken!;
           glNSRef.current = mapboxgl.default;
-          engineRef.current = 'mapbox';
-          setEngine('mapbox');
+          setEngineOnce('mapbox');
           resetMapInstance();
           mapInstance.current = new mapboxgl.default.Map({
             container: mapContainer.current!,
@@ -471,7 +558,13 @@ const MapView: React.FC<MapViewProps> = ({
           mapInstance.current.on('error', (e: any) => {
             const status = e?.error?.status || e?.statusCode;
             const resource = e?.error?.resourceType || e?.resourceType;
-            if (resource === 'style' || resource === 'source' || status) {
+            // Only fallback once on style/source auth errors (401/403) to avoid loops
+            if (
+              resource === 'style' ||
+              resource === 'source' ||
+              status === 401 ||
+              status === 403
+            ) {
               tryFallbackToMapLibre();
             }
           });
@@ -480,8 +573,7 @@ const MapView: React.FC<MapViewProps> = ({
         initMapLibre = async () => {
           const maplibregl = (await import('maplibre-gl')).default;
           glNSRef.current = maplibregl;
-          engineRef.current = 'maplibre';
-          setEngine('maplibre');
+          setEngineOnce('maplibre');
           resetMapInstance();
           mapInstance.current = new maplibregl.Map({
             container: mapContainer.current!,
@@ -502,8 +594,7 @@ const MapView: React.FC<MapViewProps> = ({
         initOsmRaster = async () => {
           const maplibregl = (await import('maplibre-gl')).default;
           glNSRef.current = maplibregl;
-          engineRef.current = 'osm-raster';
-          setEngine('osm-raster');
+          setEngineOnce('osm-raster');
           resetMapInstance();
           const rasterStyle: any = {
             version: 8,
@@ -556,19 +647,23 @@ const MapView: React.FC<MapViewProps> = ({
         };
 
         const tryFallbackToMapLibre = async () => {
-          if (engineRef.current === 'mapbox') {
-            await initMapLibre();
-          }
+          if (engineRef.current !== 'mapbox') return;
+          if (didFallbackToMapLibreRef.current) return;
+          didFallbackToMapLibreRef.current = true;
+          clearTimeout(loadingTimeout);
+          await initMapLibre();
         };
 
         const tryFallbackToOsmRaster = async () => {
-          if (engineRef.current === 'maplibre') {
-            await initOsmRaster();
-          }
+          if (engineRef.current !== 'maplibre') return;
+          if (didFallbackToOsmRef.current) return;
+          didFallbackToOsmRef.current = true;
+          clearTimeout(loadingTimeout);
+          await initOsmRaster();
         };
 
-        // Prefer Mapbox when token is present and looks valid; else MapLibre
-        if (mapboxToken && !/YOUR_|example_/i.test(mapboxToken)) {
+        // Prefer Mapbox when token looks valid and not forced otherwise
+        if (!forceMapLibre && mapboxToken && !/YOUR_|example_/i.test(mapboxToken)) {
           await initMapbox();
         } else {
           await initMapLibre();
@@ -579,8 +674,7 @@ const MapView: React.FC<MapViewProps> = ({
         try {
           const maplibregl = (await import('maplibre-gl')).default;
           glNSRef.current = maplibregl;
-          engineRef.current = 'osm-raster';
-          setEngine('osm-raster');
+          setEngineOnce('osm-raster');
           const rasterStyle: any = {
             version: 8,
             sources: {
@@ -1032,6 +1126,9 @@ const MapView: React.FC<MapViewProps> = ({
             mousePosition={mousePosition}
             containerRect={containerRect}
             onClick={handleBubbleClick}
+            onHoverChange={(hovered) =>
+              setHoveredCount((c) => Math.max(0, c + (hovered ? 1 : -1)))
+            }
           />
         ))}
 
