@@ -30,9 +30,10 @@ const SPRITES: {
 
 interface Props {
   onSpriteClick?: (key: SpriteKey) => void;
+  showModal?: boolean;
 }
 
-const SpritesOverlay: React.FC<Props> = ({ onSpriteClick }) => {
+const SpritesOverlay: React.FC<Props> = ({ onSpriteClick, showModal = true }) => {
   const [activeSprite, setActiveSprite] = useState<SpriteKey | null>(null);
 
   const handleClick = (k: SpriteKey) => {
@@ -70,7 +71,9 @@ const SpritesOverlay: React.FC<Props> = ({ onSpriteClick }) => {
           </motion.button>
         );
       })}
-      <SpriteModal personaKey={activeSprite} onClose={() => setActiveSprite(null)} />
+      {showModal && (
+        <SpriteModal personaKey={activeSprite} onClose={() => setActiveSprite(null)} />
+      )}
     </div>
   );
 };
