@@ -35,6 +35,17 @@ export function mapPgError(error: any): StructuredError {
 
   // Permission and authorization errors
   if (
+    message.includes('Only org staff/admin') ||
+    message.includes('org staff/admin')
+  ) {
+    return {
+      code: 'FORBIDDEN',
+      message: 'Org admin or staff access required',
+      details: 'This action can be performed by organization admins, staff, or master admins',
+    };
+  }
+
+  if (
     message.includes('FORBIDDEN') ||
     message.includes('permission denied') ||
     message.includes('master admin') ||

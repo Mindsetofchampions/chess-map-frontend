@@ -33,6 +33,7 @@
     "seed:cams": "node --loader ts-node/esm scripts/seed-cams-demo.ts",
     "sanity:cams": "node --loader ts-node/esm scripts/sanity-cams.ts",
     "sanity:quests": "node --loader ts-node/esm scripts/sanity-quests.ts",
+  "smoke:quests": "node --loader ts-node/esm scripts/smoke-quests-e2e.ts",
   "check:mapbox": "node --loader ts-node/esm scripts/check-mapbox-token.ts",
     "create:bucket:parent_ids": "node --loader ts-node/esm scripts/create-parent-ids-bucket.ts",
     "rpc:test:users": "node scripts/rpc-test-get-admin-user-list.mjs",

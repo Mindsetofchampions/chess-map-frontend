@@ -89,14 +89,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // Try to get role from public.user_roles table first (new system)
+      // Support both 'role' and 'user_role' columns for compatibility
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (!roleError && roleData) {
+      if (!roleError && roleData && roleData.role) {
         const userRole = roleData.role as AppRole;
+        setRole(userRole);
+        setRoleLoading(false);
+        return userRole;
+      }
+
+      // Check alternate column name 'user_role' if present
+      const { data: roleDataAlt, error: roleErrorAlt } = await supabase
+        .from('user_roles')
+        .select('user_role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!roleErrorAlt && roleDataAlt && (roleDataAlt as any).user_role) {
+        const userRole = (roleDataAlt as any).user_role as AppRole;
         setRole(userRole);
         setRoleLoading(false);
         return userRole;

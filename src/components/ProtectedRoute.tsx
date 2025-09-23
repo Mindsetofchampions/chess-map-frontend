@@ -40,7 +40,7 @@ const AuthLoadingScreen: React.FC<{ message?: string }> = ({
 /**
  * Not Authorized Component
  */
-const NotAuthorizedPanel: React.FC = () => (
+const NotAuthorizedPanel: React.FC<{ requiredRole: AppRole }> = ({ requiredRole }) => (
   <div className='min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary flex items-center justify-center'>
     <GlassContainer variant='card' className='text-center max-w-md'>
       <div className='w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6'>
@@ -49,7 +49,13 @@ const NotAuthorizedPanel: React.FC = () => (
 
       <h2 className='text-3xl font-bold text-white mb-4'>Access Restricted</h2>
       <p className='text-gray-300 mb-6'>
-        You don't have permission to access this area. Master admin privileges are required.
+        {requiredRole === 'master_admin'
+          ? "You don't have permission to access this area. Master admin privileges are required."
+          : requiredRole === 'staff'
+            ? "You don't have permission to access this area. Staff, org admin, or master admin privileges are required."
+            : requiredRole === 'org_admin'
+              ? "You don't have permission to access this area. Org admin or master admin privileges are required."
+              : "You don't have permission to access this area."}
       </p>
 
       <div className='space-y-3'>
@@ -102,7 +108,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const hasAccess = hasRoleLevel(role, actualRequiredRole);
 
   if (!hasAccess) {
-    return <NotAuthorizedPanel />;
+    return <NotAuthorizedPanel requiredRole={actualRequiredRole} />;
   }
 
   // Render children - user is authenticated and authorized
