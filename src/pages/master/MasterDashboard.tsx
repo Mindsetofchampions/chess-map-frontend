@@ -46,6 +46,7 @@ import {
 import MasterLedger from '@/pages/master/tabs/MasterLedger';
 import MasterOrganizations from '@/pages/master/tabs/MasterOrganizations';
 import MasterReports from '@/pages/master/tabs/MasterReports';
+import MasterMap from '@/pages/master/tabs/MasterMap';
 import MasterRewards from '@/pages/master/tabs/MasterRewards';
 import type { Quest } from '@/types/backend';
 import { formatDateTime } from '@/utils/format';
@@ -876,6 +877,7 @@ const MasterDashboard: React.FC = () => {
             <Tabs
               tabs={[
                 { key: 'orgs', label: 'Organizations' },
+                { key: 'map', label: 'Master Map' },
                 { key: 'ledger', label: 'Ledger' },
                 { key: 'reports', label: 'Reports' },
                 { key: 'rewards', label: 'Rewards' },
@@ -885,6 +887,7 @@ const MasterDashboard: React.FC = () => {
             />
             <div className='mt-4'>
               {activeTab === 'orgs' && <MasterOrganizations />}
+              {activeTab === 'map' && <MasterMap />}
               {activeTab === 'ledger' && <MasterLedger />}
               {activeTab === 'reports' && <MasterReports />}
               {activeTab === 'rewards' && <MasterRewards />}

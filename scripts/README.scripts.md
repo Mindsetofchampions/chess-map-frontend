@@ -16,8 +16,9 @@ The scripts auto-load env from `.env.scripts.local` if present, otherwise fall b
 
 ### Required env for smoke
 
-- `SUPABASE_URL` and `SUPABASE_ANON_KEY` (or the Vite `VITE_*` equivalents)
-- `ORG_EMAIL` and `ORG_PASSWORD` (org_admin or staff)
+- `SUPABASE_URL` and `SUPABASE_ANON_KEY` (or Vite `VITE_*` equivalents)
+- EITHER provide `ORG_EMAIL` and `ORG_PASSWORD` (org_admin or staff)
+- OR provide `SUPABASE_SERVICE_ROLE_KEY` and the script will auto-provision a temporary `org_admin`, run, and clean it up.
 - Optional: `MASTER_EMAIL`, `MASTER_PASSWORD` to try approval step
 - Optional: `SMOKE_ATTRIBUTE_ID` if your `attributes` table is empty
 

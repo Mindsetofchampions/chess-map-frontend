@@ -17,12 +17,15 @@ import {
   type OrganizationWithPersonas,
 } from '@/lib/sprites';
 import QuestMapOverlay from '@/pages/student/QuestMapOverlay';
+import PublicMapOverlay from '@/pages/common/PublicMapOverlay';
 import type { PersonaDef } from '@/types';
 
 interface MapViewProps {
   center?: [number, number];
   zoom?: number;
   onQuestComplete?: (questId: string) => void;
+  // Optional render prop to inject overlays with access to the map instance
+  renderOverlay?: (map: any) => React.ReactNode;
 }
 
 interface BubbleTooltipProps {
@@ -287,6 +290,7 @@ const MapView: React.FC<MapViewProps> = ({
   center = [-75.1652, 39.9526],
   zoom = 12,
   onQuestComplete,
+  renderOverlay,
 }) => {
   const { user } = useAuth() as { user?: { role?: string } };
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -1136,6 +1140,12 @@ const MapView: React.FC<MapViewProps> = ({
         {user?.role === 'student' && mapInstance.current && (
           <QuestMapOverlay map={mapInstance.current} />
         )}
+
+        {/* Public overlay for safe spaces and events (all roles) */}
+        {mapInstance.current ? <PublicMapOverlay map={mapInstance.current} /> : null}
+
+        {/* Custom overlay from parent (e.g., master admin map tools) */}
+        {renderOverlay && mapInstance.current ? renderOverlay(mapInstance.current) : null}
       </div>
 
       {/* Mobile Legend Toggle */}

@@ -32,8 +32,8 @@
     "seed:test": "node --loader ts-node/esm scripts/seed-test-data.ts",
     "seed:cams": "node --loader ts-node/esm scripts/seed-cams-demo.ts",
     "sanity:cams": "node --loader ts-node/esm scripts/sanity-cams.ts",
-    "sanity:quests": "node --loader ts-node/esm scripts/sanity-quests.ts",
-  "smoke:quests": "node --loader ts-node/esm scripts/smoke-quests-e2e.ts",
+    "sanity:quests": "tsx scripts/sanity-quests.ts",
+    "smoke:quests": "tsx scripts/smoke-quests-e2e.ts",
   "check:mapbox": "node --loader ts-node/esm scripts/check-mapbox-token.ts",
     "create:bucket:parent_ids": "node --loader ts-node/esm scripts/create-parent-ids-bucket.ts",
     "rpc:test:users": "node scripts/rpc-test-get-admin-user-list.mjs",
@@ -47,6 +47,7 @@
     "npm": ">=10 <11"
   },
   "devDependencies": {
+  "tsx": "^4.19.2",
     "@babel/preset-env": "^7.28.0",
     "@babel/preset-react": "^7.27.1",
     "@babel/preset-typescript": "^7.27.1",

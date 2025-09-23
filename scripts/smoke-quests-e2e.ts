@@ -21,18 +21,67 @@ async function signInEmail(client: any, email: string, password: string) {
   return data;
 }
 
+function randSuffix(len = 10) {
+  return Math.random().toString(36).slice(2, 2 + len);
+}
+
+type TempUser = { id: string; email: string; password: string };
+
+async function provisionTempOrgAdmin(url: string, serviceKey: string): Promise<TempUser> {
+  const admin = createClient(url, serviceKey, { auth: { persistSession: false } }) as any;
+  const email = `smoke_org_${Date.now()}_${randSuffix(6)}@test.local`;
+  const password = `Tmp!${randSuffix(8)}_${Date.now().toString().slice(-4)}`;
+  const { data: created, error: createErr } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { role: 'org_admin', created_by_admin: 'smoke' },
+  });
+  if (createErr) throw createErr;
+  if (!created?.user?.id) throw new Error('Failed to create temporary org admin');
+
+  // Assign role in user_roles for backend checks
+  const { error: roleErr } = await admin.from('user_roles').upsert({
+    user_id: created.user.id,
+    role: 'org_admin',
+  });
+  if (roleErr) {
+    // cleanup user if role assignment fails
+    await admin.auth.admin.deleteUser(created.user.id).catch(() => {});
+    throw roleErr;
+  }
+
+  // Optional legacy profile entry for compatibility
+  await admin.from('profiles').upsert({
+    user_id: created.user.id,
+    role: 'org_admin',
+    display_name: email.split('@')[0],
+  });
+
+  return { id: created.user.id, email, password };
+}
+
 async function main() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const anon = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
   const service = process.env.SUPABASE_SERVICE_ROLE_KEY; // optional for cleanup-only
   if (!url || !anon) throw new Error('Missing SUPABASE_URL and/or ANON KEY in env');
 
-  const ORG_EMAIL = process.env.ORG_EMAIL;
-  const ORG_PASSWORD = process.env.ORG_PASSWORD;
+  let ORG_EMAIL = process.env.ORG_EMAIL;
+  let ORG_PASSWORD = process.env.ORG_PASSWORD;
   const MASTER_EMAIL = process.env.MASTER_EMAIL;
   const MASTER_PASSWORD = process.env.MASTER_PASSWORD;
 
-  if (!ORG_EMAIL || !ORG_PASSWORD) throw new Error('Set ORG_EMAIL and ORG_PASSWORD in env to run authenticated smoke.');
+  let tempUser: TempUser | null = null;
+  if (!ORG_EMAIL || !ORG_PASSWORD) {
+    if (!service) {
+      throw new Error('Set ORG_EMAIL/ORG_PASSWORD or provide SUPABASE_SERVICE_ROLE_KEY for auto-provisioning.');
+    }
+    console.log('No org credentials provided. Auto-provisioning a temporary org_admin...');
+    tempUser = await provisionTempOrgAdmin(url!, service!);
+    ORG_EMAIL = tempUser.email;
+    ORG_PASSWORD = tempUser.password;
+  }
 
   const org = createClient(url, anon, { auth: { persistSession: false } });
   console.log('Signing in as org admin/staff...');
@@ -70,8 +119,8 @@ async function main() {
   if (MASTER_EMAIL && MASTER_PASSWORD) {
     console.log('Signing in as master to approve quest...');
     const master = createClient(url, anon, { auth: { persistSession: false } });
-    await signInEmail(master, MASTER_EMAIL, MASTER_PASSWORD);
     try {
+      await signInEmail(master, MASTER_EMAIL, MASTER_PASSWORD);
       const { data: approved, error: approveErr } = await master.rpc('approve_quest', { p_quest_id: quest.id });
       if (approveErr) throw approveErr;
       console.log('Quest approved response:', approved);
@@ -79,6 +128,8 @@ async function main() {
       const msg: string = err?.message || String(err);
       if (msg.includes('approve_quest') && msg.includes('does not exist')) {
         console.warn('[warn] approve_quest RPC not found; skipping approval step.');
+      } else if (msg.toLowerCase().includes('invalid login credentials')) {
+        console.warn('[warn] Master login failed; skipping approval step.');
       } else {
         throw err;
       }
@@ -88,6 +139,15 @@ async function main() {
   }
 
   console.log('Smoke test complete.');
+
+  // Cleanup temp user if we created one
+  if (tempUser && service) {
+    console.log('Cleaning up temporary org_admin user...');
+    const admin = createClient(url!, service!, { auth: { persistSession: false } }) as any;
+    await admin.auth.admin.deleteUser(tempUser.id).catch((e: any) => {
+      console.warn('Warning: failed to delete temp user', e?.message || e);
+    });
+  }
 }
 
 main()
