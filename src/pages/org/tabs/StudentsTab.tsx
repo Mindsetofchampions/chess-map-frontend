@@ -11,7 +11,7 @@ export default function StudentsTab() {
     supabase
       .from('students')
       .select('*')
-      .then(({ data }) => setRows(data ?? []));
+      .then(({ data }: { data: any[] | null }) => setRows(data ?? []));
   }, []);
   async function addStudent() {
     const org_id = (await supabase.auth.getUser()).data.user?.user_metadata?.org_id;

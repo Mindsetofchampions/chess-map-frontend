@@ -9,7 +9,7 @@ export default function StaffTab() {
     supabase
       .from('staff')
       .select('*')
-      .then(({ data }) => setRows(data ?? []));
+      .then(({ data }: { data: any[] | null }) => setRows(data ?? []));
   }, []);
   async function add() {
     const org_id = (await supabase.auth.getUser()).data.user?.user_metadata?.org_id;

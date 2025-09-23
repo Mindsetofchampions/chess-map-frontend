@@ -116,11 +116,41 @@ const OrgDashboard: React.FC = () => {
       const { supabase } = await import('@/lib/supabase');
       sub = supabase
         .channel('org_status_channel')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'organizations' }, (p) => {
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'organizations' }, (p: any) => {
           if ((p.new as any)?.id && org?.org_id && (p.new as any).id === org.org_id) {
             setOrgStatus(((p.new as any).status as any) ?? null);
           }
         })
+        .subscribe();
+    })();
+    return () => {
+      try {
+        sub?.unsubscribe?.();
+      } catch {}
+    };
+  }, [org?.org_id]);
+
+  // Realtime: refresh wallet when org_wallet changes for my org
+  useEffect(() => {
+    if (!org?.org_id) return;
+    let sub: any;
+    (async () => {
+      const { supabase } = await import('@/lib/supabase');
+      sub = supabase
+        .channel('org_wallet_channel')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'org_coin_wallets', filter: `org_id=eq.${org.org_id}` },
+          () => {
+            // Refetch wallet when this org's wallet changes
+            getMyOrgWallet()
+              .then((w) => {
+                setWallet(w);
+                showSuccess('Wallet updated', `${(w?.balance ?? 0).toLocaleString()} coins`);
+              })
+              .catch(() => {});
+          },
+        )
         .subscribe();
     })();
     return () => {

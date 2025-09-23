@@ -12,16 +12,16 @@ export default function AttendanceTab() {
     supabase
       .from('students')
       .select('*')
-      .then(({ data }) => setStudents(data ?? []));
+      .then(({ data }: { data: any[] | null }) => setStudents(data ?? []));
     supabase
       .from('services')
       .select('*')
-      .then(({ data }) => setServices(data ?? []));
+      .then(({ data }: { data: any[] | null }) => setServices(data ?? []));
     supabase
       .from('attendance')
       .select('*')
       .order('date', { ascending: false })
-      .then(({ data }) => setRows(data ?? []));
+      .then(({ data }: { data: any[] | null }) => setRows(data ?? []));
   }, []);
   const selectedServiceId = useMemo(() => (studentId: string) => {
     return serviceByStudent[studentId] || services[0]?.id || '';

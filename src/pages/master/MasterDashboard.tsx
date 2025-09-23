@@ -398,7 +398,7 @@ const MasterDashboard: React.FC = () => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'platform_balance' },
-        (payload) => {
+        (payload: any) => {
           console.log('Platform balance realtime event:', payload);
           // Refresh balance and mark serverConfirmed
           fetchPlatformBalance();

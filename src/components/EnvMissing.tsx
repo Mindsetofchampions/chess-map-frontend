@@ -72,7 +72,8 @@ const EnvMissing: React.FC<EnvMissingProps> = ({ error, showInstructions = true 
                       <div className='text-electric-blue-400'>VITE_SUPABASE_URL=</div>
                       <div className='text-electric-blue-400'>VITE_SUPABASE_ANON_KEY=</div>
                       <div className='text-gray-400'># Optional:</div>
-                      <div className='text-neon-purple-400'>VITE_MAPBOX_TOKEN_PK=</div>
+                      <div className='text-neon-purple-400'>VITE_MAPBOX_TOKEN= # Mapbox public token (pk...)</div>
+                      <div className='text-neon-purple-400'>VITE_GOOGLE_MAPS_API_KEY= # For geocoding/autocomplete</div>
                     </div>
                   </div>
 

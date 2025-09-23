@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import GlassContainer from './GlassContainer';
 import { useToast } from './ToastProvider';
-import SpritesOverlay from './SpritesOverlay';
 import { rpcCreateQuest } from '@/lib/supabase';
+import { loadGoogleMapsPlaces } from '@/lib/googleMaps';
+import { supabase } from '@/lib/supabase';
 
 interface Props {
   open: boolean;
@@ -10,18 +11,19 @@ interface Props {
 }
 
 const PERSONAS = [
-  { key: 'hootie', label: 'Hootie (Character)' },
-  { key: 'kittykat', label: 'Kitty Kat (Health)' },
-  { key: 'gino', label: 'Gino (Exploration)' },
-  { key: 'hammer', label: 'Hammer (STEM)' },
-  { key: 'badge', label: 'MOC Badge (Stewardship)' },
-];
+  { key: 'hootie', label: 'Hootie (Character)', attributeName: 'Character' },
+  { key: 'kittykat', label: 'Kitty Kat (Health)', attributeName: 'Health' },
+  { key: 'gino', label: 'Gino (Exploration)', attributeName: 'Exploration' },
+  { key: 'hammer', label: 'Hammer (STEM)', attributeName: 'STEM' },
+  { key: 'badge', label: 'MOC Badge (Stewardship)', attributeName: 'Stewardship' },
+] as const;
+type PersonaKey = typeof PERSONAS[number]['key'];
 
 export default function QuestBuilder({ open, onClose }: Props) {
   const { showSuccess, showError } = useToast();
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
-  const [persona, setPersona] = useState(PERSONAS[0].key);
+  const [persona, setPersona] = useState<PersonaKey>(PERSONAS[0].key as PersonaKey);
   const [reward, setReward] = useState('50');
   const [questType, setQuestType] = useState<'mcq' | 'text' | 'numeric'>('mcq');
   const [grades, setGrades] = useState<{ ES: boolean; MS: boolean; HS: boolean }>(
@@ -33,11 +35,41 @@ export default function QuestBuilder({ open, onClose }: Props) {
   const [address, setAddress] = useState('');
   const [geocoding, setGeocoding] = useState(false);
   const [geocodeResults, setGeocodeResults] = useState<any[]>([]);
+  const [autoSuggests, setAutoSuggests] = useState<{ description: string; place_id: string }[]>([]);
   const [optA, setOptA] = useState('Option A');
   const [optB, setOptB] = useState('Option B');
   const [optC, setOptC] = useState('Option C');
   const [correct, setCorrect] = useState<'A' | 'B' | 'C'>('A');
   const [saving, setSaving] = useState(false);
+  const [attributes, setAttributes] = useState<{ id: string; name: string }[]>([]);
+  const [attributesLoading, setAttributesLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setAttributesLoading(true);
+        const { data, error } = await supabase.from('attributes').select('id,name').order('name');
+        if (error) throw error;
+        if (!mounted) return;
+        setAttributes((data as any[])?.map((r: any) => ({ id: r.id, name: r.name })) ?? []);
+      } catch (e) {
+        // Soft-fail; we'll validate on submit
+      } finally {
+        if (mounted) setAttributesLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const selectedAttributeId = useMemo(() => {
+    const personaDef = PERSONAS.find((p) => p.key === persona as PersonaKey);
+    if (!personaDef) return undefined;
+    const targetName = personaDef.attributeName.toLowerCase();
+    return attributes.find((a) => (a.name || '').toLowerCase() === targetName)?.id;
+  }, [persona, attributes]);
 
   if (!open) return null;
 
@@ -45,14 +77,13 @@ export default function QuestBuilder({ open, onClose }: Props) {
     if (!title.trim()) return showError('Title required', 'Enter a quest title');
     if (!persona) return showError('Persona required', 'Select a persona for this quest');
     const rewardCoins = parseInt(reward || '0', 10) || 0;
-    const personaToAttribute: Record<string, string> = {
-      hootie: 'character',
-      kittykat: 'health',
-      gino: 'exploration',
-      hammer: 'stem',
-      badge: 'stewardship',
-    };
-    const attributeId = personaToAttribute[persona] || 'character';
+    // Resolve attribute UUID by name (from attributes table)
+    if (!selectedAttributeId) {
+      return showError(
+        'Attribute lookup failed',
+        'Could not resolve CHESS attribute. Please ensure attributes are seeded and try again.'
+      );
+    }
     const selectedGrades = Object.entries(grades)
       .filter(([, v]) => v)
       .map(([k]) => k);
@@ -96,7 +127,7 @@ export default function QuestBuilder({ open, onClose }: Props) {
       await rpcCreateQuest({
         title: title.trim(),
         description: desc.trim() || undefined,
-        attribute_id: attributeId,
+        attribute_id: selectedAttributeId,
         reward_coins: rewardCoins,
         qtype: questType,
         grade_bands: selectedGrades,
@@ -141,6 +172,60 @@ export default function QuestBuilder({ open, onClose }: Props) {
     }
   }
 
+  // Autocomplete: query predictions while typing
+  useEffect(() => {
+    const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+    if (!API_KEY) return; // silent when not configured
+    if (!address.trim()) {
+      setAutoSuggests([]);
+      return;
+    }
+    const ctrl = new AbortController();
+    let active = true;
+    (async () => {
+      try {
+        const google = await loadGoogleMapsPlaces(API_KEY);
+        const service = new google.maps.places.AutocompleteService();
+        service.getPlacePredictions({ input: address.trim() }, (preds: any[], status: string) => {
+          if (!active) return;
+          if (status === google.maps.places.PlacesServiceStatus.OK && Array.isArray(preds)) {
+            setAutoSuggests(preds.slice(0, 6).map((p: any) => ({ description: p.description, place_id: p.place_id })));
+          } else {
+            setAutoSuggests([]);
+          }
+        });
+      } catch (_) {
+        // ignore
+      } finally {
+      }
+    })();
+    return () => {
+      active = false;
+      ctrl.abort();
+    };
+  }, [address]);
+
+  async function selectPlacePrediction(placeId: string, description: string) {
+    const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+    if (!API_KEY) return;
+    try {
+      const google = await loadGoogleMapsPlaces(API_KEY);
+      const map = document.createElement('div');
+      const placesSvc = new google.maps.places.PlacesService(map);
+      placesSvc.getDetails({ placeId, fields: ['geometry','formatted_address'] }, (place: any, status: string) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
+          const loc = place.geometry.location;
+          setAddress(place.formatted_address || description);
+          setLat(String(typeof loc.lat === 'function' ? loc.lat() : loc.lat));
+          setLng(String(typeof loc.lng === 'function' ? loc.lng() : loc.lng));
+          setAutoSuggests([]);
+        }
+      });
+    } catch (_) {
+      // ignore
+    }
+  }
+
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-auto'>
       <GlassContainer className='w-full max-w-2xl p-6 max-h-[85vh] overflow-y-auto'>
@@ -166,14 +251,33 @@ export default function QuestBuilder({ open, onClose }: Props) {
             placeholder='What should students do?'
           />
           <label className='text-sm text-gray-300'>Persona</label>
-          <div className='relative h-28 rounded-xl border border-white/10 overflow-hidden'>
-            <SpritesOverlay showModal={false} onSpriteClick={(k) => {
-              // restrict to persona keys we support in this builder
-              if (PERSONAS.find((p) => p.key === k)) setPersona(k as any);
-            }} />
-            <div className='absolute bottom-2 left-2 text-xs text-white/80 bg-black/30 rounded px-2 py-1'>
-              Selected: {PERSONAS.find((p) => p.key === persona)?.label}
-            </div>
+          <select
+            value={persona}
+            onChange={(e) => setPersona(e.target.value as PersonaKey)}
+            className='bg-glass border-glass rounded-xl px-3 py-2 text-white'
+          >
+            {PERSONAS.map((p) => (
+              <option key={p.key} value={p.key}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+          <div className='text-xs text-gray-300'>
+            {attributesLoading
+              ? 'Loading CHESS attributes…'
+              : selectedAttributeId
+                ? 'Attribute resolved ✓'
+                : 'Attribute not found – contact support.'}
+          </div>
+          <div className='rounded-xl border border-white/10 bg-black/20 p-3 text-gray-200 text-sm'>
+            <div className='font-medium text-white mb-1'>How to create a good quest</div>
+            <ul className='list-disc pl-5 space-y-1'>
+              <li>Give it a clear, action-oriented title.</li>
+              <li>Pick the persona that best matches your learning goal.</li>
+              <li>Select at least one grade band; set seats if limited.</li>
+              <li>Add an optional location to help students find it.</li>
+              <li>For MCQ, keep options brief; mark the intended answer for reviewers.</li>
+            </ul>
           </div>
           <label className='text-sm text-gray-300'>Reward Coins</label>
           <input
@@ -234,6 +338,19 @@ export default function QuestBuilder({ open, onClose }: Props) {
                 {geocoding ? 'Finding…' : 'Find Address'}
               </button>
             </div>
+            {!!autoSuggests.length && (
+              <div className='bg-black/20 border border-white/10 rounded-xl p-2 max-h-40 overflow-auto'>
+                {autoSuggests.map((s, i) => (
+                  <button
+                    key={s.place_id + i}
+                    className='block w-full text-left text-sm text-gray-200 hover:bg-white/10 rounded px-2 py-1'
+                    onClick={() => selectPlacePrediction(s.place_id, s.description)}
+                  >
+                    {s.description}
+                  </button>
+                ))}
+              </div>
+            )}
             {!!geocodeResults.length && (
               <div className='bg-black/20 border border-white/10 rounded-xl p-2 max-h-40 overflow-auto'>
                 {geocodeResults.map((r, i) => (

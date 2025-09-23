@@ -10,7 +10,7 @@ export default function ServicesTab() {
     supabase
       .from('services')
       .select('*')
-      .then(({ data }) => setRows(data ?? []));
+      .then(({ data }: { data: any[] | null }) => setRows(data ?? []));
   }, []);
   async function addService() {
     const org_id = (await supabase.auth.getUser()).data.user?.user_metadata?.org_id;

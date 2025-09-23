@@ -453,8 +453,8 @@ const SystemDiagnostics: React.FC = () => {
         throw new Error(error.message);
       }
 
-      const approved = (data || []).filter((q) => q.status === 'approved' && q.active);
-      const submitted = (data || []).filter((q) => q.status === 'submitted');
+  const approved = (data || []).filter((q: any) => q.status === 'approved' && q.active);
+  const submitted = (data || []).filter((q: any) => q.status === 'submitted');
 
       setAvailableQuests(data || []);
       setSubmittedQuests(submitted);
