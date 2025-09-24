@@ -8,8 +8,21 @@ Deployment (recommended):
 2. From the repository root run:
 
 ```bash
+# When CLI is linked (recommended):
+npx supabase functions deploy send_onboarding_notification
+npx supabase functions deploy process_notifications
+npx supabase functions deploy admin_create_user
+npx supabase functions deploy admin_generate_link
+npx supabase functions deploy admin_set_password
+npx supabase functions deploy admin_delete_user
+
+# Or with explicit project ref:
 npx supabase functions deploy send_onboarding_notification --project-ref <ref>
 npx supabase functions deploy process_notifications --project-ref <ref>
+npx supabase functions deploy admin_create_user --project-ref <ref>
+npx supabase functions deploy admin_generate_link --project-ref <ref>
+npx supabase functions deploy admin_set_password --project-ref <ref>
+npx supabase functions deploy admin_delete_user --project-ref <ref>
 ```
 
 3. Set secrets for the functions (either in Supabase dashboard or via CLI). Required secrets:
@@ -19,11 +32,17 @@ npx supabase functions deploy process_notifications --project-ref <ref>
 - FROM_EMAIL (the verified sender email/domain)
 - SUPABASE_URL (project URL) - often already set by Supabase
 - SUPABASE_SERVICE_ROLE_KEY (service role key for internal calls)
+- Note: If the CLI rejects names starting with SUPABASE_, set `SERVICE_ROLE_KEY` instead. The functions read either name.
+- ALLOWED_REDIRECT_HOSTS (comma-separated list for magic link redirect validation, e.g. "chesscompanions.app,www.chesscompanions.app")
 
 Example CLI to set secrets:
 
 ```bash
-npx supabase secrets set RESEND_API_KEY="..." SENDGRID_API_KEY="..." FROM_EMAIL="no-reply@yourdomain.com" --project-ref <ref>
+# When linked:
+npx supabase secrets set RESEND_API_KEY="..." SENDGRID_API_KEY="..." FROM_EMAIL="no-reply@yourdomain.com" SERVICE_ROLE_KEY="..." ALLOWED_REDIRECT_HOSTS="chesscompanions.app,www.chesscompanions.app"
+
+# Or with explicit ref:
+npx supabase secrets set RESEND_API_KEY="..." SENDGRID_API_KEY="..." FROM_EMAIL="no-reply@yourdomain.com" SERVICE_ROLE_KEY="..." ALLOWED_REDIRECT_HOSTS="chesscompanions.app,www.chesscompanions.app" --project-ref <ref>
 ```
 
 Windows tips:

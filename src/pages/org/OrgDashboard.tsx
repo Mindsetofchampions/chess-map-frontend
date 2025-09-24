@@ -26,6 +26,7 @@ import ServicesTab from '@/pages/org/tabs/ServicesTab';
 import StaffTab from '@/pages/org/tabs/StaffTab';
 import StudentsTab from '@/pages/org/tabs/StudentsTab';
 import QuestBuilder from '@/components/QuestBuilder';
+import { supabase } from '@/lib/supabase';
 
 const OrgDashboard: React.FC = () => {
   const { showSuccess, showError } = useToast();
@@ -68,6 +69,9 @@ const OrgDashboard: React.FC = () => {
   const [distributing, setDistributing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('students');
   const [showQuestBuilder, setShowQuestBuilder] = useState(false);
+  // My quests tracking
+  const [myQuests, setMyQuests] = useState<any[]>([]);
+  const [loadingMyQuests, setLoadingMyQuests] = useState(true);
 
   const selectedEngagement = useMemo(
     () =>
@@ -108,6 +112,53 @@ const OrgDashboard: React.FC = () => {
       }
     })();
   }, []);
+
+  // Load my quests (created by me or by my org) and subscribe to updates
+  useEffect(() => {
+    let sub: any;
+    (async () => {
+      try {
+        setLoadingMyQuests(true);
+        // Fetch quests either created by current user or linked to their org (if any)
+        const [{ data: session }, { data: orgRow }] = await Promise.all([
+          supabase.auth.getSession(),
+          org?.org_id
+            ? supabase.from('quests').select('*').eq('org_id', org.org_id)
+            : supabase.from('quests').select('*').eq('created_by', (await supabase.auth.getUser()).data.user?.id ?? '0'),
+        ] as any);
+        const list = Array.isArray(orgRow) ? orgRow : Array.isArray(session) ? session : [];
+        setMyQuests(list || []);
+      } catch (_) {
+        setMyQuests([]);
+      } finally {
+        setLoadingMyQuests(false);
+      }
+
+      // Realtime subscription scoped to my org if available, otherwise creator id
+      try {
+        const filter = org?.org_id
+          ? { event: '*', schema: 'public', table: 'quests', filter: `org_id=eq.${org.org_id}` }
+          : { event: '*', schema: 'public', table: 'quests' };
+        sub = supabase
+          .channel('org_my_quests')
+          .on('postgres_changes', filter as any, async () => {
+            try {
+              const { data } = org?.org_id
+                ? await supabase.from('quests').select('*').eq('org_id', org.org_id)
+                : await supabase
+                    .from('quests')
+                    .select('*')
+                    .eq('created_by', (await supabase.auth.getUser()).data.user?.id ?? '0');
+              setMyQuests(data || []);
+            } catch {}
+          })
+          .subscribe();
+      } catch {}
+    })();
+    return () => {
+      try { sub?.unsubscribe?.(); } catch {}
+    };
+  }, [org?.org_id]);
 
   // Subscribe to organization status changes to refresh banner/actions
   useEffect(() => {
@@ -428,6 +479,70 @@ const OrgDashboard: React.FC = () => {
               </div>
             )}
           </GlassContainer>
+
+          {/* My Quests Tracker */}
+          <div className='mt-8'>
+            <GlassContainer>
+              <div className='flex items-center justify-between mb-3'>
+                <h2 className='text-lg font-semibold text-white'>My Quests</h2>
+                <button
+                  className='btn-esports'
+                  onClick={async () => {
+                    try {
+                      setLoadingMyQuests(true);
+                      const { data } = org?.org_id
+                        ? await supabase.from('quests').select('*').eq('org_id', org.org_id)
+                        : await supabase
+                            .from('quests')
+                            .select('*')
+                            .eq('created_by', (await supabase.auth.getUser()).data.user?.id ?? '0');
+                      setMyQuests(data || []);
+                    } catch {}
+                    finally { setLoadingMyQuests(false); }
+                  }}
+                  disabled={loadingMyQuests}
+                >
+                  {loadingMyQuests ? 'Refreshing…' : 'Refresh'}
+                </button>
+              </div>
+              {loadingMyQuests ? (
+                <div className='text-gray-300'>Loading…</div>
+              ) : myQuests.length === 0 ? (
+                <div className='text-gray-300'>No quests yet. Use "New Quest" to submit one.</div>
+              ) : (
+                <div className='overflow-x-auto'>
+                  <table className='w-full text-sm text-left'>
+                    <thead>
+                      <tr className='text-gray-300'>
+                        <th className='py-2 pr-3 font-medium'>Title</th>
+                        <th className='py-2 pr-3 font-medium'>Status</th>
+                        <th className='py-2 pr-3 font-medium'>Reward</th>
+                        <th className='py-2 pr-3 font-medium'>Seats</th>
+                        <th className='py-2 pr-3 font-medium'>Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {myQuests.map((q) => (
+                        <tr key={q.id} className='border-t border-white/10 hover:bg-white/5'>
+                          <td className='py-2 pr-3 text-white'>{q.title}</td>
+                          <td className='py-2 pr-3'>
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${q.status === 'approved' ? 'bg-green-500/20 text-green-300 border border-green-400/30' : q.status === 'rejected' ? 'bg-red-500/20 text-red-300 border border-red-400/30' : 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/30'}`}>
+                              {q.status}
+                            </span>
+                          </td>
+                          <td className='py-2 pr-3 text-gray-200'>{Number(q.reward_coins ?? 0).toLocaleString()}</td>
+                          <td className='py-2 pr-3 text-gray-200'>
+                            {q.seats_total != null ? `${q.seats_taken ?? 0}/${q.seats_total}` : '—'}
+                          </td>
+                          <td className='py-2 pr-3 text-gray-400'>{new Date(q.created_at).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </GlassContainer>
+          </div>
 
           {/* CAMS Org Tabs */}
           <div className='mt-8'>

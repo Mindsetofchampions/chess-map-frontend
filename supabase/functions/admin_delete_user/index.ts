@@ -29,11 +29,16 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
 
-    const check = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_master_admin`, {
+    const check = await fetch(`${SUPABASE_URL}/rest/v1/rpc/actor_is_master_admin`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
       body: '{}',
     });
+    if (!check.ok)
+      return new Response(JSON.stringify({ error: 'FORBIDDEN' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     const ok = await check.json();
     if (!ok)
       return new Response(JSON.stringify({ error: 'FORBIDDEN' }), {

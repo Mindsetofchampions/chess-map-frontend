@@ -28,12 +28,18 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
 
-    // Use a hardened check that doesn't rely on user_roles RLS
-    const check = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_master_admin`, {
+    // Verify caller is master admin using auth.uid() aware function
+    const check = await fetch(`${SUPABASE_URL}/rest/v1/rpc/actor_is_master_admin`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
       body: '{}',
     });
+    if (!check.ok) {
+      return new Response(JSON.stringify({ error: 'FORBIDDEN' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     const ok = await check.json();
     if (!ok)
       return new Response(JSON.stringify({ error: 'FORBIDDEN' }), {
@@ -62,8 +68,12 @@ serve(async (req) => {
       }
     }
 
-    const payload: Record<string, unknown> = { email, type };
-    if (includeRedirect) payload.redirect_to = redirectTo;
+    const payload: Record<string, unknown> = { email, type, options: {} };
+    if (includeRedirect) {
+      // Set both legacy top-level and new options.redirect_to for compatibility
+      (payload as any).redirect_to = redirectTo;
+      (payload.options as any) = { ...(payload.options as any), redirect_to: redirectTo };
+    }
 
     const resp = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
       method: 'POST',
@@ -72,10 +82,16 @@ serve(async (req) => {
     });
     const body = await resp.json();
     if (!resp.ok)
-      return new Response(JSON.stringify(body), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({
+          error: body?.error || body?.message || body?.error_description || 'generate_link failed',
+          details: body,
+        }),
+        {
+          status: resp.status || 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
 
     return new Response(
       JSON.stringify({ url: body?.properties?.action_link ?? body?.action_link }),

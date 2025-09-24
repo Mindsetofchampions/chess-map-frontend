@@ -399,7 +399,10 @@ export async function adminGenerateLink(email: string, redirectTo?: string) {
     });
 
     const body = await resp.json();
-    if (!resp.ok) throw new Error(body?.error || 'admin_generate_link failed');
+    if (!resp.ok)
+      throw new Error(
+        body?.error || body?.message || body?.error_description || 'admin_generate_link failed',
+      );
     return body;
   } catch (error: any) {
     throw new Error(error?.message || String(error));
