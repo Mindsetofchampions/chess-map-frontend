@@ -25,7 +25,7 @@ interface MapViewProps {
   zoom?: number;
   onQuestComplete?: (questId: string) => void;
   // Optional render prop to inject overlays with access to the map instance
-  renderOverlay?: (map: any) => React.ReactNode;
+  renderOverlay?: (map: any, gl?: any) => React.ReactNode;
 }
 
 interface BubbleTooltipProps {
@@ -1145,7 +1145,7 @@ const MapView: React.FC<MapViewProps> = ({
         {mapInstance.current ? <PublicMapOverlay map={mapInstance.current} /> : null}
 
         {/* Custom overlay from parent (e.g., master admin map tools) */}
-        {renderOverlay && mapInstance.current ? renderOverlay(mapInstance.current) : null}
+  {renderOverlay && mapInstance.current ? renderOverlay(mapInstance.current, glNSRef.current) : null}
       </div>
 
       {/* Mobile Legend Toggle */}

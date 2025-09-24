@@ -45,7 +45,7 @@ export default function MasterMap() {
     return () => ch.unsubscribe();
   }, []);
 
-  const renderOverlay = (map: any) => {
+  const renderOverlay = (map: any, gl?: any) => {
     // add markers for each entity
     const markers: any[] = [];
 
@@ -57,7 +57,9 @@ export default function MasterMap() {
         el.className = 'quest-marker-master';
         el.style.cssText = `width: 20px;height: 20px;border-radius: 50%;background:${q.status==='approved'?'#10B981':'#F59E0B'};border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.3);`;
         el.title = `${q.title} (${q.status})`;
-        markers.push(new (window as any).mapboxgl.Marker(el).setLngLat([lng, lat]).addTo(map));
+        const GL = gl || (window as any).mapboxgl || (window as any).maplibregl;
+        if (!GL?.Marker) return;
+        markers.push(new GL.Marker(el).setLngLat([lng, lat]).addTo(map));
       }
     });
 
@@ -69,7 +71,9 @@ export default function MasterMap() {
         el.className = 'safe-marker-master';
         el.style.cssText = `width: 18px;height: 18px;border-radius: 6px;background:#8B5CF6;border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.25);`;
         el.title = s.name || 'Safe Space';
-        markers.push(new (window as any).mapboxgl.Marker(el).setLngLat([lng, lat]).addTo(map));
+        const GL = gl || (window as any).mapboxgl || (window as any).maplibregl;
+        if (!GL?.Marker) return;
+        markers.push(new GL.Marker(el).setLngLat([lng, lat]).addTo(map));
       }
     });
 
@@ -81,7 +85,9 @@ export default function MasterMap() {
         el.className = 'event-marker-master';
         el.style.cssText = `width: 18px;height: 18px;border-radius: 50%;background:#F43F5E;border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.25);`;
         el.title = ev.title || 'Event';
-        markers.push(new (window as any).mapboxgl.Marker(el).setLngLat([lng, lat]).addTo(map));
+        const GL = gl || (window as any).mapboxgl || (window as any).maplibregl;
+        if (!GL?.Marker) return;
+        markers.push(new GL.Marker(el).setLngLat([lng, lat]).addTo(map));
       }
     });
 
