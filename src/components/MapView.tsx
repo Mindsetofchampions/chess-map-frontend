@@ -1145,7 +1145,17 @@ const MapView: React.FC<MapViewProps> = ({
         {mapInstance.current ? <PublicMapOverlay map={mapInstance.current} /> : null}
 
         {/* Custom overlay from parent (e.g., master admin map tools) */}
-  {renderOverlay && mapInstance.current ? renderOverlay(mapInstance.current, glNSRef.current) : null}
+        {(() => {
+          if (!renderOverlay || !mapInstance.current) return null;
+          try {
+            return renderOverlay(mapInstance.current, glNSRef.current);
+          } catch (e) {
+            // Avoid crashing the whole page if an overlay throws
+            // eslint-disable-next-line no-console
+            console.error('renderOverlay failed:', e);
+            return null;
+          }
+        })()}
       </div>
 
       {/* Mobile Legend Toggle */}

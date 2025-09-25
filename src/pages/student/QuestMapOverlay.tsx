@@ -18,7 +18,7 @@ import { supabase } from '@/lib/supabase';
  * Quest Map Overlay Props
  */
 interface QuestMapOverlayProps {
-  map: any; // Mapbox map instance
+  map: any; // Map instance (Mapbox or MapLibre)
 }
 
 /**
@@ -63,6 +63,8 @@ const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
     // Add quest markers to the map
     mapQuests.forEach((quest) => {
       if (quest.lng && quest.lat) {
+        const GL: any = (window as any).mapboxgl || (window as any).maplibregl;
+        if (!GL || !GL.Marker) return;
         // Create marker element
         const markerElement = document.createElement('div');
         markerElement.className = 'quest-marker';
@@ -109,10 +111,8 @@ const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
           // In production, this would open quest details
         });
 
-        // Create Mapbox marker
-        if (window.mapboxgl) {
-          new window.mapboxgl.Marker(markerElement).setLngLat([quest.lng, quest.lat]).addTo(map);
-        }
+        // Create marker
+        new GL.Marker(markerElement).setLngLat([quest.lng, quest.lat]).addTo(map);
       }
     });
 
@@ -125,9 +125,8 @@ const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
         el.style.cssText = `width:34px;height:34px;background:${color}66;border:2px solid white;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.2);`;
         el.title = space.name || 'Safe Space';
         el.addEventListener('click', () => console.log('Safe Space clicked', space.id));
-        if (window.mapboxgl) {
-          new window.mapboxgl.Marker(el).setLngLat([space.lng, space.lat]).addTo(map);
-        }
+        const GL: any = (window as any).mapboxgl || (window as any).maplibregl;
+        if (GL?.Marker) new GL.Marker(el).setLngLat([space.lng, space.lat]).addTo(map);
       }
     });
 

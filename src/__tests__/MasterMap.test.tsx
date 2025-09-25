@@ -56,10 +56,10 @@ describe('MasterMap smoke test', () => {
   it('renders and does not crash when GL is missing (no Mapbox/MapLibre)', async () => {
     render(<MasterMap />);
 
-    // Buttons should render
-    expect(await screen.findByText(/Place Quest/i)).toBeInTheDocument();
-    expect(screen.getByText(/Place Safe Space/i)).toBeInTheDocument();
-    expect(screen.getByText(/Place Event/i)).toBeInTheDocument();
+  // Buttons should render
+  expect(await screen.findByText(/New Quest/i)).toBeInTheDocument();
+  expect(screen.getByText(/New Safe Space/i)).toBeInTheDocument();
+  expect(screen.getByText(/New Event/i)).toBeInTheDocument();
 
     // Mocked MapView present
     expect(screen.getByTestId('mock-map-view')).toBeInTheDocument();

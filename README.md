@@ -398,6 +398,13 @@ Before deploying to production:
 ### Database Setup
 
 - [ ] Apply master admin migration (`supabase db push`)
+ - [ ] Create public storage bucket for map assets (logos/images): `map_assets`
+    - Public: Yes (for read)
+    - RLS Policies:
+       - SELECT: public can read objects where bucket_id = 'map_assets'
+       - INSERT/UPDATE: to authenticated users for bucket_id = 'map_assets'
+    - Or run the provided migration: `supabase/migrations/*_map_assets_bucket.sql`
+    - In the UI, this bucket is used to host quest/event images or safe space logos
 - [ ] Enable Realtime for `public.quests` table
 - [ ] Assign initial master admin role using SQL snippet above
 - [ ] Verify platform balance is seeded (should have 10,000 coins)

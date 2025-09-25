@@ -10,7 +10,11 @@
  * - REDIRECT_ORIGIN (optional; e.g., https://chesscompanions.app)
  */
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+// Load env from .env, then override with .env.local and .env.scripts.local if present
+dotenv.config();
+dotenv.config({ path: '.env.local' });
+dotenv.config({ path: '.env.scripts.local' });
 import { createClient } from '@supabase/supabase-js';
 
 async function main() {
@@ -19,7 +23,7 @@ async function main() {
   const MASTER_EMAIL = process.env.MASTER_EMAIL as string;
   const MASTER_PASSWORD = process.env.MASTER_PASSWORD as string;
   const TARGET_EMAIL = (process.env.TARGET_EMAIL as string) || MASTER_EMAIL;
-  const REDIRECT_ORIGIN = process.env.REDIRECT_ORIGIN as string | undefined;
+  const REDIRECT_ORIGIN = (process.env.REDIRECT_ORIGIN as string | undefined) || 'https://chesscompanions.app';
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error('Missing SUPABASE_URL/ANON_KEY');
   if (!MASTER_EMAIL || !MASTER_PASSWORD) throw new Error('Missing MASTER_EMAIL/PASSWORD');
