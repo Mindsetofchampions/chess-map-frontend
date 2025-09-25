@@ -31,7 +31,11 @@ serve(async (req) => {
 
     const check = await fetch(`${SUPABASE_URL}/rest/v1/rpc/actor_is_master_admin`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        apikey: SERVICE_ROLE,
+        'Content-Type': 'application/json',
+      },
       body: '{}',
     });
     if (!check.ok)
@@ -49,7 +53,7 @@ serve(async (req) => {
     const lookup = await fetch(
       `${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(normalized)}`,
       {
-        headers: { Authorization: `Bearer ${SERVICE_ROLE}` },
+        headers: { Authorization: `Bearer ${SERVICE_ROLE}`, apikey: SERVICE_ROLE },
       },
     );
     const lu = await lookup.json();
@@ -77,7 +81,7 @@ serve(async (req) => {
 
     const del = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${SERVICE_ROLE}` },
+      headers: { Authorization: `Bearer ${SERVICE_ROLE}`, apikey: SERVICE_ROLE },
     });
 
     if (!del.ok) {

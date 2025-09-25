@@ -35,7 +35,11 @@ serve(async (req) => {
 
     const check = await fetch(`${SUPABASE_URL}/rest/v1/rpc/actor_is_master_admin`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        apikey: SERVICE_ROLE,
+        'Content-Type': 'application/json',
+      },
       body: '{}',
     });
     if (!check.ok) {
@@ -54,7 +58,7 @@ serve(async (req) => {
     const lookup = await fetch(
       `${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(email)}`,
       {
-        headers: { Authorization: `Bearer ${SERVICE_ROLE}` },
+        headers: { Authorization: `Bearer ${SERVICE_ROLE}`, apikey: SERVICE_ROLE },
       },
     );
     const lu = await lookup.json();
@@ -67,7 +71,11 @@ serve(async (req) => {
 
     const patch = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
       method: 'PATCH',
-      headers: { Authorization: `Bearer ${SERVICE_ROLE}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+        apikey: SERVICE_ROLE,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ password }),
     });
     const res = await patch.json();

@@ -31,7 +31,11 @@ serve(async (req) => {
     // Verify caller is master admin using auth.uid() aware function
     const check = await fetch(`${SUPABASE_URL}/rest/v1/rpc/actor_is_master_admin`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        apikey: SERVICE_ROLE,
+        'Content-Type': 'application/json',
+      },
       body: '{}',
     });
     if (!check.ok) {
@@ -77,7 +81,11 @@ serve(async (req) => {
 
     const resp = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${SERVICE_ROLE}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+        apikey: SERVICE_ROLE,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(payload),
     });
     const body = await resp.json();
