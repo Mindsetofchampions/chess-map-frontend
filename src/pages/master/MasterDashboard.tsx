@@ -43,6 +43,7 @@ import {
   allocateUserCoins,
   topUpPlatformBalance,
   type OrgBalance,
+  adminListOrganizations,
 } from '@/lib/supabase';
 import MasterLedger from '@/pages/master/tabs/MasterLedger';
 import MasterMap from '@/pages/master/tabs/MasterMap';
@@ -119,6 +120,8 @@ const MasterDashboard: React.FC = () => {
   const [serverConfirmed, setServerConfirmed] = useState<boolean>(false);
   const [showAllocateModal, setShowAllocateModal] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<string>('');
+  const [orgOptions, setOrgOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [orgOptionsLoading, setOrgOptionsLoading] = useState<boolean>(false);
   const [allocateAmount, setAllocateAmount] = useState<string>('');
   const [allocateReason, setAllocateReason] = useState<string>('Master allocation');
   const [allocating, setAllocating] = useState(false);
@@ -127,7 +130,11 @@ const MasterDashboard: React.FC = () => {
   const [sendingNotif, setSendingNotif] = useState(false);
   // Allocate to user modal state
   const [showUserAllocate, setShowUserAllocate] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [userOptions, setUserOptions] = useState<
+    Array<{ id: string; email: string; role?: string }>
+  >([]);
+  const [userOptionsLoading, setUserOptionsLoading] = useState<boolean>(false);
   const [userAmount, setUserAmount] = useState('');
   const [userReason, setUserReason] = useState('Direct user allocation');
   const [allocatingUser, setAllocatingUser] = useState(false);
@@ -419,8 +426,61 @@ const MasterDashboard: React.FC = () => {
     };
   }, [fetchPendingQuests, fetchPlatformBalance, fetchOrgBalances]);
 
-  const openAllocate = () => {
-    setSelectedOrg(orgBalances[0]?.org_id || '');
+  // Load active org options for allocation dropdown
+  const loadActiveOrgs = useCallback(async () => {
+    try {
+      setOrgOptionsLoading(true);
+      const list = await adminListOrganizations();
+      const active = (list || []).filter((o: any) => o?.status === 'active');
+      if (active.length) {
+        setOrgOptions(active.map((o: any) => ({ id: o.id, name: o.name })));
+        return;
+      }
+      // fallback to client select
+      const { data: orgs } = await supabase
+        .from('organizations')
+        .select('id,name,status')
+        .eq('status', 'active')
+        .order('name', { ascending: true });
+      setOrgOptions(((orgs as any[]) || []).map((o) => ({ id: o.id, name: o.name })));
+    } catch (e) {
+      try {
+        const { data: orgs } = await supabase
+          .from('organizations')
+          .select('id,name')
+          .eq('status', 'active')
+          .order('name', { ascending: true });
+        setOrgOptions(((orgs as any[]) || []).map((o) => ({ id: o.id, name: o.name })));
+      } catch (_) {
+        setOrgOptions([]);
+      }
+    } finally {
+      setOrgOptionsLoading(false);
+    }
+  }, []);
+
+  // Load user options for allocation dropdown
+  const loadUserOptions = useCallback(async () => {
+    try {
+      setUserOptionsLoading(true);
+      const { data, error } = await supabase.rpc('get_admin_user_list');
+      if (error) throw error;
+      const rows: any[] = Array.isArray(data) ? data : [];
+      const opts = rows
+        .map((r) => ({ id: r.id, email: r.email, role: r.role }))
+        .filter((r) => r.email)
+        .sort((a, b) => a.email.localeCompare(b.email));
+      setUserOptions(opts);
+    } catch (e) {
+      setUserOptions([]);
+    } finally {
+      setUserOptionsLoading(false);
+    }
+  }, []);
+
+  const openAllocate = async () => {
+    if (!orgOptions.length) await loadActiveOrgs();
+    setSelectedOrg((prev) => prev || orgOptions[0]?.id || orgBalances[0]?.org_id || '');
     setAllocateAmount('');
     setShowAllocateModal(true);
   };
@@ -463,7 +523,7 @@ const MasterDashboard: React.FC = () => {
 
   const handleAllocateUser = async () => {
     const amt = parseInt(userAmount || '0', 10);
-    if (!userEmail.trim()) return showWarning('Email Required', 'Enter a user email.');
+    if (!selectedUserId) return showWarning('User Required', 'Select a user.');
     if (!amt || amt <= 0) return showWarning('Invalid Amount', 'Enter a positive amount.');
     if (!serverConfirmed)
       return showWarning(
@@ -475,11 +535,13 @@ const MasterDashboard: React.FC = () => {
 
     setAllocatingUser(true);
     try {
-      await allocateUserCoins(userEmail.trim(), amt, userReason || 'Direct user allocation');
-      showSuccess('Coins Allocated', `Allocated ${amt.toLocaleString()} coins to ${userEmail}.`);
+      const target = userOptions.find((u) => u.id === selectedUserId);
+      const email = target?.email || '';
+      await allocateUserCoins(email, amt, userReason || 'Direct user allocation');
+      showSuccess('Coins Allocated', `Allocated ${amt.toLocaleString()} coins to ${email}.`);
       await fetchPlatformBalance();
       setShowUserAllocate(false);
-      setUserEmail('');
+      setSelectedUserId('');
       setUserAmount('');
     } catch (error: any) {
       showError('Allocation Failed', mapPgError(error).message || error.message || 'Failed');
@@ -538,7 +600,10 @@ const MasterDashboard: React.FC = () => {
                 <PlusCircle className='w-4 h-4' /> Allocate to Org
               </button>
               <button
-                onClick={() => setShowUserAllocate(true)}
+                onClick={async () => {
+                  if (!userOptions.length) await loadUserOptions();
+                  setShowUserAllocate(true);
+                }}
                 className='btn-esports flex items-center gap-2'
               >
                 <PlusCircle className='w-4 h-4' /> Allocate to User
@@ -971,8 +1036,12 @@ const MasterDashboard: React.FC = () => {
                 onChange={(e) => setSelectedOrg(e.target.value)}
                 className='w-full bg-glass border-glass rounded-xl px-3 py-2 text-white mb-3'
               >
-                {orgBalances.map((o) => (
-                  <option key={o.org_id} value={o.org_id}>
+                {orgOptionsLoading && <option>Loading...</option>}
+                {!orgOptionsLoading && orgOptions.length === 0 && (
+                  <option value=''>No active organizations</option>
+                )}
+                {orgOptions.map((o) => (
+                  <option key={o.id} value={o.id}>
                     {o.name}
                   </option>
                 ))}
@@ -1027,14 +1096,22 @@ const MasterDashboard: React.FC = () => {
               <h3 className='text-xl font-bold text-white mb-2'>Allocate Coins to User</h3>
               <p className='text-gray-300 mb-4'>Send coins directly to a user by email.</p>
 
-              <label className='block text-sm text-gray-300 mb-1'>User Email</label>
-              <input
-                type='email'
-                value={userEmail}
-                onChange={(e) => setUserEmail(e.target.value)}
-                placeholder='user@example.com'
+              <label className='block text-sm text-gray-300 mb-1'>User</label>
+              <select
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
                 className='w-full bg-glass border-glass rounded-xl px-3 py-2 text-white mb-3'
-              />
+              >
+                {userOptionsLoading && <option>Loading users...</option>}
+                {!userOptionsLoading && userOptions.length === 0 && (
+                  <option value=''>No users available</option>
+                )}
+                {userOptions.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.email}
+                  </option>
+                ))}
+              </select>
 
               <label className='block text-sm text-gray-300 mb-1'>Amount</label>
               <input
@@ -1064,7 +1141,7 @@ const MasterDashboard: React.FC = () => {
                 </button>
                 <button
                   onClick={handleAllocateUser}
-                  disabled={allocatingUser || !userEmail.trim()}
+                  disabled={allocatingUser || !selectedUserId}
                   className='flex-1 bg-electric-blue-500/20 border border-electric-blue-500/30 text-electric-blue-300 hover:bg-electric-blue-500/30 rounded-xl px-4 py-2 font-medium transition-all duration-200'
                 >
                   {allocatingUser ? 'Allocating...' : 'Allocate Coins'}

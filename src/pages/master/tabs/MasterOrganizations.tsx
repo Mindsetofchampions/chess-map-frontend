@@ -1,18 +1,33 @@
 import { useEffect, useState } from 'react';
 
 import { useToast } from '@/components/ToastProvider';
-import { supabase } from '@/lib/supabase';
+import {
+  adminCreateOrg,
+  adminDeleteOrganization,
+  adminListOrganizations,
+  adminUpdateOrg,
+  supabase,
+} from '@/lib/supabase';
 
 export default function MasterOrganizations() {
   const [rows, setRows] = useState<any[]>([]);
   const [name, setName] = useState('');
   const { showError, showSuccess } = useToast();
+  async function refresh() {
+    try {
+      const list = await adminListOrganizations();
+      setRows(list);
+    } catch {
+      const { data } = await supabase
+        .from('organizations')
+        .select('*')
+        .order('created_at', { ascending: false });
+      setRows(data ?? []);
+    }
+  }
+
   useEffect(() => {
-    supabase
-      .from('organizations')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .then(({ data }: { data: any[] | null }) => setRows(data ?? []));
+    refresh();
   }, []);
   async function createOrg() {
     const trimmed = name.trim();
@@ -21,12 +36,8 @@ export default function MasterOrganizations() {
       return;
     }
     try {
-      const { data, error } = await supabase
-        .from('organizations')
-        .insert({ name: trimmed })
-        .select('*')
-        .single();
-      if (error) throw error;
+      const resp = await adminCreateOrg({ name: trimmed });
+      const data = (resp as any).organization;
       if (data) {
         setRows((r) => [data, ...r]);
         showSuccess('Organization created', trimmed);
@@ -39,13 +50,8 @@ export default function MasterOrganizations() {
   }
   async function setStatus(id: string, status: string) {
     try {
-      const { data, error } = await supabase
-        .from('organizations')
-        .update({ status })
-        .eq('id', id)
-        .select('*')
-        .single();
-      if (error) throw error;
+      const resp = await adminUpdateOrg({ id, status: status as any });
+      const data = (resp as any).organization;
       if (data) {
         setRows((r) => r.map((x) => (x.id === id ? data : x)));
         showSuccess('Organization updated', `${data.name} → ${data.status}`);
@@ -53,6 +59,19 @@ export default function MasterOrganizations() {
     } catch (e: any) {
       const msg = e?.message || 'Update status failed';
       showError('Update organization failed', msg);
+    }
+  }
+
+  async function removeOrg(id: string) {
+    if (!confirm('Delete this organization? This cannot be undone.')) return;
+    try {
+      const resp = await adminDeleteOrganization(id);
+      if ((resp as any).success) {
+        setRows((r) => r.filter((x) => x.id !== id));
+        showSuccess('Organization deleted');
+      }
+    } catch (e: any) {
+      showError('Delete organization failed', e?.message || 'Unknown error');
     }
   }
   return (
@@ -86,24 +105,62 @@ export default function MasterOrganizations() {
                 <td className='p-2'>{r.name}</td>
                 <td className='p-2 capitalize'>{r.status}</td>
                 <td className='p-2 flex gap-2'>
-                  <button
-                    onClick={() => setStatus(r.id, 'active')}
-                    className='px-3 py-1 rounded bg-emerald-700'
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => setStatus(r.id, 'rejected')}
-                    className='px-3 py-1 rounded bg-rose-700'
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => setStatus(r.id, 'suspended')}
-                    className='px-3 py-1 rounded bg-amber-700'
-                  >
-                    Suspend
-                  </button>
+                  {r.status === 'pending' && (
+                    <>
+                      <button
+                        onClick={() => setStatus(r.id, 'active')}
+                        className='px-3 py-1 rounded bg-emerald-700'
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => setStatus(r.id, 'rejected')}
+                        className='px-3 py-1 rounded bg-rose-700'
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
+                  {r.status === 'active' && (
+                    <>
+                      <button
+                        onClick={() => setStatus(r.id, 'suspended')}
+                        className='px-3 py-1 rounded bg-amber-700'
+                      >
+                        Suspend
+                      </button>
+                      <button
+                        onClick={() => removeOrg(r.id)}
+                        className='px-3 py-1 rounded bg-rose-800'
+                      >
+                        Remove
+                      </button>
+                    </>
+                  )}
+                  {r.status === 'rejected' && (
+                    <button
+                      onClick={() => removeOrg(r.id)}
+                      className='px-3 py-1 rounded bg-rose-800'
+                    >
+                      Remove
+                    </button>
+                  )}
+                  {r.status === 'suspended' && (
+                    <>
+                      <button
+                        onClick={() => setStatus(r.id, 'active')}
+                        className='px-3 py-1 rounded bg-emerald-700'
+                      >
+                        Reinstate
+                      </button>
+                      <button
+                        onClick={() => removeOrg(r.id)}
+                        className='px-3 py-1 rounded bg-rose-800'
+                      >
+                        Remove
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}

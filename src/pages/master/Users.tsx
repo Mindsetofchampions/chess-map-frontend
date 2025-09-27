@@ -13,6 +13,7 @@ import {
   adminDeleteUser,
   setUserRole,
   adminSetUserOrg,
+  adminListOrganizations,
 } from '@/lib/supabase';
 
 interface Row {
@@ -51,53 +52,78 @@ export default function MasterUsersPage() {
     [resolvedRole, user],
   );
 
+  // Prevent aggressive refresh on visibility changes by tracking last load time
+  const [lastLoadedAt, setLastLoadedAt] = useState<number>(0);
   useEffect(() => {
-    if (!isMaster) return;
-    (async () => {
-      try {
-        // Prefer secure RPC for master admins
-        const { data, error } = await supabase.rpc('get_admin_user_list');
-        if (error) throw error;
-        let rows: Row[] = Array.isArray(data) ? (data as any) : [];
-        // Enrich with org assignment from profiles (and map to org name)
-        const ids = rows.map((r) => r.id);
-        if (ids.length) {
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('user_id, org_id')
-            .in('user_id', ids);
-          const profMap = new Map((profiles || []).map((p: any) => [p.user_id, p.org_id]));
-          const orgIds = Array.from(
-            new Set((profiles || []).map((p: any) => p.org_id).filter(Boolean)),
-          );
-          let orgNameById: Record<string, string> = {};
-          if (orgIds.length) {
-            const { data: orgRows } = await supabase
-              .from('organizations')
-              .select('id,name')
-              .in('id', orgIds);
-            orgNameById = Object.fromEntries((orgRows || []).map((o: any) => [o.id, o.name]));
-          }
-          rows = rows.map((r) => {
-            const oid = (profMap.get(r.id) as string | null) || null;
-            return { ...r, org_id: oid, org_name: oid ? orgNameById[oid] || null : null };
-          });
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const now = Date.now();
+        // Only reload if it has been >30s since the last load
+        if (now - lastLoadedAt > 30_000) {
+          void loadData();
         }
-        setUsers(rows);
-      } catch (e) {
-        console.error('Load users failed', e);
       }
-      // load organizations for optional association
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [lastLoadedAt]);
+
+  async function loadData() {
+    if (!isMaster) return;
+    try {
+      // Prefer secure RPC for master admins
+      const { data, error } = await supabase.rpc('get_admin_user_list');
+      if (error) throw error;
+      let rows: Row[] = Array.isArray(data) ? (data as any) : [];
+      // Enrich with org assignment from profiles (and map to org name)
+      const ids = rows.map((r) => r.id);
+      if (ids.length) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, org_id')
+          .in('user_id', ids);
+        const profMap = new Map((profiles || []).map((p: any) => [p.user_id, p.org_id]));
+        const orgIdList = (profiles || []).map((p: any) => p.org_id).filter(Boolean);
+        const orgIds = Array.from(new Set(orgIdList));
+        let orgNameById: Record<string, string> = {};
+        if (orgIds.length) {
+          const { data: orgRows } = await supabase
+            .from('organizations')
+            .select('id,name')
+            .in('id', orgIds);
+          orgNameById = Object.fromEntries((orgRows || []).map((o: any) => [o.id, o.name]));
+        }
+        rows = rows.map((r) => {
+          const oid = (profMap.get(r.id) as string | null) || null;
+          return { ...r, org_id: oid, org_name: oid ? orgNameById[oid] || null : null };
+        });
+      }
+      setUsers(rows);
+    } catch (e) {
+      console.error('Load users failed', e);
+    }
+    // load organizations for optional association (secure path for master)
+    try {
+      const list = await adminListOrganizations();
+      // Exclude pending orgs from selection dropdowns
+      const filtered = (list || []).filter((o: any) => o?.status !== 'pending');
+      setOrgs(filtered.map((o: any) => ({ id: o.id, name: o.name })));
+    } catch (e) {
+      // fallback to client if function unavailable
       try {
         const { data: orgData } = await supabase
           .from('organizations')
           .select('id,name')
+          .neq('status', 'pending')
           .order('name', { ascending: true });
         if (Array.isArray(orgData)) setOrgs(orgData as any);
-      } catch (e) {
-        // ignore
-      }
-    })();
+      } catch (_) {}
+    }
+    setLastLoadedAt(Date.now());
+  }
+
+  useEffect(() => {
+    void loadData();
   }, [isMaster]);
 
   if (!isMaster) {

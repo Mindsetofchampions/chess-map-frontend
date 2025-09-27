@@ -31,6 +31,18 @@ npx supabase functions deploy admin_delete_user "${REF_ARG[@]}"
 echo "Deploying admin_set_user_org..."
 npx supabase functions deploy admin_set_user_org "${REF_ARG[@]}"
 
+echo "Deploying admin_create_org..."
+npx supabase functions deploy admin_create_org "${REF_ARG[@]}"
+
+echo "Deploying admin_update_org..."
+npx supabase functions deploy admin_update_org "${REF_ARG[@]}"
+
+echo "Deploying admin_list_organizations..."
+npx supabase functions deploy admin_list_organizations "${REF_ARG[@]}"
+
+echo "Deploying admin_delete_org..."
+npx supabase functions deploy admin_delete_org "${REF_ARG[@]}"
+
 if [ -n "$REF" ]; then
   echo "Done. To set secrets run:
 npx supabase secrets set RESEND_API_KEY=... SENDGRID_API_KEY=... FROM_EMAIL=... SUPABASE_SERVICE_ROLE_KEY=... ALLOWED_REDIRECT_HOSTS=chesscompanions.app,www.chesscompanions.app --project-ref $REF"

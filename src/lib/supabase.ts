@@ -556,6 +556,107 @@ export async function adminSetUserOrg(payload: {
   }
 }
 
+/**
+ * Admin edge function: create organization (master_admin only)
+ */
+export async function adminCreateOrg(payload: {
+  name: string;
+  status?: 'pending' | 'active' | 'rejected' | 'suspended';
+  slug?: string;
+}) {
+  try {
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
+    const resp = await fetch(`${supabaseUrl}/functions/v1/admin_create_org`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        apikey: supabaseAnonKey as string,
+      },
+      body: JSON.stringify(payload),
+    });
+    const body = await resp.json();
+    if (!resp.ok) throw new Error(body?.error || 'admin_create_org failed');
+    return body as { success: true; organization: any };
+  } catch (error: any) {
+    throw new Error(error?.message || String(error));
+  }
+}
+
+/**
+ * Admin edge function: update organization status (master_admin only)
+ */
+export async function adminUpdateOrg(payload: {
+  id: string;
+  status: 'pending' | 'active' | 'rejected' | 'suspended';
+}) {
+  try {
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
+    const resp = await fetch(`${supabaseUrl}/functions/v1/admin_update_org`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        apikey: supabaseAnonKey as string,
+      },
+      body: JSON.stringify(payload),
+    });
+    const body = await resp.json();
+    if (!resp.ok) throw new Error(body?.error || 'admin_update_org failed');
+    return body as { success: true; organization: any };
+  } catch (error: any) {
+    throw new Error(error?.message || String(error));
+  }
+}
+
+/**
+ * Admin edge function: list organizations (master_admin only)
+ */
+export async function adminListOrganizations() {
+  try {
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
+    const resp = await fetch(`${supabaseUrl}/functions/v1/admin_list_organizations`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: supabaseAnonKey as string,
+      },
+    });
+    const body = await resp.json();
+    if (!resp.ok) throw new Error(body?.error || 'admin_list_organizations failed');
+    return (body?.rows as any[]) || [];
+  } catch (error: any) {
+    throw new Error(error?.message || String(error));
+  }
+}
+
+/**
+ * Admin edge function: delete organization (master_admin only)
+ */
+export async function adminDeleteOrganization(id: string) {
+  try {
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
+    const resp = await fetch(`${supabaseUrl}/functions/v1/admin_delete_org`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        apikey: supabaseAnonKey as string,
+      },
+      body: JSON.stringify({ id }),
+    });
+    const body = await resp.json();
+    if (!resp.ok) throw new Error(body?.error || 'admin_delete_org failed');
+    return body as { success: true; organization: any };
+  } catch (error: any) {
+    throw new Error(error?.message || String(error));
+  }
+}
+
 // Org admin: org and engagement flows
 export interface MyOrg {
   org_id: string;

@@ -6,7 +6,7 @@
  */
 
 import { User } from '@supabase/supabase-js';
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 
 import { supabase } from '@/lib/supabase';
 
@@ -72,6 +72,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [role, setRole] = useState<AppRole>('unknown');
   const [loading, setLoading] = useState(true);
   const [roleLoading, setRoleLoading] = useState(true);
+  // Track the last user id to prevent unnecessary updates on token refresh
+  const userIdRef = useRef<string | null>(null);
 
   /**
    * Refresh user role from database
@@ -257,19 +259,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Set up auth state listener
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event: string, session: any) => {
-      if (mounted) {
-        setUser(session?.user || null);
-        setLoading(false);
-        // Only refresh role if user changes and not already loading
-        if (session?.user) {
+    } = supabase.auth.onAuthStateChange(async (event: string, session: any) => {
+      if (!mounted) return;
+      const nextUser: User | null = session?.user || null;
+      const nextUserId = nextUser?.id || null;
+      const currentId = userIdRef.current;
+
+      // For token refreshes, avoid state changes if the user identity didn't change
+      if (event === 'TOKEN_REFRESHED') {
+        if (currentId && currentId === nextUserId) {
+          // No change in user identity; skip updates to prevent app-wide refreshes
+          return;
+        }
+      }
+
+      // Update user state only if identity actually changed or on sign-out
+      const identityChanged = currentId !== nextUserId;
+      if (identityChanged) {
+        userIdRef.current = nextUserId;
+        setUser(nextUser);
+      }
+      setLoading(false);
+
+      // Refresh role only on meaningful events
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        if (nextUser) {
           setTimeout(() => {
             refreshRole();
           }, 100);
-        } else {
-          setRole('unknown');
-          setRoleLoading(false);
         }
+      } else if (event === 'SIGNED_OUT') {
+        setRole('unknown');
+        setRoleLoading(false);
       }
     });
 
@@ -284,12 +305,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Refresh role when user changes
   useEffect(() => {
     if (user) {
+      // Only refresh role if the user identity changed (handled by auth listener)
+      // This effect remains for initial mount when initializeAuth set the user
       refreshRole();
     } else {
       setRole('unknown');
       setRoleLoading(false);
     }
-  }, [user]); // Only depend on user
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const contextValue: AuthContextType = {
     user,
