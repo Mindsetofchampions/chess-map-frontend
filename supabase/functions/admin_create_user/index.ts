@@ -11,6 +11,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 interface CreateUserRequest {
@@ -37,80 +38,66 @@ serve(async (req) => {
 
   try {
     // Initialize Supabase with service role
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? Deno.env.get('INTERNAL_SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      },
-    );
+    const SUPABASE_URL =
+      Deno.env.get('SUPABASE_URL') ?? Deno.env.get('INTERNAL_SUPABASE_URL') ?? '';
+    const SERVICE_ROLE =
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SERVICE_ROLE_KEY') ?? '';
+
+    const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
     // Get the authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
         JSON.stringify({ success: false, error: 'Authorization header required' }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401,
-        },
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 },
       );
     }
 
-    // Initialize client Supabase to verify caller permissions
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? Deno.env.get('INTERNAL_SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    );
-
-    // Set the session from the auth header
-    const token = authHeader.replace('Bearer ', '');
-    const {
-      data: { user: callingUser },
-      error: userError,
-    } = await supabaseClient.auth.getUser(token);
-
-    if (userError || !callingUser) {
+    const jwt = authHeader.replace('Bearer ', '');
+    if (!jwt) {
       return new Response(
         JSON.stringify({ success: false, error: 'Invalid authentication token' }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401,
-        },
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 },
       );
     }
 
-    // Verify caller is master admin (accept from user_roles OR profiles for backward compatibility)
-    const { data: roleData, error: roleError } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', callingUser.id)
-      .maybeSingle();
-
-    let isMaster = roleData?.role === 'master_admin';
-
-    if (!isMaster) {
-      const { data: profData } = await supabaseAdmin
-        .from('profiles')
-        .select('role')
-        .eq('user_id', callingUser.id)
-        .maybeSingle();
-      isMaster = profData?.role === 'master_admin';
+    // Decode JWT to extract caller user id (sub)
+    function jwtSub(token: string): string | null {
+      try {
+        const parts = token.split('.');
+        if (parts.length < 2) return null;
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return payload?.sub || null;
+      } catch {
+        return null;
+      }
     }
+    const callerId = jwtSub(jwt);
 
-    if (!isMaster) {
+    // Verify caller is master admin using DB RPC that checks roles
+    const check = await fetch(`${SUPABASE_URL}/rest/v1/rpc/actor_is_master_admin`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        apikey: SERVICE_ROLE,
+        'Content-Type': 'application/json',
+      },
+      body: '{}',
+    });
+    if (!check.ok) {
       return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Master admin privileges required',
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 403,
-        },
+        JSON.stringify({ success: false, error: 'FORBIDDEN' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 },
+      );
+    }
+    const ok = await check.json();
+    if (!ok) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Master admin privileges required' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 },
       );
     }
 
@@ -191,7 +178,7 @@ serve(async (req) => {
     const { error: roleInsertError } = await supabaseAdmin.from('user_roles').upsert({
       user_id: newUser.user.id,
       role: role,
-      assigned_by: callingUser.id,
+      assigned_by: callerId ?? null,
     });
 
     if (roleInsertError) {

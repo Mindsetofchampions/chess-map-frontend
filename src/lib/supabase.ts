@@ -375,6 +375,7 @@ export async function adminCreateUser(payload: {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
+        apikey: supabaseAnonKey as string,
       },
       body: JSON.stringify(payload),
     });
@@ -402,6 +403,7 @@ export async function adminGenerateLink(email: string, redirectTo?: string) {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
+        apikey: supabaseAnonKey as string,
       },
       body: JSON.stringify({ email, type: 'magiclink', redirectTo }),
     });
@@ -429,6 +431,7 @@ export async function adminSetPassword(email: string, password: string) {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
+        apikey: supabaseAnonKey as string,
       },
       body: JSON.stringify({ email, password }),
     });
@@ -453,6 +456,7 @@ export async function adminDeleteUser(email: string) {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
+        apikey: supabaseAnonKey as string,
       },
       body: JSON.stringify({ email }),
     });
@@ -507,7 +511,11 @@ export async function sendSystemNotification(to: string, subject: string, text: 
   const token = session.data.session?.access_token;
   const resp = await fetch(`${supabaseUrl}/functions/v1/send_onboarding_notification`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      apikey: supabaseAnonKey as string,
+    },
     body: JSON.stringify({ event: 'system_notification', parent_email: to, subject, text }),
   });
   if (!resp.ok) {
