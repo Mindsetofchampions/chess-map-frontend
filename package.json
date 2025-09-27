@@ -37,6 +37,8 @@
     "smoke:map": "node --loader ts-node/esm scripts/smoke-map-layers.ts",
   "smoke:magic-link": "node --loader ts-node/esm scripts/smoke-magic-link.ts",
   "check:mapbox": "node --loader ts-node/esm scripts/check-mapbox-token.ts",
+    "bucket:create:map-assets": "node --loader ts-node/esm scripts/create-map-assets-bucket.ts",
+    "bucket:create:parent-ids": "node --loader ts-node/esm scripts/create-parent-ids-bucket.ts",
     "check:master-admin": "node --loader ts-node/esm scripts/check-master-admin.ts",
     "create:bucket:parent_ids": "node --loader ts-node/esm scripts/create-parent-ids-bucket.ts",
     "rpc:test:users": "node scripts/rpc-test-get-admin-user-list.mjs",

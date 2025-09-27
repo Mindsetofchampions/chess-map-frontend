@@ -43,5 +43,6 @@ create_bucket() {
 
 create_bucket "org_logos"
 create_bucket "org_admin_ids"
+create_bucket "map_assets"
 
 echo "All done. If you need custom storage policies, apply supabase/storage_policies.sql in your Supabase SQL editor."

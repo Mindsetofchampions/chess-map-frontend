@@ -15,6 +15,7 @@ import { useToast } from '@/components/ToastProvider';
 import { useWallet } from '@/components/wallet/WalletChip';
 import { supabase, rpcSubmitMcq } from '@/lib/supabase';
 import type { Quest, MCQConfig, MCQOption } from '@/types/backend';
+import SEO from '@/components/SEO';
 
 /**
  * Quest Play Component
@@ -199,6 +200,12 @@ const QuestPlay: React.FC = () => {
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary'>
+      <SEO
+        title={quest ? `Quest: ${quest.title}` : 'Quest'}
+        description={quest?.description || 'Play this CHESS Quest to learn and earn rewards.'}
+        image={'/icons/google.svg'}
+        type='article'
+      />
       <div className='container mx-auto max-w-4xl p-6'>
         {/* Navigation */}
         <motion.div

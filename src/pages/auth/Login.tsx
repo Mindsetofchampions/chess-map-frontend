@@ -14,6 +14,7 @@ import GlassContainer from '@/components/GlassContainer';
 import { useToast } from '@/components/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
 import { routeForRole } from '@/lib/routes';
+import SEO from '@/components/SEO';
 
 /**
  * Login form data interface
@@ -121,6 +122,7 @@ const Login: React.FC = () => {
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary flex items-center justify-center py-12 px-4'>
+      <SEO title="Sign in to CHESS Quest" description="Access your CHESS Quest account to explore quests and manage your progress." image="/icons/google.svg" />
       <div className='max-w-md w-full'>
         {/* Back to Home Link */}
         <motion.div

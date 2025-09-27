@@ -26,6 +26,7 @@ import { supabase } from '@/lib/supabase';
 import { rpcReserveSeat, rpcCancelSeat } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Quest } from '@/types/backend';
+import SEO from '@/components/SEO';
 
 /**
  * Quests List Component
@@ -234,6 +235,7 @@ const QuestsList: React.FC = () => {
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary'>
+      <SEO title="Available Quests" description="Explore available CHESS Quests by persona, grade, and location." image="/icons/google.svg" />
       <div className='container mx-auto max-w-7xl p-6'>
         {/* Header */}
         <motion.div

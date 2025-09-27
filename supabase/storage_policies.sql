@@ -130,6 +130,52 @@ create policy if not exists "org_logos_delete_orgadmin_or_master" on storage.obj
   );
 
 -- ==============================================================
+-- Policies for bucket: map_assets
+-- Purpose: store quest and map imagery intended for public consumption. Bucket is public for read.
+--          Writes are allowed for authenticated users; updates/deletes limited to uploader or master_admin.
+
+-- SELECT: allow anyone to read objects in map_assets (redundant for public bucket, but explicit here)
+create policy if not exists "map_assets_select_public" on storage.objects
+  for select
+  using (bucket_id = 'map_assets');
+
+-- INSERT: allow any authenticated user to upload; require metadata.uploader_id = auth.uid()
+create policy if not exists "map_assets_insert_authenticated" on storage.objects
+  for insert
+  using (
+    bucket_id = 'map_assets' AND auth.role() = 'authenticated' AND (metadata->>'uploader_id') = auth.uid()
+  )
+  with check (
+    bucket_id = 'map_assets' AND auth.role() = 'authenticated' AND (metadata->>'uploader_id') = auth.uid()
+  );
+
+-- UPDATE: allow only uploader or master_admin to modify
+create policy if not exists "map_assets_update_owner_or_master" on storage.objects
+  for update
+  using (
+    bucket_id = 'map_assets' AND (
+      (metadata->>'uploader_id') = auth.uid()
+      OR public.is_user_in_roles(auth.uid()::uuid, ARRAY['master_admin'])
+    )
+  )
+  with check (
+    bucket_id = 'map_assets' AND (
+      (metadata->>'uploader_id') = auth.uid()
+      OR public.is_user_in_roles(auth.uid()::uuid, ARRAY['master_admin'])
+    )
+  );
+
+-- DELETE: allow only uploader or master_admin to delete
+create policy if not exists "map_assets_delete_owner_or_master" on storage.objects
+  for delete
+  using (
+    bucket_id = 'map_assets' AND (
+      (metadata->>'uploader_id') = auth.uid()
+      OR public.is_user_in_roles(auth.uid()::uuid, ARRAY['master_admin'])
+    )
+  );
+
+-- ==============================================================
 -- Helper: example organization_admins table (optional)
 -- If you don't have an org->admins mapping, create one similar to the example below and maintain it from your onboarding flow.
 --

@@ -1,3 +1,4 @@
+import SEO from '@/components/SEO';
 /**
  * Map Page Component with Supabase Integration
  *
@@ -254,6 +255,10 @@ const MapPage: React.FC = () => {
 
   return (
     <GlassContainer variant='page'>
+      <SEO
+        title='Map – Discover Quests and Safe Spaces'
+        description='Explore organizations, safe spaces, and quests across the city.'
+      />
       <div className='container mx-auto max-w-7xl'>
         {/* Navigation Header */}
         <motion.div

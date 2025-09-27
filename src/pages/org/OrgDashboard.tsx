@@ -27,6 +27,7 @@ import StaffTab from '@/pages/org/tabs/StaffTab';
 import StudentsTab from '@/pages/org/tabs/StudentsTab';
 import QuestBuilder from '@/components/QuestBuilder';
 import { supabase } from '@/lib/supabase';
+import SEO from '@/components/SEO';
 
 const OrgDashboard: React.FC = () => {
   const { showSuccess, showError } = useToast();
@@ -331,6 +332,7 @@ const OrgDashboard: React.FC = () => {
   return (
     <ProtectedRoute requiredRole={'staff'}>
       <OnboardingGate>
+        <SEO title="Organization Dashboard" description="Manage your CHESS Quest organization: students, staff, services, attendance, and reports." image="/icons/google.svg" />
         <div className='container mx-auto p-6 max-w-6xl'>
           <h1 className='text-2xl font-bold text-white mb-6'>Organization Dashboard</h1>
 

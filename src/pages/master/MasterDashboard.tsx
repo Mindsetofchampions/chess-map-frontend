@@ -48,6 +48,7 @@ import MasterOrganizations from '@/pages/master/tabs/MasterOrganizations';
 import MasterReports from '@/pages/master/tabs/MasterReports';
 import MasterMap from '@/pages/master/tabs/MasterMap';
 import MasterRewards from '@/pages/master/tabs/MasterRewards';
+import SEO from '@/components/SEO';
 import type { Quest } from '@/types/backend';
 import { formatDateTime } from '@/utils/format';
 import { mapPgError } from '@/utils/mapPgError';
@@ -489,6 +490,11 @@ const MasterDashboard: React.FC = () => {
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary'>
+      <SEO
+        title="Master Admin Dashboard"
+        description="Approve quests, manage wallets and organizations, and monitor system health."
+        image="/icons/google.svg"
+      />
       <div className='container mx-auto max-w-7xl p-6'>
         {/* Back button hidden on dashboard, but placeholder for consistency */}
         <div className='mb-4'>{/* No back button on dashboard */}</div>
