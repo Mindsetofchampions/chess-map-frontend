@@ -5,6 +5,7 @@ import MapView from '@/components/MapView';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ToastProvider';
 import { supabase } from '@/lib/supabase';
+import { uploadQuestImage } from '@/lib/storage';
 import { loadGoogleMapsPlaces } from '@/lib/googleMaps';
 
 /**
@@ -417,27 +418,10 @@ export default function MasterMap() {
   const uploadLogo = async (file: File) => {
     try {
       setUploading(true);
-      const bucket = 'map_assets';
-      const ext = file.name.split('.').pop() || 'png';
-      const path = `${createType || 'misc'}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error: upErr } = await supabase.storage.from(bucket).upload(path, file, { upsert: false, cacheControl: '3600' });
-      if (upErr) {
-        const msg = upErr.message?.toLowerCase?.() || '';
-        if (msg.includes('bucket not found') || (upErr as any).status === 404) {
-          showError(
-            'Bucket missing',
-            "Storage bucket 'map_assets' not found. Create a public bucket named 'map_assets' in Supabase Storage or update MasterMap to use an existing bucket.",
-          );
-        } else {
-          showError('Upload failed', upErr.message || 'Unable to upload file');
-        }
-        setUploading(false);
-        return;
-      }
-      const { data: pub } = await supabase.storage.from(bucket).getPublicUrl(path);
-      const url = pub?.publicUrl || null;
-      setUploadedUrl(url);
-      showSuccess('Logo uploaded');
+      // Delegate to helper which sets metadata.uploader_id and returns public URL
+      const url = await uploadQuestImage(file, createType || 'misc');
+      setUploadedUrl(url || null);
+      showSuccess('Image uploaded');
     } catch (e: any) {
       showError('Upload error', e.message || String(e));
     } finally {

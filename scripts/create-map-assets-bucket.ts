@@ -19,9 +19,9 @@ async function main() {
 
   try {
     // Check existing buckets
-    const { data: buckets, error: listErr } = await supabase.storage.listBuckets();
+  const { data: buckets, error: listErr } = await supabase.storage.listBuckets();
     if (listErr) throw listErr;
-    const exists = buckets?.some((b) => b.name === bucketId);
+  const exists = Array.isArray(buckets) && buckets.some((b: { name: string }) => b.name === bucketId);
     if (exists) {
       console.log(`Bucket '${bucketId}' already exists. No action taken.`);
       process.exit(0);
