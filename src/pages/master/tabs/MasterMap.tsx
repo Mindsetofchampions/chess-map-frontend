@@ -69,6 +69,22 @@ export default function MasterMap() {
   const [attributes, setAttributes] = useState<{ id: string; name: string }[]>([]);
   const [attrIdToName, setAttrIdToName] = useState<Record<string, string>>({});
 
+  // Helper to extract lng/lat from heterogenous rows
+  const extractLngLat = (row: any): { lng: number | null; lat: number | null } => {
+    // Common fields
+    let lng = row?.lng ?? row?.longitude ?? row?.lon ?? null;
+    let lat = row?.lat ?? row?.latitude ?? null;
+    // GeoJSON-like fallback
+    if ((lng == null || lat == null) && row?.location?.coordinates?.length === 2) {
+      const coords = row.location.coordinates;
+      lng = coords[0];
+      lat = coords[1];
+    }
+    // String to number coercion
+    const toNum = (v: any) => (v === null || v === undefined || v === '' ? null : Number(v));
+    return { lng: toNum(lng), lat: toNum(lat) };
+  };
+
   // Fetch all layers
   useEffect(() => {
     const load = async () => {
@@ -104,13 +120,56 @@ export default function MasterMap() {
     };
     load();
 
+    // Realtime: incrementally update state for snappy UI, with full reload fallback
     const ch = supabase
       .channel('master_map_all')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'quests' }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'safe_spaces' }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'quests' }, (payload: any) => {
+        const { eventType, new: newRow, old: oldRow } = payload || {};
+        setQuests((prev) => {
+          if (eventType === 'INSERT') {
+            // Put newest first
+            return [newRow, ...prev.filter((q) => q.id !== newRow?.id)];
+          }
+          if (eventType === 'UPDATE') {
+            return prev.map((q) => (q.id === newRow?.id ? { ...q, ...newRow } : q));
+          }
+          if (eventType === 'DELETE') {
+            return prev.filter((q) => q.id !== oldRow?.id);
+          }
+          return prev;
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'safe_spaces' }, (payload: any) => {
+        const { eventType, new: newRow, old: oldRow } = payload || {};
+        setSafeSpaces((prev) => {
+          if (eventType === 'INSERT') return [newRow, ...prev.filter((r) => r.id !== newRow?.id)];
+          if (eventType === 'UPDATE') return prev.map((r) => (r.id === newRow?.id ? { ...r, ...newRow } : r));
+          if (eventType === 'DELETE') return prev.filter((r) => r.id !== oldRow?.id);
+          return prev;
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, (payload: any) => {
+        const { eventType, new: newRow, old: oldRow } = payload || {};
+        setEvents((prev) => {
+          if (eventType === 'INSERT') return [newRow, ...prev.filter((r) => r.id !== newRow?.id)];
+          if (eventType === 'UPDATE') return prev.map((r) => (r.id === newRow?.id ? { ...r, ...newRow } : r));
+          if (eventType === 'DELETE') return prev.filter((r) => r.id !== oldRow?.id);
+          return prev;
+        });
+      })
       .subscribe();
-    return () => ch.unsubscribe();
+
+    // Focus-based refresh as a fallback if realtime misses events
+    const onFocus = () => {
+      load();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => {
+      try {
+        ch.unsubscribe();
+      } catch {}
+      window.removeEventListener('focus', onFocus);
+    };
   }, []);
 
   const renderOverlay = (map: any, gl?: any) => {
@@ -121,9 +180,8 @@ export default function MasterMap() {
     const markers: any[] = [];
 
     quests.forEach((q) => {
-      const lng = q?.lng ?? q?.longitude ?? q?.lon;
-      const lat = q?.lat ?? q?.latitude;
-      if (lng && lat) {
+      const { lng, lat } = extractLngLat(q);
+      if (lng !== null && lat !== null) {
         const el = document.createElement('div');
         el.className = 'quest-marker-master';
         // Color by attribute, fallback by status
@@ -148,14 +206,13 @@ export default function MasterMap() {
         el.title = `${q.title} (${q.status})`;
         const GL = gl || (window as any).mapboxgl || (window as any).maplibregl;
         if (!GL?.Marker) return;
-        markers.push(new GL.Marker(el).setLngLat([lng, lat]).addTo(map));
+        markers.push(new GL.Marker(el).setLngLat([Number(lng), Number(lat)]).addTo(map));
       }
     });
 
     safeSpaces.forEach((s) => {
-      const lng = s?.lng ?? s?.longitude ?? s?.lon;
-      const lat = s?.lat ?? s?.latitude;
-      if (lng && lat) {
+      const { lng, lat } = extractLngLat(s);
+      if (lng !== null && lat !== null) {
         const el = document.createElement('div');
         el.className = 'safe-marker-master';
         el.style.cssText =
@@ -163,14 +220,13 @@ export default function MasterMap() {
         el.title = s.name || 'Safe Space';
         const GL = gl || (window as any).mapboxgl || (window as any).maplibregl;
         if (!GL?.Marker) return;
-        markers.push(new GL.Marker(el).setLngLat([lng, lat]).addTo(map));
+        markers.push(new GL.Marker(el).setLngLat([Number(lng), Number(lat)]).addTo(map));
       }
     });
 
     events.forEach((ev) => {
-      const lng = ev?.lng ?? ev?.longitude ?? ev?.lon;
-      const lat = ev?.lat ?? ev?.latitude;
-      if (lng && lat) {
+      const { lng, lat } = extractLngLat(ev);
+      if (lng !== null && lat !== null) {
         const el = document.createElement('div');
         el.className = 'event-marker-master';
         el.style.cssText =
@@ -178,7 +234,7 @@ export default function MasterMap() {
         el.title = ev.title || 'Event';
         const GL = gl || (window as any).mapboxgl || (window as any).maplibregl;
         if (!GL?.Marker) return;
-        markers.push(new GL.Marker(el).setLngLat([lng, lat]).addTo(map));
+        markers.push(new GL.Marker(el).setLngLat([Number(lng), Number(lat)]).addTo(map));
       }
     });
 

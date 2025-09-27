@@ -43,8 +43,9 @@
     "create:bucket:parent_ids": "node --loader ts-node/esm scripts/create-parent-ids-bucket.ts",
     "rpc:test:users": "node scripts/rpc-test-get-admin-user-list.mjs",
     "admin:grant:master": "node --loader ts-node/esm scripts/grant-master-admin.ts",
-    "db:push": "npx supabase db push --yes",
+  "db:push": "npx supabase db push --include-all --yes",
     "db:push:remote": "node --loader ts-node/esm scripts/db-push-remote.ts",
+    "db:inspect": "node --loader ts-node/esm scripts/db-inspect-functions.ts",
     "admin:promote:self": "node --loader ts-node/esm scripts/promote-self-master.ts"
   },
   "bin": {},
