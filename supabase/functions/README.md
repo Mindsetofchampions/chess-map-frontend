@@ -15,6 +15,7 @@ npx supabase functions deploy admin_create_user
 npx supabase functions deploy admin_generate_link
 npx supabase functions deploy admin_set_password
 npx supabase functions deploy admin_delete_user
+npx supabase functions deploy admin_set_user_org
 
 # Or with explicit project ref:
 npx supabase functions deploy send_onboarding_notification --project-ref <ref>
@@ -23,6 +24,7 @@ npx supabase functions deploy admin_create_user --project-ref <ref>
 npx supabase functions deploy admin_generate_link --project-ref <ref>
 npx supabase functions deploy admin_set_password --project-ref <ref>
 npx supabase functions deploy admin_delete_user --project-ref <ref>
+npx supabase functions deploy admin_set_user_org --project-ref <ref>
 ```
 
 3. Set secrets for the functions (either in Supabase dashboard or via CLI). Required secrets:
