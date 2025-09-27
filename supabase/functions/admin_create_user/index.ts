@@ -88,10 +88,10 @@ serve(async (req) => {
       body: '{}',
     });
     if (!check.ok) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'FORBIDDEN' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 },
-      );
+      return new Response(JSON.stringify({ success: false, error: 'FORBIDDEN' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      });
     }
     const ok = await check.json();
     if (!ok) {

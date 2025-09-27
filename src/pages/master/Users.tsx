@@ -67,7 +67,9 @@ export default function MasterUsersPage() {
             .select('user_id, org_id')
             .in('user_id', ids);
           const profMap = new Map((profiles || []).map((p: any) => [p.user_id, p.org_id]));
-          const orgIds = Array.from(new Set((profiles || []).map((p: any) => p.org_id).filter(Boolean)));
+          const orgIds = Array.from(
+            new Set((profiles || []).map((p: any) => p.org_id).filter(Boolean)),
+          );
           let orgNameById: Record<string, string> = {};
           if (orgIds.length) {
             const { data: orgRows } = await supabase
@@ -216,7 +218,9 @@ export default function MasterUsersPage() {
       const res = await adminSetUserOrg({ email: u.email, org_id: newOrgId || null });
       setUsers((prev) =>
         prev.map((row) =>
-          row.id === u.id ? { ...row, org_id: res.org_id ?? null, org_name: res.org_name ?? null } : row,
+          row.id === u.id
+            ? { ...row, org_id: res.org_id ?? null, org_name: res.org_name ?? null }
+            : row,
         ),
       );
       showSuccess('Organization updated', `${u.email} → ${res.org_name || 'None'}`);
