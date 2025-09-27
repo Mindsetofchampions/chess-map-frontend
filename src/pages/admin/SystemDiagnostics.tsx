@@ -241,7 +241,7 @@ const DiagnosticCard: React.FC<DiagnosticCardProps> = ({
  */
 const SystemDiagnostics: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
-  const { showSuccess, showError, showWarning } = useToast();
+  const { showSuccess, showError, showWarning, errorLogs, clearErrorLogs } = useToast() as any;
 
   const [results, setResults] = useState<Record<string, CheckResult>>({});
   const [runningAll, setRunningAll] = useState(false);
@@ -1191,6 +1191,56 @@ const SystemDiagnostics: React.FC = () => {
             </div>
           </GlassContainer>
         </div>
+
+        {/* Master Admin Error Log (persistent) */}
+        <motion.div className='mt-8' initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <GlassContainer variant='card'>
+            <div className='flex items-center justify-between mb-3'>
+              <div className='flex items-center gap-2'>
+                <Shield className='w-5 h-5 text-red-300' />
+                <h3 className='text-white font-semibold'>Master Admin Error Log</h3>
+                <span className='text-xs text-white/60'>({errorLogs?.length || 0} recent)</span>
+              </div>
+              <button
+                onClick={() => clearErrorLogs?.()}
+                className='btn-esports-secondary px-3 py-1 text-xs'
+                disabled={!errorLogs?.length}
+              >
+                Clear
+              </button>
+            </div>
+            {!errorLogs?.length ? (
+              <div className='text-white/60 text-sm'>No error toasts captured yet.</div>
+            ) : (
+              <div className='max-h-80 overflow-auto border border-white/10 rounded-lg'>
+                <table className='w-full text-sm'>
+                  <thead className='sticky top-0 bg-black/30 text-white/70'>
+                    <tr>
+                      <th className='p-2 text-left'>Time</th>
+                      <th className='p-2 text-left'>Title</th>
+                      <th className='p-2 text-left'>Message</th>
+                      <th className='p-2 text-left'>Path</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {errorLogs.map((e: any) => (
+                      <tr key={e.id} className='border-t border-white/10'>
+                        <td className='p-2 whitespace-nowrap text-white/80'>
+                          {new Date(e.timestamp).toLocaleTimeString()}
+                        </td>
+                        <td className='p-2 text-white'>{e.title}</td>
+                        <td className='p-2 text-white/90 break-all max-w-[30rem]'>
+                          {e.message || ''}
+                        </td>
+                        <td className='p-2 text-white/70'>{e.path || ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </GlassContainer>
+        </motion.div>
 
         {/* Navigation Links */}
         <motion.div

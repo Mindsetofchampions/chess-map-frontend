@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 
+import { useToast } from '@/components/ToastProvider';
 import { supabase } from '@/lib/supabase';
 
 export default function MasterOrganizations() {
   const [rows, setRows] = useState<any[]>([]);
   const [name, setName] = useState('');
+  const { showError, showSuccess } = useToast();
   useEffect(() => {
     supabase
       .from('organizations')
@@ -13,23 +15,45 @@ export default function MasterOrganizations() {
       .then(({ data }: { data: any[] | null }) => setRows(data ?? []));
   }, []);
   async function createOrg() {
-    if (!name.trim()) return;
-    const { data, error } = await supabase
-      .from('organizations')
-      .insert({ name })
-      .select('*')
-      .single();
-    if (!error && data) setRows((r) => [data, ...r]);
-    setName('');
+    const trimmed = name.trim();
+    if (!trimmed) {
+      showError('Organization name required');
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('organizations')
+        .insert({ name: trimmed })
+        .select('*')
+        .single();
+      if (error) throw error;
+      if (data) {
+        setRows((r) => [data, ...r]);
+        showSuccess('Organization created', trimmed);
+        setName('');
+      }
+    } catch (e: any) {
+      const msg = e?.message || 'Create organization failed';
+      showError('Create organization failed', msg);
+    }
   }
   async function setStatus(id: string, status: string) {
-    const { data } = await supabase
-      .from('organizations')
-      .update({ status })
-      .eq('id', id)
-      .select('*')
-      .single();
-    if (data) setRows((r) => r.map((x) => (x.id === id ? data : x)));
+    try {
+      const { data, error } = await supabase
+        .from('organizations')
+        .update({ status })
+        .eq('id', id)
+        .select('*')
+        .single();
+      if (error) throw error;
+      if (data) {
+        setRows((r) => r.map((x) => (x.id === id ? data : x)));
+        showSuccess('Organization updated', `${data.name} → ${data.status}`);
+      }
+    } catch (e: any) {
+      const msg = e?.message || 'Update status failed';
+      showError('Update organization failed', msg);
+    }
   }
   return (
     <div className='space-y-4'>

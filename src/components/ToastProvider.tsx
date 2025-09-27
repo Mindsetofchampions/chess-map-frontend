@@ -34,6 +34,15 @@ interface ToastContextType {
   showSuccess: (title: string, message?: string) => void;
   showError: (title: string, message?: string) => void;
   showWarning: (title: string, message?: string) => void;
+  // Error log visibility for diagnostics
+  errorLogs: Array<{
+    id: string;
+    title: string;
+    message?: string;
+    timestamp: string;
+    path?: string;
+  }>;
+  clearErrorLogs: () => void;
 }
 
 /**
@@ -127,6 +136,9 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
  */
 export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [errorLogs, setErrorLogs] = useState<
+    Array<{ id: string; title: string; message?: string; timestamp: string; path?: string }>
+  >([]);
 
   /**
    * Show a toast notification
@@ -175,6 +187,17 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const showError = useCallback(
     (title: string, message?: string) => {
       showToast('error', title, message, 8000); // Errors stay longer
+      // Persist to in-memory error log for diagnostics view
+      try {
+        const entry = {
+          id: `elog-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          title,
+          message,
+          timestamp: new Date().toISOString(),
+          path: typeof window !== 'undefined' ? window.location.pathname : undefined,
+        };
+        setErrorLogs((prev) => [entry, ...prev].slice(0, 200)); // keep last 200
+      } catch {}
     },
     [showToast],
   );
@@ -192,6 +215,8 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     showSuccess,
     showError,
     showWarning,
+    errorLogs,
+    clearErrorLogs: () => setErrorLogs([]),
   };
 
   return (
