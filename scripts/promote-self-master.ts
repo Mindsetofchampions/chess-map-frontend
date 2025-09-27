@@ -40,7 +40,7 @@ async function main() {
     process.exit(1);
   }
   if (!MASTER_EMAIL || !MASTER_PASSWORD) {
-  console.error('Set MASTER_EMAIL and MASTER_PASSWORD in env/.env.scripts.local');
+    console.error('Set MASTER_EMAIL and MASTER_PASSWORD in env/.env.scripts.local');
     process.exit(1);
   }
 

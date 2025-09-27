@@ -9,11 +9,7 @@ if (fs.existsSync('.env.scripts.local')) {
   dotenvConfig();
 }
 
-function req(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env ${name}`);
-  return v;
-}
+// Note: env accessors inline; failing values will be handled with fallbacks below.
 
 async function signInEmail(client: any, email: string, password: string) {
   const { data, error } = await client.auth.signInWithPassword({ email, password });
@@ -22,7 +18,9 @@ async function signInEmail(client: any, email: string, password: string) {
 }
 
 function randSuffix(len = 10) {
-  return Math.random().toString(36).slice(2, 2 + len);
+  return Math.random()
+    .toString(36)
+    .slice(2, 2 + len);
 }
 
 type TempUser = { id: string; email: string; password: string };
@@ -75,7 +73,9 @@ async function main() {
   let tempUser: TempUser | null = null;
   if (!ORG_EMAIL || !ORG_PASSWORD) {
     if (!service) {
-      throw new Error('Set ORG_EMAIL/ORG_PASSWORD or provide SUPABASE_SERVICE_ROLE_KEY for auto-provisioning.');
+      throw new Error(
+        'Set ORG_EMAIL/ORG_PASSWORD or provide SUPABASE_SERVICE_ROLE_KEY for auto-provisioning.',
+      );
     }
     console.log('No org credentials provided. Auto-provisioning a temporary org_admin...');
     tempUser = await provisionTempOrgAdmin(url!, service!);
@@ -97,7 +97,8 @@ async function main() {
     if (attrsErr) throw attrsErr;
     attributeId = attrs?.[0]?.id ?? null;
   }
-  if (!attributeId) throw new Error('No attribute_id found; seed attributes table or set SMOKE_ATTRIBUTE_ID');
+  if (!attributeId)
+    throw new Error('No attribute_id found; seed attributes table or set SMOKE_ATTRIBUTE_ID');
 
   const { data: created, error: createErr } = await org.rpc('create_quest', {
     p_title: title,
@@ -121,7 +122,9 @@ async function main() {
     const master = createClient(url, anon, { auth: { persistSession: false } });
     try {
       await signInEmail(master, MASTER_EMAIL, MASTER_PASSWORD);
-      const { data: approved, error: approveErr } = await master.rpc('approve_quest', { p_quest_id: quest.id });
+      const { data: approved, error: approveErr } = await master.rpc('approve_quest', {
+        p_quest_id: quest.id,
+      });
       if (approveErr) throw approveErr;
       console.log('Quest approved response:', approved);
     } catch (err: any) {

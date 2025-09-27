@@ -18,6 +18,7 @@ import StudentProfileCard from '@/components/StudentProfileCard';
 import LedgerTable from '@/components/wallet/LedgerTable';
 import WalletChip from '@/components/wallet/WalletChip';
 import { useAuth } from '@/contexts/AuthContext';
+import { routeForRole } from '@/lib/routes';
 
 /**
  * Dashboard Stats Card Props
@@ -64,9 +65,9 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, delay 
 const Dashboard: React.FC = () => {
   const { user, role, roleLoading } = useAuth();
 
-  // Redirect master admins to their proper dashboard
+  // Redirect admin roles to their appropriate dashboard
   if (!roleLoading && (role === 'master_admin' || role === 'org_admin' || role === 'staff')) {
-    return <Navigate to='/master/dashboard' replace />;
+    return <Navigate to={routeForRole(role)} replace />;
   }
 
   // If student hasn't completed onboarding, show onboarding flow

@@ -289,7 +289,7 @@ if (buildResult.success) {
       'page=$(curl -s http://127.0.0.1:4173/admin/diagnostics || true)',
       // print markers for parsing
       'echo CODE:$code',
-      "if echo \"$page\" | grep -q 'data-testid=\"btn-run-all\"'; then echo HASBTN:yes; else echo HASBTN:no; fi",
+      'if echo "$page" | grep -q \'data-testid="btn-run-all"\'; then echo HASBTN:yes; else echo HASBTN:no; fi',
       // cleanup
       'kill $pid >/dev/null 2>&1 || true',
     ].join('; ');

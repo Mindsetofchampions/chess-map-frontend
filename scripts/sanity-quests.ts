@@ -20,7 +20,11 @@ async function main() {
   // Optional: sign in using MASTER_EMAIL/PASSWORD if present
   const MASTER_EMAIL = process.env.MASTER_EMAIL;
   const MASTER_PASSWORD = process.env.MASTER_PASSWORD;
-  if (MASTER_EMAIL && MASTER_PASSWORD && (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || key)) {
+  if (
+    MASTER_EMAIL &&
+    MASTER_PASSWORD &&
+    (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || key)
+  ) {
     try {
       await supabase.auth.signInWithPassword({ email: MASTER_EMAIL, password: MASTER_PASSWORD });
     } catch (e) {

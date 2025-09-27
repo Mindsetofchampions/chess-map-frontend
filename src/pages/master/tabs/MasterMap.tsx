@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import MapView from '@/components/MapView';
 import { useToast } from '@/components/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
-import { loadGoogleMapsPlaces } from '@/lib/googleMaps';
 import { env } from '@/lib/env';
+import { loadGoogleMapsPlaces } from '@/lib/googleMaps';
 import { uploadQuestImage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 
@@ -121,43 +121,52 @@ export default function MasterMap() {
     load();
 
     // Realtime: incrementally update state for snappy UI, with full reload fallback
-    const ch = supabase
-      .channel('master_map_all')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'quests' }, (payload: any) => {
-        const { eventType, new: newRow, old: oldRow } = payload || {};
-        setQuests((prev) => {
-          if (eventType === 'INSERT') {
-            // Put newest first
-            return [newRow, ...prev.filter((q) => q.id !== newRow?.id)];
-          }
-          if (eventType === 'UPDATE') {
-            return prev.map((q) => (q.id === newRow?.id ? { ...q, ...newRow } : q));
-          }
-          if (eventType === 'DELETE') {
-            return prev.filter((q) => q.id !== oldRow?.id);
-          }
-          return prev;
-        });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'safe_spaces' }, (payload: any) => {
+    const ch = supabase.channel('master_map_all');
+
+    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'quests' }, (payload: any) => {
+      const { eventType, new: newRow, old: oldRow } = payload || {};
+      setQuests((prev) => {
+        if (eventType === 'INSERT') {
+          // Put newest first
+          return [newRow, ...prev.filter((q) => q.id !== newRow?.id)];
+        }
+        if (eventType === 'UPDATE') {
+          return prev.map((q) => (q.id === newRow?.id ? { ...q, ...newRow } : q));
+        }
+        if (eventType === 'DELETE') {
+          return prev.filter((q) => q.id !== oldRow?.id);
+        }
+        return prev;
+      });
+    });
+
+    ch.on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'safe_spaces' },
+      (payload: any) => {
         const { eventType, new: newRow, old: oldRow } = payload || {};
         setSafeSpaces((prev) => {
           if (eventType === 'INSERT') return [newRow, ...prev.filter((r) => r.id !== newRow?.id)];
-          if (eventType === 'UPDATE') return prev.map((r) => (r.id === newRow?.id ? { ...r, ...newRow } : r));
+          if (eventType === 'UPDATE')
+            return prev.map((r) => (r.id === newRow?.id ? { ...r, ...newRow } : r));
           if (eventType === 'DELETE') return prev.filter((r) => r.id !== oldRow?.id);
           return prev;
         });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, (payload: any) => {
-        const { eventType, new: newRow, old: oldRow } = payload || {};
-        setEvents((prev) => {
-          if (eventType === 'INSERT') return [newRow, ...prev.filter((r) => r.id !== newRow?.id)];
-          if (eventType === 'UPDATE') return prev.map((r) => (r.id === newRow?.id ? { ...r, ...newRow } : r));
-          if (eventType === 'DELETE') return prev.filter((r) => r.id !== oldRow?.id);
-          return prev;
-        });
-      })
-      .subscribe();
+      },
+    );
+
+    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, (payload: any) => {
+      const { eventType, new: newRow, old: oldRow } = payload || {};
+      setEvents((prev) => {
+        if (eventType === 'INSERT') return [newRow, ...prev.filter((r) => r.id !== newRow?.id)];
+        if (eventType === 'UPDATE')
+          return prev.map((r) => (r.id === newRow?.id ? { ...r, ...newRow } : r));
+        if (eventType === 'DELETE') return prev.filter((r) => r.id !== oldRow?.id);
+        return prev;
+      });
+    });
+
+    ch.subscribe();
 
     // Focus-based refresh as a fallback if realtime misses events
     const onFocus = () => {

@@ -32,7 +32,7 @@ npx supabase functions deploy admin_delete_user --project-ref <ref>
 - FROM_EMAIL (the verified sender email/domain)
 - SUPABASE_URL (project URL) - often already set by Supabase
 - SUPABASE_SERVICE_ROLE_KEY (service role key for internal calls)
-- Note: If the CLI rejects names starting with SUPABASE_, set `SERVICE_ROLE_KEY` instead. The functions read either name.
+- Note: If the CLI rejects names starting with SUPABASE\_, set `SERVICE_ROLE_KEY` instead. The functions read either name.
 - ALLOWED_REDIRECT_HOSTS (comma-separated list for magic link redirect validation, e.g. "chesscompanions.app,www.chesscompanions.app")
 
 Example CLI to set secrets:

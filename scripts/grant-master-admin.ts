@@ -11,7 +11,7 @@ function parseEnvFile(file: string): Record<string, string> {
       const m = line.match(/^([A-Z0-9_]+)\s*=\s*(.*)$/);
       if (!m) continue;
       let v = m[2].trim();
-      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith('\'') && v.endsWith('\''))) {
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
         v = v.slice(1, -1);
       }
       out[m[1]] = v;
@@ -26,7 +26,11 @@ function loadEnvAll(): Record<string, string> {
   return { ...local, ...scripts, ...process.env } as any;
 }
 
-async function findUserIdByEmailWithSDK(url: string, serviceKey: string, email: string): Promise<string | null> {
+async function findUserIdByEmailWithSDK(
+  url: string,
+  serviceKey: string,
+  email: string,
+): Promise<string | null> {
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
   let page = 1;
   const perPage = 200;
@@ -62,11 +66,13 @@ async function main() {
   const email = process.env.MASTER_EMAIL || (env as any).MASTER_EMAIL;
   const password = process.env.MASTER_PASSWORD || (env as any).MASTER_PASSWORD;
   if (!url || !serviceKey) {
-  console.error('Need SUPABASE_URL and SERVICE_ROLE_KEY (or SUPABASE_SERVICE_ROLE_KEY) in env/.env.scripts.local');
+    console.error(
+      'Need SUPABASE_URL and SERVICE_ROLE_KEY (or SUPABASE_SERVICE_ROLE_KEY) in env/.env.scripts.local',
+    );
     process.exit(1);
   }
   if (!email) {
-  console.error('Set MASTER_EMAIL in env/.env.scripts.local to the account to promote');
+    console.error('Set MASTER_EMAIL in env/.env.scripts.local to the account to promote');
     process.exit(1);
   }
   let userId: string | null = null;

@@ -17,13 +17,10 @@ serve(async (req) => {
 
     const { email, password } = await req.json();
     if (!email || !password || password.length < 10) {
-      return new Response(
-        JSON.stringify({ error: 'email & strong password (>=10) required' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
+      return new Response(JSON.stringify({ error: 'email & strong password (>=10) required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const jwt = req.headers.get('Authorization')?.replace('Bearer ', '');

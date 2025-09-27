@@ -14,7 +14,7 @@ import GlassContainer from '@/components/GlassContainer';
 import SEO from '@/components/SEO';
 import { useToast } from '@/components/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
-import { routeForRole } from '@/lib/routes';
+import { routeForRole, canAccessPath } from '@/lib/routes';
 
 /**
  * Login form data interface
@@ -108,7 +108,11 @@ const Login: React.FC = () => {
         // Resolve the freshest role and route consistently
         const resolvedRole = await refreshRole();
         const attempted = location.state?.from?.pathname as string | undefined;
-        const next = attempted || routeForRole(resolvedRole);
+        // If user tried to access a restricted route for their role, send them to their home route
+        const next =
+          attempted && canAccessPath(resolvedRole, attempted)
+            ? attempted
+            : routeForRole(resolvedRole);
         navigate(next, { replace: true });
       } else {
         showError('Sign in failed', result.error);

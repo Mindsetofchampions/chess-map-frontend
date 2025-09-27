@@ -8,39 +8,48 @@ This document captures the current state of the frontend, how to run and deploy 
 ---
 
 ## What’s Live
+
 - Netlify production: chesscompanions.app
 - Auto-deploys: `main` branch via `netlify.toml` (build: `npm run build`, publish: `dist`, Node 20)
 - SPA redirects: `public/_redirects` contains `/*   /index.html   200`
 
 ## Latest Commits
+
 - b9e7108: build(vite): move cacheDir to OS temp to prevent OneDrive EPERM on Windows
 - 571b495: fix(router): render MobileNav inside Router; guard missing env to show EnvMissing; move vite cache to OS temp
 
 ---
 
 ## Required Environment Variables (Frontend)
+
 Configure in Netlify → Site settings → Environment (and locally via `.env`):
+
 - `VITE_SUPABASE_URL`: Supabase project URL (https://xxxx.supabase.co)
 - `VITE_SUPABASE_ANON_KEY`: Supabase anon key
 
 Optional (maps/styles):
+
 - `VITE_MAPBOX_TOKEN` or `VITE_MAPBOX_TOKEN_PK`: Mapbox token (enables Mapbox tiles)
 - `VITE_MAP_STYLE_URL`: Mapbox style (defaults to `mapbox://styles/mapbox/dark-v11`)
 - `VITE_MAPLIBRE_STYLE_URL`: MapLibre style URL if using open tiles
 
 Optional (functions/testing):
+
 - `REACT_APP_SUPABASE_FUNCTIONS_URL`: Base for outbound function calls (falls back to `/.netlify/functions`)
 - Netlify Functions Neon demo: `NETLIFY_DATABASE_URL`
 
 Notes:
+
 - Realtime/WebSockets are not supported in Netlify Edge Functions; the app uses standard Supabase client connections.
 
 ---
 
 ## Runbook
+
 Node: `>=20 <21` (enforced in `package.json` engines)
 
 Local development:
+
 ```bash
 npm ci
 npm run dev   # starts Vite
@@ -49,7 +58,9 @@ npm run build && npm run preview
 ```
 
 Deployment (Netlify):
+
 - Push to `main` triggers CI/CD. To force a deploy:
+
 ```bash
 git commit --allow-empty -m "chore: redeploy" && git push origin main
 ```
@@ -57,6 +68,7 @@ git commit --allow-empty -m "chore: redeploy" && git push origin main
 ---
 
 ## Recent Fixes (Today)
+
 - Dev crash on Windows/OneDrive (EPERM removing `.vite-cache`):
   - Vite `cacheDir` moved to OS temp (`os.tmpdir()`). File: `vite.config.ts`.
 - Production white screen when envs missing:
@@ -69,6 +81,7 @@ git commit --allow-empty -m "chore: redeploy" && git push origin main
 ---
 
 ## Architecture Notes
+
 - Routing/Auth:
   - `AuthProvider` manages Supabase auth and role resolution.
   - `ProtectedRoute` + `OnboardingGate` for org onboarding and dashboards.
@@ -82,6 +95,7 @@ git commit --allow-empty -m "chore: redeploy" && git push origin main
 ---
 
 ## Key Commands
+
 ```bash
 npm run type-check
 npm run lint:check
@@ -95,6 +109,7 @@ npm run seed:test
 ---
 
 ## Troubleshooting
+
 - White screen on production:
   - Verify `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Netlify env.
   - If missing, the app shows the `EnvMissing` screen (by design) instead of crashing.
@@ -108,6 +123,7 @@ npm run seed:test
 ---
 
 ## Performance & Bundle Notes
+
 - Large vendor chunks (Mapbox/MapLibre, Supabase) produce size warnings but build is healthy.
 - Potential improvements:
   - Lazy-load map libraries on non-map routes
@@ -116,6 +132,7 @@ npm run seed:test
 ---
 
 ## Next Steps (Optional)
+
 - Monitor Netlify deploy of commit `571b495`; validate https://chesscompanions.app
 - Add CI check to fail build if `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` are missing
 - Further mobile responsive polish on org/master dashboards (collapsible panels, sticky tabs)
@@ -124,6 +141,7 @@ npm run seed:test
 ---
 
 ## Key Files
+
 - App shell/routing: `src/App.tsx`, `src/main.tsx`
 - Auth: `src/contexts/AuthContext.tsx`, `src/components/ProtectedRoute.tsx`, `src/components/auth/OnboardingGate.tsx`
 - Supabase client: `src/lib/supabase.ts`

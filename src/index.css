@@ -54,7 +54,6 @@
   }
 }
 
-
 /* Custom component styles */
 @layer components {
   /* Secondary button style for neutral actions */
@@ -95,8 +94,8 @@
     font-family: inherit;
     /* Prevent flashing during initialization */
     background-color: #0a0a0f;
-  /* Remove opacity transitions to avoid periodic flicker when style/layers update */
-  transition: none !important;
+    /* Remove opacity transitions to avoid periodic flicker when style/layers update */
+    transition: none !important;
   }
 }
 
@@ -241,8 +240,18 @@
     background: #fff !important;
     color: #000 !important;
   }
-  .print\:hidden { display: none !important; }
-  .print\:overflow-visible { overflow: visible !important; }
-  table { border-collapse: collapse !important; }
-  th, td { border: 1px solid #000 !important; color: #000 !important; }
+  .print\:hidden {
+    display: none !important;
+  }
+  .print\:overflow-visible {
+    overflow: visible !important;
+  }
+  table {
+    border-collapse: collapse !important;
+  }
+  th,
+  td {
+    border: 1px solid #000 !important;
+    color: #000 !important;
+  }
 }

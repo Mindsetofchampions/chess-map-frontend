@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
 import { createSystemNotification } from '@/lib/notifications';
+import { routeForRole } from '@/lib/routes';
 import { supabase } from '@/lib/supabase';
 
 export default function OrgOnboarding() {
-  const { user, refreshRole } = useAuth();
+  const { user, refreshRole, role } = useAuth();
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
 
@@ -212,7 +213,7 @@ export default function OrgOnboarding() {
             {submitting ? 'Submitting…' : step === 4 ? 'Submit Onboarding' : 'Continue'}
           </button>
           <button
-            onClick={() => navigate('/master/dashboard')}
+            onClick={() => navigate(routeForRole(role))}
             className='px-4 py-2 rounded bg-glass border-glass text-gray-300'
           >
             Cancel

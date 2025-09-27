@@ -13,7 +13,11 @@ try {
 } catch {}
 
 function ensureSsl(url: string): string {
-  return url.includes('sslmode=') ? url : (url.includes('?') ? `${url}&sslmode=require` : `${url}?sslmode=require`);
+  return url.includes('sslmode=')
+    ? url
+    : url.includes('?')
+      ? `${url}&sslmode=require`
+      : `${url}?sslmode=require`;
 }
 
 function readPoolerTemplate(): string | null {

@@ -15,7 +15,11 @@ try {
 } catch {}
 
 function ensureSsl(url: string): string {
-  return url.includes('sslmode=') ? url : (url.includes('?') ? `${url}&sslmode=require` : `${url}?sslmode=require`);
+  return url.includes('sslmode=')
+    ? url
+    : url.includes('?')
+      ? `${url}&sslmode=require`
+      : `${url}?sslmode=require`;
 }
 
 function readPoolerTemplate(): string | null {
@@ -32,12 +36,14 @@ function composeDbUrl(): string {
   const password = process.env.SUPABASE_DB_PASSWORD?.trim();
   if (!password) {
     throw new Error(
-      'Missing DB credentials. Provide either SUPABASE_DB_URL or SUPABASE_DB_PASSWORD in .env.scripts.local.'
+      'Missing DB credentials. Provide either SUPABASE_DB_URL or SUPABASE_DB_PASSWORD in .env.scripts.local.',
     );
   }
   const template = readPoolerTemplate();
   if (!template) {
-    throw new Error('Missing supabase/.temp/pooler-url template. Run `supabase projects list` once or paste your pooled URL.');
+    throw new Error(
+      'Missing supabase/.temp/pooler-url template. Run `supabase projects list` once or paste your pooled URL.',
+    );
   }
   const url = template.replace('[YOUR-PASSWORD]', encodeURIComponent(password));
   return ensureSsl(url);
@@ -50,8 +56,12 @@ async function main() {
   } catch (e: any) {
     console.error('✖', e.message);
     console.error('\nHow to fix:');
-    console.error('- Option A: Add SUPABASE_DB_URL to .env.scripts.local (find in Supabase → Settings → Database → Pooled connection string)');
-    console.error('- Option B: Add SUPABASE_DB_PASSWORD to .env.scripts.local and ensure supabase/.temp/pooler-url exists');
+    console.error(
+      '- Option A: Add SUPABASE_DB_URL to .env.scripts.local (find in Supabase → Settings → Database → Pooled connection string)',
+    );
+    console.error(
+      '- Option B: Add SUPABASE_DB_PASSWORD to .env.scripts.local and ensure supabase/.temp/pooler-url exists',
+    );
     process.exit(2);
   }
 

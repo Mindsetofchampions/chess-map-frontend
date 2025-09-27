@@ -37,7 +37,7 @@ Uploading images to map_assets
 
 - When uploading via the app or scripts, include metadata key `uploader_id = auth.uid()`.
 - Public read is enabled by making the bucket public; URLs are of the form:
-	`${SUPABASE_URL}/storage/v1/object/public/map_assets/<path/to/file>`
+  `${SUPABASE_URL}/storage/v1/object/public/map_assets/<path/to/file>`
 
 Policies overview
 
