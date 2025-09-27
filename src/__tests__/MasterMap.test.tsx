@@ -27,15 +27,13 @@ jest.mock('@/lib/supabase', () => ({
         select: async () => ({ data: [] }),
       } as any;
     },
-    channel: () => ({
-      on: () => ({
-        on: () => ({
-          on: () => ({
-            subscribe: () => ({ unsubscribe: () => {} }),
-          }),
-        }),
-      }),
-    }),
+    channel: () => {
+      const ch: any = {
+        on: jest.fn().mockReturnThis(),
+        subscribe: jest.fn(() => ({ unsubscribe: () => {} })),
+      };
+      return ch;
+    },
   },
 }));
 

@@ -25,13 +25,13 @@ jest.mock('@/lib/supabase', () => ({
         getPublicUrl: () => ({ data: { publicUrl: 'https://example.com/img.png' } }),
       }),
     },
-    channel: () => ({
-      on: () => ({
-        on: () => ({
-          on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }),
-        }),
-      }),
-    }),
+    channel: () => {
+      const ch: any = {
+        on: jest.fn().mockReturnThis(),
+        subscribe: jest.fn(() => ({ unsubscribe: () => {} })),
+      };
+      return ch;
+    },
   },
 }));
 
