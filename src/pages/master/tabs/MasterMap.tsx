@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Shield, Calendar, X } from 'lucide-react';
 
 import MapView from '@/components/MapView';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ToastProvider';
 import { supabase } from '@/lib/supabase';
+import { loadGoogleMapsPlaces } from '@/lib/googleMaps';
 
 /**
  * MasterMap Tab
@@ -29,10 +30,26 @@ export default function MasterMap() {
   const [qTitle, setQTitle] = useState('');
   const [qDesc, setQDesc] = useState('');
   const [qReward, setQReward] = useState<number>(5);
-  const [qType, setQType] = useState<'text' | 'photo' | 'mcq' | 'checkin'>('text');
-  const [qGradeBands, setQGradeBands] = useState<string[]>(['ES']);
+  const [qType, setQType] = useState<'text' | 'mcq' | 'numeric'>('mcq');
+  const [qGradeBands, setQGradeBands] = useState<string[]>(['ES', 'MS', 'HS']);
+  const [allGrades, setAllGrades] = useState<boolean>(true);
   const [qSeats, setQSeats] = useState<number>(1);
   const [qAttribute, setQAttribute] = useState<string | null>(null);
+  // MCQ options
+  const [mcqA, setMcqA] = useState('Option A');
+  const [mcqB, setMcqB] = useState('Option B');
+  const [mcqC, setMcqC] = useState('Option C');
+  const [mcqCorrect, setMcqCorrect] = useState<'A' | 'B' | 'C'>('A');
+  // Numeric constraints
+  const [numMin, setNumMin] = useState<number>(0);
+  const [numMax, setNumMax] = useState<number>(100);
+  // Address/geocode
+  const [address, setAddress] = useState('');
+  const [geocoding, setGeocoding] = useState(false);
+  const [autoSuggests, setAutoSuggests] = useState<{ description: string; place_id: string }[]>([]);
+  const [geocodeResults, setGeocodeResults] = useState<any[]>([]);
+  const [pendingLoc, setPendingLoc] = useState<{ lat: number; lng: number } | null>(null);
+  const mapRef = useRef<any>(null);
 
   // Safe space fields
   const [sName, setSName] = useState('');
@@ -48,6 +65,7 @@ export default function MasterMap() {
 
   // Simple attributes cache for quest attribute selection
   const [attributes, setAttributes] = useState<{ id: string; name: string }[]>([]);
+  const [attrIdToName, setAttrIdToName] = useState<Record<string, string>>({});
 
   // Fetch all layers
   useEffect(() => {
@@ -66,8 +84,17 @@ export default function MasterMap() {
       } catch (e) {}
       try {
         // Load attributes for quest attribute selection (best-effort)
-        const { data: attrs } = await supabase.from('attributes').select('id,name').order('name', { ascending: true });
-        setAttributes(attrs || []);
+        const { data: attrs } = await supabase
+          .from('attributes')
+          .select('id,name')
+          .order('name', { ascending: true });
+        const rows = attrs || [];
+        setAttributes(rows);
+        const map: Record<string, string> = {};
+        rows.forEach((r: any) => {
+          if (r?.id && r?.name) map[r.id] = r.name as string;
+        });
+        setAttrIdToName(map);
       } catch {}
     };
     load();
@@ -82,6 +109,9 @@ export default function MasterMap() {
   }, []);
 
   const renderOverlay = (map: any, gl?: any) => {
+    if (!mapRef.current) {
+      mapRef.current = map;
+    }
     // add markers for each entity
     const markers: any[] = [];
 
@@ -91,7 +121,25 @@ export default function MasterMap() {
       if (lng && lat) {
         const el = document.createElement('div');
         el.className = 'quest-marker-master';
-        el.style.cssText = `width: 20px;height: 20px;border-radius: 50%;background:${q.status==='approved'?'#10B981':'#F59E0B'};border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.3);`;
+        // Color by attribute, fallback by status
+        const attrName = q.attribute_id ? (attrIdToName[q.attribute_id] || '').toLowerCase() : '';
+        const color = (() => {
+          switch (attrName) {
+            case 'character':
+              return '#A855F7'; // purple
+            case 'health':
+              return '#EC4899'; // pink
+            case 'exploration':
+              return '#3B82F6'; // blue
+            case 'stem':
+              return '#F59E0B'; // amber
+            case 'stewardship':
+              return '#10B981'; // emerald
+            default:
+              return q.status === 'approved' ? '#10B981' : '#F59E0B';
+          }
+        })();
+        el.style.cssText = `width: 20px;height: 20px;border-radius: 50%;background:${color};border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.3);`;
         el.title = `${q.title} (${q.status})`;
         const GL = gl || (window as any).mapboxgl || (window as any).maplibregl;
         if (!GL?.Marker) return;
@@ -132,6 +180,7 @@ export default function MasterMap() {
       const clickHandler = async (e: any) => {
         const { lng, lat } = e.lngLat || {};
         if (lng == null || lat == null) return;
+        setPendingLoc({ lat, lng });
         if (placeMode === 'quest') {
           await createQuest({
             lat,
@@ -139,11 +188,12 @@ export default function MasterMap() {
             title: qTitle || 'Master Quest',
             description: qDesc || 'Created by Master Map',
             reward_coins: qReward || 1,
-            qtype: qType || 'text',
-            grade_bands: qGradeBands?.length ? qGradeBands : ['ES'],
+            qtype: qType || 'mcq',
+            grade_bands: (allGrades ? ['ES','MS','HS'] : (qGradeBands?.length ? qGradeBands : ['ES'])) as string[],
             seats_total: qSeats || 1,
             attribute_id: qAttribute || undefined,
             image_url: uploadedUrl || undefined,
+            config: buildQuestConfig(),
           });
         } else if (placeMode === 'safe') {
           await createSafeSpace({
@@ -175,7 +225,36 @@ export default function MasterMap() {
     }
 
     // Render-only function; cleanup is handled inline after click and on next render
+    // Preview selected address/coords if present
+    if (pendingLoc) {
+      const el = document.createElement('div');
+      el.className = 'preview-marker-master';
+      el.style.cssText = `width: 22px;height: 22px;border-radius: 50%;background:#ffffff;border:3px solid #22d3ee;box-shadow:0 2px 10px rgba(0,0,0,0.4);`;
+      const GL = gl || (window as any).mapboxgl || (window as any).maplibregl;
+      if (GL?.Marker) {
+        markers.push(new GL.Marker(el).setLngLat([pendingLoc.lng, pendingLoc.lat]).addTo(map));
+      }
+    }
     return null;
+  };
+
+  const buildQuestConfig = () => {
+    const base: any = { meta: { from: 'master_map', image_url: uploadedUrl || null } };
+    if (qType === 'mcq') {
+      return {
+        ...base,
+        options: [
+          { id: 'A', text: mcqA },
+          { id: 'B', text: mcqB },
+          { id: 'C', text: mcqC },
+        ],
+        answer: mcqCorrect,
+      };
+    }
+    if (qType === 'numeric') {
+      return { ...base, numeric: { min: numMin, max: numMax } };
+    }
+    return { ...base, text: { maxLength: 1000 } };
   };
 
   // Quick create helpers
@@ -196,15 +275,16 @@ export default function MasterMap() {
         p_description: payload.description || 'Created by Master Map',
         p_attribute_id: attributeId || null,
         p_reward_coins: payload.reward_coins || 1,
-        p_qtype: payload.qtype || 'text',
-        p_grade_bands: payload.grade_bands || ['ES'],
+        p_qtype: payload.qtype || 'mcq',
+        p_grade_bands: payload.grade_bands || ['ES','MS','HS'],
         p_seats_total: payload.seats_total || 1,
         p_lat: payload.lat || null,
         p_lng: payload.lng || null,
-        p_config: payload.config || { meta: { from: 'master_map', image_url: payload.image_url || null } },
+        p_config: payload.config || buildQuestConfig(),
       });
       if (error) throw error;
       showSuccess('Quest created');
+      setPendingLoc(null);
     } catch (e: any) {
       showError('Create quest failed', e.message || String(e));
     }
@@ -229,6 +309,91 @@ export default function MasterMap() {
       showError('Create safe space failed', e.message || String(e));
     }
   };
+
+  // Address autocomplete: query predictions while typing
+  useEffect(() => {
+    const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+    if (!API_KEY) return; // silent when not configured
+    if (!address.trim()) {
+      setAutoSuggests([]);
+      return;
+    }
+    let active = true;
+    (async () => {
+      try {
+        const google = await loadGoogleMapsPlaces(API_KEY);
+        const service = new google.maps.places.AutocompleteService();
+        service.getPlacePredictions({ input: address.trim() }, (preds: any[], status: string) => {
+          if (!active) return;
+          if (status === google.maps.places.PlacesServiceStatus.OK && Array.isArray(preds)) {
+            setAutoSuggests(preds.slice(0, 6).map((p: any) => ({ description: p.description, place_id: p.place_id })));
+          } else {
+            setAutoSuggests([]);
+          }
+        });
+      } catch (_) {
+        // ignore
+      } finally {
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [address]);
+
+  async function geocodeAddress() {
+    const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+    if (!address.trim()) return showError('Address required', 'Enter an address to search');
+    if (!API_KEY) return showError('Missing API key', 'Set VITE_GOOGLE_MAPS_API_KEY to use geocoding');
+    setGeocoding(true);
+    try {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+        address.trim(),
+      )}&key=${API_KEY}`;
+      const resp = await fetch(url);
+      const body = await resp.json();
+      if (body.status !== 'OK' || !Array.isArray(body.results)) {
+        throw new Error(body.error_message || 'No results');
+      }
+      const results = body.results.slice(0, 5);
+      setGeocodeResults(results);
+      const first = results[0];
+      const loc = first?.geometry?.location;
+      if (loc) {
+        const lat = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+        const lng = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+        setPendingLoc({ lat, lng });
+        try { mapRef.current?.flyTo?.({ center: [lng, lat], zoom: 15 }); } catch {}
+      }
+    } catch (e: any) {
+      showError('Geocode failed', e?.message || 'Unable to find address');
+    } finally {
+      setGeocoding(false);
+    }
+  }
+
+  async function selectPlacePrediction(placeId: string, description: string) {
+    const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+    if (!API_KEY) return;
+    try {
+      const google = await loadGoogleMapsPlaces(API_KEY);
+      const tmpDiv = document.createElement('div');
+      const placesSvc = new google.maps.places.PlacesService(tmpDiv);
+      placesSvc.getDetails({ placeId, fields: ['geometry','formatted_address'] }, (place: any, status: string) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
+          const loc = place.geometry.location;
+          const lat = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+          const lng = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+          setAddress(place.formatted_address || description);
+          setPendingLoc({ lat, lng });
+          setAutoSuggests([]);
+          try { mapRef.current?.flyTo?.({ center: [lng, lat], zoom: 15 }); } catch {}
+        }
+      });
+    } catch (_) {
+      // ignore
+    }
+  }
 
   const createEvent = async (payload: Partial<any>) => {
     try {
@@ -282,7 +447,10 @@ export default function MasterMap() {
 
   const resetForm = () => {
     setUploadedUrl(null);
-    setQTitle(''); setQDesc(''); setQReward(5); setQType('text'); setQGradeBands(['ES']); setQSeats(1); setQAttribute(null);
+    setQTitle(''); setQDesc(''); setQReward(5); setQType('mcq'); setQGradeBands(['ES','MS','HS']); setAllGrades(true); setQSeats(1); setQAttribute(null);
+    setMcqA('Option A'); setMcqB('Option B'); setMcqC('Option C'); setMcqCorrect('A');
+    setNumMin(0); setNumMax(100);
+    setAddress(''); setGeocodeResults([]); setAutoSuggests([]); setPendingLoc(null);
     setSName(''); setSDesc(''); setSGrade(null); setSContact(null);
     setETitle(''); setEDesc(''); setEStartsAt(''); setEEndsAt('');
   };
@@ -382,10 +550,9 @@ export default function MasterMap() {
               <div>
                 <label className='block text-xs text-gray-300 mb-1'>Type</label>
                 <select value={qType} onChange={(e) => setQType(e.target.value as any)} className='w-full bg-white/10 rounded px-3 py-2 text-white'>
-                  <option value='text'>Text</option>
-                  <option value='photo'>Photo</option>
                   <option value='mcq'>MCQ</option>
-                  <option value='checkin'>Check-in</option>
+                  <option value='text'>Text</option>
+                  <option value='numeric'>Numeric</option>
                 </select>
               </div>
               <div className='md:col-span-3'>
@@ -394,11 +561,32 @@ export default function MasterMap() {
               </div>
               <div>
                 <label className='block text-xs text-gray-300 mb-1'>Grade Bands</label>
-                <select multiple value={qGradeBands as any} onChange={(e) => setQGradeBands(Array.from(e.target.selectedOptions).map(o=>o.value))} className='w-full bg-white/10 rounded px-3 py-2 text-white'>
-                  <option value='ES'>ES</option>
-                  <option value='MS'>MS</option>
-                  <option value='HS'>HS</option>
-                </select>
+                <div className='space-y-2'>
+                  <select
+                    multiple
+                    value={qGradeBands as any}
+                    onChange={(e) => {
+                      const vals = Array.from(e.target.selectedOptions).map(o=>o.value);
+                      setQGradeBands(vals);
+                      setAllGrades(vals.length===3);
+                    }}
+                    className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                  >
+                    <option value='ES'>ES</option>
+                    <option value='MS'>MS</option>
+                    <option value='HS'>HS</option>
+                  </select>
+                  <label className='flex items-center gap-2 text-gray-200 text-xs'>
+                    <input
+                      type='checkbox'
+                      checked={allGrades}
+                      onChange={(e)=>{
+                        const v = e.target.checked; setAllGrades(v); setQGradeBands(v?['ES','MS','HS']:qGradeBands.length?qGradeBands:['ES']);
+                      }}
+                    />
+                    Apply to all grades (ES, MS, HS)
+                  </label>
+                </div>
               </div>
               <div>
                 <label className='block text-xs text-gray-300 mb-1'>Seats Total</label>
@@ -413,6 +601,120 @@ export default function MasterMap() {
                   ))}
                 </select>
               </div>
+              {/* Address search and placement */}
+              <div className='md:col-span-3'>
+                <label className='block text-xs text-gray-300 mb-1'>Address (optional)</label>
+                <div className='grid md:grid-cols-[1fr_auto_auto] gap-2'>
+                  <input
+                    value={address}
+                    onChange={(e)=> setAddress(e.target.value)}
+                    placeholder='Enter address or place name'
+                    className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                  />
+                  <button
+                    className='px-3 py-2 rounded bg-white/20 text-white hover:bg-white/30'
+                    onClick={async ()=>{ await geocodeAddress(); }}
+                    disabled={geocoding}
+                  >
+                    {geocoding? 'Finding…' : 'Find'}
+                  </button>
+                  <button
+                    className='px-3 py-2 rounded bg-electric-blue-600 text-white disabled:opacity-50'
+                    disabled={!pendingLoc || placeMode!=null}
+                    onClick={async ()=>{
+                      if (!pendingLoc) return;
+                      await createQuest({
+                        lat: pendingLoc.lat,
+                        lng: pendingLoc.lng,
+                        title: qTitle || 'Master Quest',
+                        description: qDesc || 'Created by Master Map',
+                        reward_coins: qReward || 1,
+                        qtype: qType || 'mcq',
+                        grade_bands: (allGrades ? ['ES','MS','HS'] : (qGradeBands?.length ? qGradeBands : ['ES'])) as string[],
+                        seats_total: qSeats || 1,
+                        attribute_id: qAttribute || undefined,
+                        image_url: uploadedUrl || undefined,
+                        config: buildQuestConfig(),
+                      });
+                    }}
+                  >
+                    Place at address
+                  </button>
+                </div>
+                {!!autoSuggests.length && (
+                  <div className='mt-2 bg-black/20 border border-white/10 rounded-xl p-2 max-h-40 overflow-auto'>
+                    {autoSuggests.map((s) => (
+                      <button
+                        key={s.place_id}
+                        className='block w-full text-left text-sm text-gray-200 hover:bg-white/10 rounded px-2 py-1'
+                        onClick={()=> selectPlacePrediction(s.place_id, s.description)}
+                      >
+                        {s.description}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {!!geocodeResults.length && (
+                  <div className='mt-2 bg-black/20 border border-white/10 rounded-xl p-2 max-h-40 overflow-auto'>
+                    {geocodeResults.map((r, i) => (
+                      <button
+                        key={i}
+                        className='block w-full text-left text-sm text-gray-200 hover:bg-white/10 rounded px-2 py-1'
+                        onClick={() => {
+                          const loc = r.geometry?.location;
+                          if (loc) {
+                            const lat = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+                            const lng = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+                            setPendingLoc({ lat, lng });
+                            setAddress(r.formatted_address || address);
+                            try { mapRef.current?.flyTo?.({ center: [lng, lat], zoom: 15 }); } catch {}
+                          }
+                        }}
+                      >
+                        {r.formatted_address || 'Unknown address'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Type-specific inputs */}
+              {qType === 'mcq' && (
+                <div className='md:col-span-3 grid md:grid-cols-4 gap-3'>
+                  <div>
+                    <label className='block text-xs text-gray-300 mb-1'>Option A</label>
+                    <input value={mcqA} onChange={(e)=> setMcqA(e.target.value)} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                  </div>
+                  <div>
+                    <label className='block text-xs text-gray-300 mb-1'>Option B</label>
+                    <input value={mcqB} onChange={(e)=> setMcqB(e.target.value)} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                  </div>
+                  <div>
+                    <label className='block text-xs text-gray-300 mb-1'>Option C</label>
+                    <input value={mcqC} onChange={(e)=> setMcqC(e.target.value)} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                  </div>
+                  <div>
+                    <label className='block text-xs text-gray-300 mb-1'>Correct</label>
+                    <select value={mcqCorrect} onChange={(e)=> setMcqCorrect(e.target.value as any)} className='w-full bg-white/10 rounded px-3 py-2 text-white'>
+                      <option value='A'>A</option>
+                      <option value='B'>B</option>
+                      <option value='C'>C</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+              {qType === 'numeric' && (
+                <div className='md:col-span-3 grid md:grid-cols-2 gap-3'>
+                  <div>
+                    <label className='block text-xs text-gray-300 mb-1'>Minimum</label>
+                    <input type='number' value={numMin} onChange={(e)=> setNumMin(parseFloat(e.target.value||'0'))} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                  </div>
+                  <div>
+                    <label className='block text-xs text-gray-300 mb-1'>Maximum</label>
+                    <input type='number' value={numMax} onChange={(e)=> setNumMax(parseFloat(e.target.value||'0'))} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {createType === 'safe' && (
