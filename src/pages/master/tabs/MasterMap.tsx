@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
 import { Plus, Shield, Calendar, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 import MapView from '@/components/MapView';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ToastProvider';
-import { supabase } from '@/lib/supabase';
-import { uploadQuestImage } from '@/lib/storage';
+import { useAuth } from '@/contexts/AuthContext';
 import { loadGoogleMapsPlaces } from '@/lib/googleMaps';
+import { env } from '@/lib/env';
+import { uploadQuestImage } from '@/lib/storage';
+import { supabase } from '@/lib/supabase';
 
 /**
  * MasterMap Tab
@@ -72,7 +73,10 @@ export default function MasterMap() {
   useEffect(() => {
     const load = async () => {
       try {
-        const { data: q } = await supabase.from('quests').select('*').order('created_at', { ascending: false });
+        const { data: q } = await supabase
+          .from('quests')
+          .select('*')
+          .order('created_at', { ascending: false });
         setQuests(q || []);
       } catch (e) {}
       try {
@@ -154,7 +158,8 @@ export default function MasterMap() {
       if (lng && lat) {
         const el = document.createElement('div');
         el.className = 'safe-marker-master';
-        el.style.cssText = `width: 18px;height: 18px;border-radius: 6px;background:#8B5CF6;border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.25);`;
+        el.style.cssText =
+          'width: 18px;height: 18px;border-radius: 6px;background:#8B5CF6;border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.25);';
         el.title = s.name || 'Safe Space';
         const GL = gl || (window as any).mapboxgl || (window as any).maplibregl;
         if (!GL?.Marker) return;
@@ -168,7 +173,8 @@ export default function MasterMap() {
       if (lng && lat) {
         const el = document.createElement('div');
         el.className = 'event-marker-master';
-        el.style.cssText = `width: 18px;height: 18px;border-radius: 50%;background:#F43F5E;border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.25);`;
+        el.style.cssText =
+          'width: 18px;height: 18px;border-radius: 50%;background:#F43F5E;border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.25);';
         el.title = ev.title || 'Event';
         const GL = gl || (window as any).mapboxgl || (window as any).maplibregl;
         if (!GL?.Marker) return;
@@ -190,7 +196,11 @@ export default function MasterMap() {
             description: qDesc || 'Created by Master Map',
             reward_coins: qReward || 1,
             qtype: qType || 'mcq',
-            grade_bands: (allGrades ? ['ES','MS','HS'] : (qGradeBands?.length ? qGradeBands : ['ES'])) as string[],
+            grade_bands: (allGrades
+              ? ['ES', 'MS', 'HS']
+              : qGradeBands?.length
+                ? qGradeBands
+                : ['ES']) as string[],
             seats_total: qSeats || 1,
             attribute_id: qAttribute || undefined,
             image_url: uploadedUrl || undefined,
@@ -220,9 +230,13 @@ export default function MasterMap() {
           });
         }
         setPlaceMode(null);
-        try { map.off('click', clickHandler); } catch {}
+        try {
+          map.off('click', clickHandler);
+        } catch {}
       };
-      try { map.on('click', clickHandler); } catch {}
+      try {
+        map.on('click', clickHandler);
+      } catch {}
     }
 
     // Render-only function; cleanup is handled inline after click and on next render
@@ -230,7 +244,8 @@ export default function MasterMap() {
     if (pendingLoc) {
       const el = document.createElement('div');
       el.className = 'preview-marker-master';
-      el.style.cssText = `width: 22px;height: 22px;border-radius: 50%;background:#ffffff;border:3px solid #22d3ee;box-shadow:0 2px 10px rgba(0,0,0,0.4);`;
+      el.style.cssText =
+        'width: 22px;height: 22px;border-radius: 50%;background:#ffffff;border:3px solid #22d3ee;box-shadow:0 2px 10px rgba(0,0,0,0.4);';
       const GL = gl || (window as any).mapboxgl || (window as any).maplibregl;
       if (GL?.Marker) {
         markers.push(new GL.Marker(el).setLngLat([pendingLoc.lng, pendingLoc.lat]).addTo(map));
@@ -277,7 +292,7 @@ export default function MasterMap() {
         p_attribute_id: attributeId || null,
         p_reward_coins: payload.reward_coins || 1,
         p_qtype: payload.qtype || 'mcq',
-        p_grade_bands: payload.grade_bands || ['ES','MS','HS'],
+        p_grade_bands: payload.grade_bands || ['ES', 'MS', 'HS'],
         p_seats_total: payload.seats_total || 1,
         p_lat: payload.lat || null,
         p_lng: payload.lng || null,
@@ -313,7 +328,7 @@ export default function MasterMap() {
 
   // Address autocomplete: query predictions while typing
   useEffect(() => {
-    const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+    const API_KEY = env.get('VITE_GOOGLE_MAPS_API_KEY') as string | undefined;
     if (!API_KEY) return; // silent when not configured
     if (!address.trim()) {
       setAutoSuggests([]);
@@ -327,7 +342,11 @@ export default function MasterMap() {
         service.getPlacePredictions({ input: address.trim() }, (preds: any[], status: string) => {
           if (!active) return;
           if (status === google.maps.places.PlacesServiceStatus.OK && Array.isArray(preds)) {
-            setAutoSuggests(preds.slice(0, 6).map((p: any) => ({ description: p.description, place_id: p.place_id })));
+            setAutoSuggests(
+              preds
+                .slice(0, 6)
+                .map((p: any) => ({ description: p.description, place_id: p.place_id })),
+            );
           } else {
             setAutoSuggests([]);
           }
@@ -343,9 +362,10 @@ export default function MasterMap() {
   }, [address]);
 
   async function geocodeAddress() {
-    const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+    const API_KEY = env.get('VITE_GOOGLE_MAPS_API_KEY') as string | undefined;
     if (!address.trim()) return showError('Address required', 'Enter an address to search');
-    if (!API_KEY) return showError('Missing API key', 'Set VITE_GOOGLE_MAPS_API_KEY to use geocoding');
+    if (!API_KEY)
+      return showError('Missing API key', 'Set VITE_GOOGLE_MAPS_API_KEY to use geocoding');
     setGeocoding(true);
     try {
       const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
@@ -364,7 +384,9 @@ export default function MasterMap() {
         const lat = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
         const lng = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
         setPendingLoc({ lat, lng });
-        try { mapRef.current?.flyTo?.({ center: [lng, lat], zoom: 15 }); } catch {}
+        try {
+          mapRef.current?.flyTo?.({ center: [lng, lat], zoom: 15 });
+        } catch {}
       }
     } catch (e: any) {
       showError('Geocode failed', e?.message || 'Unable to find address');
@@ -374,23 +396,28 @@ export default function MasterMap() {
   }
 
   async function selectPlacePrediction(placeId: string, description: string) {
-    const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+    const API_KEY = env.get('VITE_GOOGLE_MAPS_API_KEY') as string | undefined;
     if (!API_KEY) return;
     try {
       const google = await loadGoogleMapsPlaces(API_KEY);
       const tmpDiv = document.createElement('div');
       const placesSvc = new google.maps.places.PlacesService(tmpDiv);
-      placesSvc.getDetails({ placeId, fields: ['geometry','formatted_address'] }, (place: any, status: string) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
-          const loc = place.geometry.location;
-          const lat = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
-          const lng = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
-          setAddress(place.formatted_address || description);
-          setPendingLoc({ lat, lng });
-          setAutoSuggests([]);
-          try { mapRef.current?.flyTo?.({ center: [lng, lat], zoom: 15 }); } catch {}
-        }
-      });
+      placesSvc.getDetails(
+        { placeId, fields: ['geometry', 'formatted_address'] },
+        (place: any, status: string) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
+            const loc = place.geometry.location;
+            const lat = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+            const lng = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+            setAddress(place.formatted_address || description);
+            setPendingLoc({ lat, lng });
+            setAutoSuggests([]);
+            try {
+              mapRef.current?.flyTo?.({ center: [lng, lat], zoom: 15 });
+            } catch {}
+          }
+        },
+      );
     } catch (_) {
       // ignore
     }
@@ -431,50 +458,89 @@ export default function MasterMap() {
 
   const resetForm = () => {
     setUploadedUrl(null);
-    setQTitle(''); setQDesc(''); setQReward(5); setQType('mcq'); setQGradeBands(['ES','MS','HS']); setAllGrades(true); setQSeats(1); setQAttribute(null);
-    setMcqA('Option A'); setMcqB('Option B'); setMcqC('Option C'); setMcqCorrect('A');
-    setNumMin(0); setNumMax(100);
-    setAddress(''); setGeocodeResults([]); setAutoSuggests([]); setPendingLoc(null);
-    setSName(''); setSDesc(''); setSGrade(null); setSContact(null);
-    setETitle(''); setEDesc(''); setEStartsAt(''); setEEndsAt('');
+    setQTitle('');
+    setQDesc('');
+    setQReward(5);
+    setQType('mcq');
+    setQGradeBands(['ES', 'MS', 'HS']);
+    setAllGrades(true);
+    setQSeats(1);
+    setQAttribute(null);
+    setMcqA('Option A');
+    setMcqB('Option B');
+    setMcqC('Option C');
+    setMcqCorrect('A');
+    setNumMin(0);
+    setNumMax(100);
+    setAddress('');
+    setGeocodeResults([]);
+    setAutoSuggests([]);
+    setPendingLoc(null);
+    setSName('');
+    setSDesc('');
+    setSGrade(null);
+    setSContact(null);
+    setETitle('');
+    setEDesc('');
+    setEStartsAt('');
+    setEEndsAt('');
   };
 
   if (role !== 'master_admin') {
-    return (
-      <div className='text-white/80 text-sm'>Master admin access required to view map.</div>
-    );
+    return <div className='text-white/80 text-sm'>Master admin access required to view map.</div>;
   }
 
   return (
     <div className='space-y-3'>
       <div className='flex flex-wrap gap-2 items-center'>
         <button
-          className={`px-3 py-2 rounded flex items-center gap-2 ${createType==='quest'&&showForm?'bg-electric-blue-600 text-white':'bg-white/10'}`}
-          onClick={() => { setCreateType('quest'); setShowForm(true); setPlaceMode(null); }}
+          className={`px-3 py-2 rounded flex items-center gap-2 ${createType === 'quest' && showForm ? 'bg-electric-blue-600 text-white' : 'bg-white/10'}`}
+          onClick={() => {
+            setCreateType('quest');
+            setShowForm(true);
+            setPlaceMode(null);
+          }}
         >
           <Plus className='w-4 h-4' /> New Quest
         </button>
         <button
-          className={`px-3 py-2 rounded flex items-center gap-2 ${createType==='safe'&&showForm?'bg-violet-700 text-white':'bg-white/10'}`}
-          onClick={() => { setCreateType('safe'); setShowForm(true); setPlaceMode(null); }}
+          className={`px-3 py-2 rounded flex items-center gap-2 ${createType === 'safe' && showForm ? 'bg-violet-700 text-white' : 'bg-white/10'}`}
+          onClick={() => {
+            setCreateType('safe');
+            setShowForm(true);
+            setPlaceMode(null);
+          }}
         >
           <Shield className='w-4 h-4' /> New Safe Space
         </button>
         <button
-          className={`px-3 py-2 rounded flex items-center gap-2 ${createType==='event'&&showForm?'bg-rose-700 text-white':'bg-white/10'}`}
-          onClick={() => { setCreateType('event'); setShowForm(true); setPlaceMode(null); }}
+          className={`px-3 py-2 rounded flex items-center gap-2 ${createType === 'event' && showForm ? 'bg-rose-700 text-white' : 'bg-white/10'}`}
+          onClick={() => {
+            setCreateType('event');
+            setShowForm(true);
+            setPlaceMode(null);
+          }}
         >
           <Calendar className='w-4 h-4' /> New Event
         </button>
         {placeMode && (
-          <div className='text-sm text-gray-200 ml-2'>Tip: click on the map to place the {placeMode}. Press ESC to cancel.</div>
+          <div className='text-sm text-gray-200 ml-2'>
+            Tip: click on the map to place the {placeMode}. Press ESC to cancel.
+          </div>
         )}
       </div>
       {showForm && (
         <div className='rounded-xl bg-white/5 border border-white/10 p-4 space-y-3'>
           <div className='flex items-center justify-between'>
             <div className='text-white font-semibold'>Create {createType}</div>
-            <button className='text-white/70 hover:text-white' onClick={() => { setShowForm(false); setCreateType(null); resetForm(); }}>
+            <button
+              className='text-white/70 hover:text-white'
+              onClick={() => {
+                setShowForm(false);
+                setCreateType(null);
+                resetForm();
+              }}
+            >
               <X className='w-5 h-5' />
             </button>
           </div>
@@ -493,23 +559,30 @@ export default function MasterMap() {
                   className='block w-full text-sm text-gray-200 file:mr-2 file:py-2 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20'
                 />
                 {uploadedUrl && (
-                  <img src={uploadedUrl} alt='preview' className='w-12 h-12 rounded object-cover border border-white/20' />
+                  <img
+                    src={uploadedUrl}
+                    alt='preview'
+                    className='w-12 h-12 rounded object-cover border border-white/20'
+                  />
                 )}
               </div>
               {uploading && <div className='text-xs text-gray-400 mt-1'>Uploading...</div>}
             </div>
             <div className='text-right'>
               <button
-                disabled={placeMode!=null}
-                className={`px-3 py-2 rounded ${placeMode? 'bg-white/10 text-white/60':'bg-white/20 text-white hover:bg-white/30'}`}
+                disabled={placeMode != null}
+                className={`px-3 py-2 rounded ${placeMode ? 'bg-white/10 text-white/60' : 'bg-white/20 text-white hover:bg-white/30'}`}
                 onClick={() => {
                   // Enter place mode after basic validation
                   if (createType === 'quest') {
-                    if (!qTitle.trim()) return showError('Missing title', 'Please enter a quest title.');
+                    if (!qTitle.trim())
+                      return showError('Missing title', 'Please enter a quest title.');
                   } else if (createType === 'safe') {
-                    if (!sName.trim()) return showError('Missing name', 'Please enter a safe space name.');
+                    if (!sName.trim())
+                      return showError('Missing name', 'Please enter a safe space name.');
                   } else if (createType === 'event') {
-                    if (!eTitle.trim()) return showError('Missing title', 'Please enter an event title.');
+                    if (!eTitle.trim())
+                      return showError('Missing title', 'Please enter an event title.');
                   }
                   setPlaceMode(createType);
                   showSuccess('Placement mode', 'Click on the map to place the item.');
@@ -524,16 +597,32 @@ export default function MasterMap() {
           {createType === 'quest' && (
             <div className='grid md:grid-cols-3 gap-3'>
               <div>
-                <label htmlFor='q-title' className='block text-xs text-gray-300 mb-1'>Title</label>
-                <input id='q-title' value={qTitle} onChange={(e) => setQTitle(e.target.value)} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                <label htmlFor='q-title' className='block text-xs text-gray-300 mb-1'>
+                  Title
+                </label>
+                <input
+                  id='q-title'
+                  value={qTitle}
+                  onChange={(e) => setQTitle(e.target.value)}
+                  className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                />
               </div>
               <div>
                 <label className='block text-xs text-gray-300 mb-1'>Reward Coins</label>
-                <input type='number' value={qReward} onChange={(e) => setQReward(parseInt(e.target.value||'0',10))} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                <input
+                  type='number'
+                  value={qReward}
+                  onChange={(e) => setQReward(parseInt(e.target.value || '0', 10))}
+                  className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                />
               </div>
               <div>
                 <label className='block text-xs text-gray-300 mb-1'>Type</label>
-                <select value={qType} onChange={(e) => setQType(e.target.value as any)} className='w-full bg-white/10 rounded px-3 py-2 text-white'>
+                <select
+                  value={qType}
+                  onChange={(e) => setQType(e.target.value as any)}
+                  className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                >
                   <option value='mcq'>MCQ</option>
                   <option value='text'>Text</option>
                   <option value='numeric'>Numeric</option>
@@ -541,7 +630,12 @@ export default function MasterMap() {
               </div>
               <div className='md:col-span-3'>
                 <label className='block text-xs text-gray-300 mb-1'>Description</label>
-                <textarea value={qDesc} onChange={(e) => setQDesc(e.target.value)} rows={2} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                <textarea
+                  value={qDesc}
+                  onChange={(e) => setQDesc(e.target.value)}
+                  rows={2}
+                  className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                />
               </div>
               <div>
                 <label className='block text-xs text-gray-300 mb-1'>Grade Bands</label>
@@ -550,9 +644,9 @@ export default function MasterMap() {
                     multiple
                     value={qGradeBands as any}
                     onChange={(e) => {
-                      const vals = Array.from(e.target.selectedOptions).map(o=>o.value);
+                      const vals = Array.from(e.target.selectedOptions).map((o) => o.value);
                       setQGradeBands(vals);
-                      setAllGrades(vals.length===3);
+                      setAllGrades(vals.length === 3);
                     }}
                     className='w-full bg-white/10 rounded px-3 py-2 text-white'
                   >
@@ -564,8 +658,12 @@ export default function MasterMap() {
                     <input
                       type='checkbox'
                       checked={allGrades}
-                      onChange={(e)=>{
-                        const v = e.target.checked; setAllGrades(v); setQGradeBands(v?['ES','MS','HS']:qGradeBands.length?qGradeBands:['ES']);
+                      onChange={(e) => {
+                        const v = e.target.checked;
+                        setAllGrades(v);
+                        setQGradeBands(
+                          v ? ['ES', 'MS', 'HS'] : qGradeBands.length ? qGradeBands : ['ES'],
+                        );
                       }}
                     />
                     Apply to all grades (ES, MS, HS)
@@ -574,14 +672,25 @@ export default function MasterMap() {
               </div>
               <div>
                 <label className='block text-xs text-gray-300 mb-1'>Seats Total</label>
-                <input type='number' value={qSeats} onChange={(e) => setQSeats(parseInt(e.target.value||'1',10))} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                <input
+                  type='number'
+                  value={qSeats}
+                  onChange={(e) => setQSeats(parseInt(e.target.value || '1', 10))}
+                  className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                />
               </div>
               <div>
                 <label className='block text-xs text-gray-300 mb-1'>Attribute</label>
-                <select value={qAttribute || ''} onChange={(e)=> setQAttribute(e.target.value||null)} className='w-full bg-white/10 rounded px-3 py-2 text-white'>
+                <select
+                  value={qAttribute || ''}
+                  onChange={(e) => setQAttribute(e.target.value || null)}
+                  className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                >
                   <option value=''>Auto-pick</option>
-                  {attributes.map((a)=> (
-                    <option key={a.id} value={a.id}>{a.name}</option>
+                  {attributes.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -591,21 +700,23 @@ export default function MasterMap() {
                 <div className='grid md:grid-cols-[1fr_auto_auto] gap-2'>
                   <input
                     value={address}
-                    onChange={(e)=> setAddress(e.target.value)}
+                    onChange={(e) => setAddress(e.target.value)}
                     placeholder='Enter address or place name'
                     className='w-full bg-white/10 rounded px-3 py-2 text-white'
                   />
                   <button
                     className='px-3 py-2 rounded bg-white/20 text-white hover:bg-white/30'
-                    onClick={async ()=>{ await geocodeAddress(); }}
+                    onClick={async () => {
+                      await geocodeAddress();
+                    }}
                     disabled={geocoding}
                   >
-                    {geocoding? 'Finding…' : 'Find'}
+                    {geocoding ? 'Finding…' : 'Find'}
                   </button>
                   <button
                     className='px-3 py-2 rounded bg-electric-blue-600 text-white disabled:opacity-50'
-                    disabled={!pendingLoc || placeMode!=null}
-                    onClick={async ()=>{
+                    disabled={!pendingLoc || placeMode != null}
+                    onClick={async () => {
                       if (!pendingLoc) return;
                       await createQuest({
                         lat: pendingLoc.lat,
@@ -614,7 +725,11 @@ export default function MasterMap() {
                         description: qDesc || 'Created by Master Map',
                         reward_coins: qReward || 1,
                         qtype: qType || 'mcq',
-                        grade_bands: (allGrades ? ['ES','MS','HS'] : (qGradeBands?.length ? qGradeBands : ['ES'])) as string[],
+                        grade_bands: (allGrades
+                          ? ['ES', 'MS', 'HS']
+                          : qGradeBands?.length
+                            ? qGradeBands
+                            : ['ES']) as string[],
                         seats_total: qSeats || 1,
                         attribute_id: qAttribute || undefined,
                         image_url: uploadedUrl || undefined,
@@ -631,7 +746,7 @@ export default function MasterMap() {
                       <button
                         key={s.place_id}
                         className='block w-full text-left text-sm text-gray-200 hover:bg-white/10 rounded px-2 py-1'
-                        onClick={()=> selectPlacePrediction(s.place_id, s.description)}
+                        onClick={() => selectPlacePrediction(s.place_id, s.description)}
                       >
                         {s.description}
                       </button>
@@ -651,7 +766,9 @@ export default function MasterMap() {
                             const lng = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
                             setPendingLoc({ lat, lng });
                             setAddress(r.formatted_address || address);
-                            try { mapRef.current?.flyTo?.({ center: [lng, lat], zoom: 15 }); } catch {}
+                            try {
+                              mapRef.current?.flyTo?.({ center: [lng, lat], zoom: 15 });
+                            } catch {}
                           }
                         }}
                       >
@@ -667,19 +784,35 @@ export default function MasterMap() {
                 <div className='md:col-span-3 grid md:grid-cols-4 gap-3'>
                   <div>
                     <label className='block text-xs text-gray-300 mb-1'>Option A</label>
-                    <input value={mcqA} onChange={(e)=> setMcqA(e.target.value)} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                    <input
+                      value={mcqA}
+                      onChange={(e) => setMcqA(e.target.value)}
+                      className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                    />
                   </div>
                   <div>
                     <label className='block text-xs text-gray-300 mb-1'>Option B</label>
-                    <input value={mcqB} onChange={(e)=> setMcqB(e.target.value)} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                    <input
+                      value={mcqB}
+                      onChange={(e) => setMcqB(e.target.value)}
+                      className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                    />
                   </div>
                   <div>
                     <label className='block text-xs text-gray-300 mb-1'>Option C</label>
-                    <input value={mcqC} onChange={(e)=> setMcqC(e.target.value)} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                    <input
+                      value={mcqC}
+                      onChange={(e) => setMcqC(e.target.value)}
+                      className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                    />
                   </div>
                   <div>
                     <label className='block text-xs text-gray-300 mb-1'>Correct</label>
-                    <select value={mcqCorrect} onChange={(e)=> setMcqCorrect(e.target.value as any)} className='w-full bg-white/10 rounded px-3 py-2 text-white'>
+                    <select
+                      value={mcqCorrect}
+                      onChange={(e) => setMcqCorrect(e.target.value as any)}
+                      className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                    >
                       <option value='A'>A</option>
                       <option value='B'>B</option>
                       <option value='C'>C</option>
@@ -691,11 +824,21 @@ export default function MasterMap() {
                 <div className='md:col-span-3 grid md:grid-cols-2 gap-3'>
                   <div>
                     <label className='block text-xs text-gray-300 mb-1'>Minimum</label>
-                    <input type='number' value={numMin} onChange={(e)=> setNumMin(parseFloat(e.target.value||'0'))} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                    <input
+                      type='number'
+                      value={numMin}
+                      onChange={(e) => setNumMin(parseFloat(e.target.value || '0'))}
+                      className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                    />
                   </div>
                   <div>
                     <label className='block text-xs text-gray-300 mb-1'>Maximum</label>
-                    <input type='number' value={numMax} onChange={(e)=> setNumMax(parseFloat(e.target.value||'0'))} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                    <input
+                      type='number'
+                      value={numMax}
+                      onChange={(e) => setNumMax(parseFloat(e.target.value || '0'))}
+                      className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                    />
                   </div>
                 </div>
               )}
@@ -705,11 +848,19 @@ export default function MasterMap() {
             <div className='grid md:grid-cols-3 gap-3'>
               <div>
                 <label className='block text-xs text-gray-300 mb-1'>Name</label>
-                <input value={sName} onChange={(e) => setSName(e.target.value)} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                <input
+                  value={sName}
+                  onChange={(e) => setSName(e.target.value)}
+                  className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                />
               </div>
               <div>
                 <label className='block text-xs text-gray-300 mb-1'>Grade Level</label>
-                <select value={sGrade || ''} onChange={(e)=> setSGrade(e.target.value||null)} className='w-full bg-white/10 rounded px-3 py-2 text-white'>
+                <select
+                  value={sGrade || ''}
+                  onChange={(e) => setSGrade(e.target.value || null)}
+                  className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                >
                   <option value=''>All</option>
                   <option value='ES'>ES</option>
                   <option value='MS'>MS</option>
@@ -718,13 +869,26 @@ export default function MasterMap() {
               </div>
               <div className='md:col-span-3'>
                 <label className='block text-xs text-gray-300 mb-1'>Description</label>
-                <textarea value={sDesc} onChange={(e) => setSDesc(e.target.value)} rows={2} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                <textarea
+                  value={sDesc}
+                  onChange={(e) => setSDesc(e.target.value)}
+                  rows={2}
+                  className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                />
               </div>
               <div className='md:col-span-3'>
                 <label className='block text-xs text-gray-300 mb-1'>Contact (optional)</label>
                 <div className='grid md:grid-cols-2 gap-2'>
-                  <input placeholder='Phone' onChange={(e)=> setSContact({ ...(sContact||{}), phone: e.target.value })} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
-                  <input placeholder='Email' onChange={(e)=> setSContact({ ...(sContact||{}), email: e.target.value })} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                  <input
+                    placeholder='Phone'
+                    onChange={(e) => setSContact({ ...(sContact || {}), phone: e.target.value })}
+                    className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                  />
+                  <input
+                    placeholder='Email'
+                    onChange={(e) => setSContact({ ...(sContact || {}), email: e.target.value })}
+                    className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                  />
                 </div>
               </div>
             </div>
@@ -733,27 +897,44 @@ export default function MasterMap() {
             <div className='grid md:grid-cols-3 gap-3'>
               <div>
                 <label className='block text-xs text-gray-300 mb-1'>Title</label>
-                <input value={eTitle} onChange={(e) => setETitle(e.target.value)} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                <input
+                  value={eTitle}
+                  onChange={(e) => setETitle(e.target.value)}
+                  className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                />
               </div>
               <div>
                 <label className='block text-xs text-gray-300 mb-1'>Starts At</label>
-                <input type='datetime-local' value={eStartsAt} onChange={(e) => setEStartsAt(e.target.value)} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                <input
+                  type='datetime-local'
+                  value={eStartsAt}
+                  onChange={(e) => setEStartsAt(e.target.value)}
+                  className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                />
               </div>
               <div>
                 <label className='block text-xs text-gray-300 mb-1'>Ends At (optional)</label>
-                <input type='datetime-local' value={eEndsAt} onChange={(e) => setEEndsAt(e.target.value)} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                <input
+                  type='datetime-local'
+                  value={eEndsAt}
+                  onChange={(e) => setEEndsAt(e.target.value)}
+                  className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                />
               </div>
               <div className='md:col-span-3'>
                 <label className='block text-xs text-gray-300 mb-1'>Description</label>
-                <textarea value={eDesc} onChange={(e) => setEDesc(e.target.value)} rows={2} className='w-full bg-white/10 rounded px-3 py-2 text-white' />
+                <textarea
+                  value={eDesc}
+                  onChange={(e) => setEDesc(e.target.value)}
+                  rows={2}
+                  className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                />
               </div>
             </div>
           )}
         </div>
       )}
-      {placeMode && (
-        <EscCatcher onEsc={() => setPlaceMode(null)} />
-      )}
+      {placeMode && <EscCatcher onEsc={() => setPlaceMode(null)} />}
       <div className='rounded-xl overflow-hidden' style={{ minHeight: 500 }}>
         <MapView renderOverlay={renderOverlay} />
       </div>

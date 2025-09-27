@@ -128,8 +128,13 @@ export default function OrgOnboarding() {
         {/* Stepper */}
         <div className='flex items-center gap-3 mb-6'>
           {[1, 2, 3, 4].map((n) => (
-            <div key={n} className={`flex items-center gap-2 ${n === step ? 'opacity-100' : 'opacity-70'}`}>
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold ${n <= step ? 'bg-electric-blue-500 text-white' : 'bg-white/10 text-gray-300'}`}>
+            <div
+              key={n}
+              className={`flex items-center gap-2 ${n === step ? 'opacity-100' : 'opacity-70'}`}
+            >
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold ${n <= step ? 'bg-electric-blue-500 text-white' : 'bg-white/10 text-gray-300'}`}
+              >
                 {n}
               </div>
               <div className='text-sm text-gray-200'>
@@ -169,7 +174,11 @@ export default function OrgOnboarding() {
         />
         {logoPreview && (
           <div className='mb-3'>
-            <img src={logoPreview} alt='Logo preview' className='h-20 rounded border border-white/10' />
+            <img
+              src={logoPreview}
+              alt='Logo preview'
+              className='h-20 rounded border border-white/10'
+            />
           </div>
         )}
 
@@ -198,11 +207,7 @@ export default function OrgOnboarding() {
             onClick={submit}
             disabled={submitting}
             className='px-4 py-2 rounded bg-electric-blue-500 text-white disabled:opacity-50'
-            title={
-              step !== 4
-                ? 'Complete required steps before submitting'
-                : undefined
-            }
+            title={step !== 4 ? 'Complete required steps before submitting' : undefined}
           >
             {submitting ? 'Submitting…' : step === 4 ? 'Submit Onboarding' : 'Continue'}
           </button>

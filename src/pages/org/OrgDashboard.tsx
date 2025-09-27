@@ -3,6 +3,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import OnboardingGate from '@/components/auth/OnboardingGate';
 import GlassContainer from '@/components/GlassContainer';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import QuestBuilder from '@/components/QuestBuilder';
+import SEO from '@/components/SEO';
 import { useToast } from '@/components/ToastProvider';
 import Tabs from '@/components/ui/Tabs';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,15 +21,13 @@ import {
   OrgWallet,
   removeEngagementRecipient,
   upsertEngagementRecipient,
+  supabase,
 } from '@/lib/supabase';
 import AttendanceTab from '@/pages/org/tabs/AttendanceTab';
 import ReportsTab from '@/pages/org/tabs/ReportsTab';
 import ServicesTab from '@/pages/org/tabs/ServicesTab';
 import StaffTab from '@/pages/org/tabs/StaffTab';
 import StudentsTab from '@/pages/org/tabs/StudentsTab';
-import QuestBuilder from '@/components/QuestBuilder';
-import { supabase } from '@/lib/supabase';
-import SEO from '@/components/SEO';
 
 const OrgDashboard: React.FC = () => {
   const { showSuccess, showError } = useToast();
@@ -125,7 +125,10 @@ const OrgDashboard: React.FC = () => {
           supabase.auth.getSession(),
           org?.org_id
             ? supabase.from('quests').select('*').eq('org_id', org.org_id)
-            : supabase.from('quests').select('*').eq('created_by', (await supabase.auth.getUser()).data.user?.id ?? '0'),
+            : supabase
+                .from('quests')
+                .select('*')
+                .eq('created_by', (await supabase.auth.getUser()).data.user?.id ?? '0'),
         ] as any);
         const list = Array.isArray(orgRow) ? orgRow : Array.isArray(session) ? session : [];
         setMyQuests(list || []);
@@ -157,7 +160,9 @@ const OrgDashboard: React.FC = () => {
       } catch {}
     })();
     return () => {
-      try { sub?.unsubscribe?.(); } catch {}
+      try {
+        sub?.unsubscribe?.();
+      } catch {}
     };
   }, [org?.org_id]);
 
@@ -168,11 +173,15 @@ const OrgDashboard: React.FC = () => {
       const { supabase } = await import('@/lib/supabase');
       sub = supabase
         .channel('org_status_channel')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'organizations' }, (p: any) => {
-          if ((p.new as any)?.id && org?.org_id && (p.new as any).id === org.org_id) {
-            setOrgStatus(((p.new as any).status as any) ?? null);
-          }
-        })
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'organizations' },
+          (p: any) => {
+            if ((p.new as any)?.id && org?.org_id && (p.new as any).id === org.org_id) {
+              setOrgStatus(((p.new as any).status as any) ?? null);
+            }
+          },
+        )
         .subscribe();
     })();
     return () => {
@@ -192,7 +201,12 @@ const OrgDashboard: React.FC = () => {
         .channel('org_wallet_channel')
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: 'org_coin_wallets', filter: `org_id=eq.${org.org_id}` },
+          {
+            event: '*',
+            schema: 'public',
+            table: 'org_coin_wallets',
+            filter: `org_id=eq.${org.org_id}`,
+          },
           () => {
             // Refetch wallet when this org's wallet changes
             getMyOrgWallet()
@@ -332,7 +346,11 @@ const OrgDashboard: React.FC = () => {
   return (
     <ProtectedRoute requiredRole={'staff'}>
       <OnboardingGate>
-        <SEO title="Organization Dashboard" description="Manage your CHESS Quest organization: students, staff, services, attendance, and reports." image="/icons/google.svg" />
+        <SEO
+          title='Organization Dashboard'
+          description='Manage your CHESS Quest organization: students, staff, services, attendance, and reports.'
+          image='/icons/google.svg'
+        />
         <div className='container mx-auto p-6 max-w-6xl'>
           <h1 className='text-2xl font-bold text-white mb-6'>Organization Dashboard</h1>
 
@@ -355,7 +373,9 @@ const OrgDashboard: React.FC = () => {
           )}
           {orgStatus === 'rejected' && (
             <GlassContainer className='mb-4 bg-red-500/10 border-red-400/30'>
-              <div className='text-red-300'>Organization onboarding was rejected. Please update your submission.</div>
+              <div className='text-red-300'>
+                Organization onboarding was rejected. Please update your submission.
+              </div>
             </GlassContainer>
           )}
 
@@ -499,8 +519,10 @@ const OrgDashboard: React.FC = () => {
                             .select('*')
                             .eq('created_by', (await supabase.auth.getUser()).data.user?.id ?? '0');
                       setMyQuests(data || []);
-                    } catch {}
-                    finally { setLoadingMyQuests(false); }
+                    } catch {
+                    } finally {
+                      setLoadingMyQuests(false);
+                    }
                   }}
                   disabled={loadingMyQuests}
                 >
@@ -516,6 +538,7 @@ const OrgDashboard: React.FC = () => {
                   <table className='w-full text-sm text-left'>
                     <thead>
                       <tr className='text-gray-300'>
+                        <th className='py-2 pr-3 font-medium'>Image</th>
                         <th className='py-2 pr-3 font-medium'>Title</th>
                         <th className='py-2 pr-3 font-medium'>Status</th>
                         <th className='py-2 pr-3 font-medium'>Reward</th>
@@ -524,21 +547,44 @@ const OrgDashboard: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {myQuests.map((q) => (
-                        <tr key={q.id} className='border-t border-white/10 hover:bg-white/5'>
-                          <td className='py-2 pr-3 text-white'>{q.title}</td>
-                          <td className='py-2 pr-3'>
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${q.status === 'approved' ? 'bg-green-500/20 text-green-300 border border-green-400/30' : q.status === 'rejected' ? 'bg-red-500/20 text-red-300 border border-red-400/30' : 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/30'}`}>
-                              {q.status}
-                            </span>
-                          </td>
-                          <td className='py-2 pr-3 text-gray-200'>{Number(q.reward_coins ?? 0).toLocaleString()}</td>
-                          <td className='py-2 pr-3 text-gray-200'>
-                            {q.seats_total != null ? `${q.seats_taken ?? 0}/${q.seats_total}` : '—'}
-                          </td>
-                          <td className='py-2 pr-3 text-gray-400'>{new Date(q.created_at).toLocaleString()}</td>
-                        </tr>
-                      ))}
+                      {myQuests.map((q) => {
+                        const img =
+                          (q as any).image_url || (q as any)?.config?.meta?.image_url || null;
+                        return (
+                          <tr key={q.id} className='border-t border-white/10 hover:bg-white/5'>
+                            <td className='py-2 pr-3'>
+                              {img ? (
+                                <img
+                                  src={img}
+                                  alt=''
+                                  className='w-10 h-10 rounded object-cover border border-white/10'
+                                />
+                              ) : (
+                                <div className='w-10 h-10 rounded bg-white/5 border border-white/10' />
+                              )}
+                            </td>
+                            <td className='py-2 pr-3 text-white'>{q.title}</td>
+                            <td className='py-2 pr-3'>
+                              <span
+                                className={`px-2 py-1 rounded text-xs font-semibold ${q.status === 'approved' ? 'bg-green-500/20 text-green-300 border border-green-400/30' : q.status === 'rejected' ? 'bg-red-500/20 text-red-300 border border-red-400/30' : 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/30'}`}
+                              >
+                                {q.status}
+                              </span>
+                            </td>
+                            <td className='py-2 pr-3 text-gray-200'>
+                              {Number(q.reward_coins ?? 0).toLocaleString()}
+                            </td>
+                            <td className='py-2 pr-3 text-gray-200'>
+                              {q.seats_total != null
+                                ? `${q.seats_taken ?? 0}/${q.seats_total}`
+                                : '—'}
+                            </td>
+                            <td className='py-2 pr-3 text-gray-400'>
+                              {new Date(q.created_at).toLocaleString()}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

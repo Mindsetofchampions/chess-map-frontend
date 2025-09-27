@@ -10,7 +10,7 @@ export default function MasterOrganizations() {
       .from('organizations')
       .select('*')
       .order('created_at', { ascending: false })
-  .then(({ data }: { data: any[] | null }) => setRows(data ?? []));
+      .then(({ data }: { data: any[] | null }) => setRows(data ?? []));
   }, []);
   async function createOrg() {
     if (!name.trim()) return;

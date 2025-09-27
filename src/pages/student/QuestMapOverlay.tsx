@@ -8,10 +8,10 @@
 import { motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 
+import { PERSONA_GIF } from '@/assets/personas';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuests } from '@/hooks/useQuests';
 import CHESS_COLORS from '@/lib/chessColors';
-import { PERSONA_GIF } from '@/assets/personas';
 import { supabase } from '@/lib/supabase';
 
 /**

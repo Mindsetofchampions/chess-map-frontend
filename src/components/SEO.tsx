@@ -1,13 +1,13 @@
 import { useEffect } from 'react';
 
-type SEOProps = {
+interface SEOProps {
   title?: string;
   description?: string;
   image?: string; // absolute or root-relative
   type?: 'website' | 'article' | 'profile' | string;
   url?: string; // canonical URL; if omitted, built from location
   themeColor?: string;
-};
+}
 
 function setMetaTag(attr: 'name' | 'property', key: string, content?: string) {
   if (!content) return;
@@ -30,7 +30,14 @@ function setLinkTag(rel: string, href: string) {
   el.setAttribute('href', href);
 }
 
-export default function SEO({ title, description, image, type = 'website', url, themeColor }: SEOProps) {
+export default function SEO({
+  title,
+  description,
+  image,
+  type = 'website',
+  url,
+  themeColor,
+}: SEOProps) {
   useEffect(() => {
     const loc = window.location;
     const origin = loc?.origin || '';

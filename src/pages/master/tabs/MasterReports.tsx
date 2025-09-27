@@ -6,7 +6,9 @@ import { exportCSV } from '@/utils/exporters';
 export default function MasterReports() {
   const [agg, setAgg] = useState<Array<Record<string, any>>>([]);
   useEffect(() => {
-    supabase.rpc('report_attendance_by_org').then(({ data }: { data: any[] | null }) => setAgg(data ?? []));
+    supabase
+      .rpc('report_attendance_by_org')
+      .then(({ data }: { data: any[] | null }) => setAgg(data ?? []));
   }, []);
   return (
     <div className='space-y-3'>

@@ -1,5 +1,5 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import React from 'react';
 
 // Mock Auth to force master_admin role
 jest.mock('@/contexts/AuthContext', () => ({
@@ -14,7 +14,7 @@ jest.mock('@/components/ToastProvider', () => ({
 // Mock Supabase minimal
 jest.mock('@/lib/supabase', () => ({
   supabase: {
-    from: (table: string) => ({
+    from: (_table: string) => ({
       select: () => ({ order: () => Promise.resolve({ data: [] }) }),
       insert: async () => ({ data: [], error: null }),
     }),
@@ -46,8 +46,12 @@ jest.mock('@/components/MapView', () => ({
         // Fake map object with on/off capable API
         const listeners: any = {};
         const map = {
-          on: (evt: string, cb: any) => { listeners[evt] = cb; },
-          off: (evt: string) => { delete listeners[evt]; },
+          on: (evt: string, cb: any) => {
+            listeners[evt] = cb;
+          },
+          off: (evt: string) => {
+            delete listeners[evt];
+          },
         };
         props.renderOverlay(map as any, undefined);
         // Trigger click

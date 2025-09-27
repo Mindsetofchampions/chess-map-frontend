@@ -16,8 +16,8 @@ import {
   type PersonaChipMarker,
   type OrganizationWithPersonas,
 } from '@/lib/sprites';
-import QuestMapOverlay from '@/pages/student/QuestMapOverlay';
 import PublicMapOverlay from '@/pages/common/PublicMapOverlay';
+import QuestMapOverlay from '@/pages/student/QuestMapOverlay';
 import type { PersonaDef } from '@/types';
 
 interface MapViewProps {
@@ -187,7 +187,16 @@ const QuestBubbleComponent: React.FC<QuestBubbleProps> = ({
       setFollowPosition((prev) => (prev.x !== 0 || prev.y !== 0 ? { x: 0, y: 0 } : prev));
     }
     // Depend on primitives to avoid effect churn, exclude followPosition to prevent self-loops
-  }, [isHovered, mousePosition.x, mousePosition.y, absolutePosition.x, absolutePosition.y, containerRect?.width, containerRect?.height, isMobile]);
+  }, [
+    isHovered,
+    mousePosition.x,
+    mousePosition.y,
+    absolutePosition.x,
+    absolutePosition.y,
+    containerRect?.width,
+    containerRect?.height,
+    isMobile,
+  ]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -527,7 +536,8 @@ const MapView: React.FC<MapViewProps> = ({
         // Allow forcing engine via env for local dev or restricted domains
         const forcedEngine = (import.meta.env.VITE_MAP_ENGINE || '').toLowerCase();
         const forceMapLibre =
-          forcedEngine === 'maplibre' || String(import.meta.env.VITE_FORCE_MAPLIBRE).toLowerCase() === 'true';
+          forcedEngine === 'maplibre' ||
+          String(import.meta.env.VITE_FORCE_MAPLIBRE).toLowerCase() === 'true';
 
         initMapbox = async () => {
           const mapboxgl = await import('mapbox-gl');
@@ -563,12 +573,7 @@ const MapView: React.FC<MapViewProps> = ({
             const status = e?.error?.status || e?.statusCode;
             const resource = e?.error?.resourceType || e?.resourceType;
             // Only fallback once on style/source auth errors (401/403) to avoid loops
-            if (
-              resource === 'style' ||
-              resource === 'source' ||
-              status === 401 ||
-              status === 403
-            ) {
+            if (resource === 'style' || resource === 'source' || status === 401 || status === 403) {
               tryFallbackToMapLibre();
             }
           });
@@ -1130,9 +1135,7 @@ const MapView: React.FC<MapViewProps> = ({
             mousePosition={mousePosition}
             containerRect={containerRect}
             onClick={handleBubbleClick}
-            onHoverChange={(hovered) =>
-              setHoveredCount((c) => Math.max(0, c + (hovered ? 1 : -1)))
-            }
+            onHoverChange={(hovered) => setHoveredCount((c) => Math.max(0, c + (hovered ? 1 : -1)))}
           />
         ))}
 

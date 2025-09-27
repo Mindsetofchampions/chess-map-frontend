@@ -1,5 +1,5 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
+import React from 'react';
 
 // Mock Auth to force master_admin role
 jest.mock('@/contexts/AuthContext', () => ({
@@ -44,9 +44,16 @@ jest.mock('@/components/MapView', () => ({
   __esModule: true,
   default: (props: any) => {
     if (props.renderOverlay) {
-      try { props.renderOverlay({ /* map */ }, undefined); } catch {}
+      try {
+        props.renderOverlay(
+          {
+            /* map */
+          },
+          undefined,
+        );
+      } catch {}
     }
-    return <div data-testid="mock-map-view">Mock MapView</div>;
+    return <div data-testid='mock-map-view'>Mock MapView</div>;
   },
 }));
 
@@ -56,10 +63,10 @@ describe('MasterMap smoke test', () => {
   it('renders and does not crash when GL is missing (no Mapbox/MapLibre)', async () => {
     render(<MasterMap />);
 
-  // Buttons should render
-  expect(await screen.findByText(/New Quest/i)).toBeInTheDocument();
-  expect(screen.getByText(/New Safe Space/i)).toBeInTheDocument();
-  expect(screen.getByText(/New Event/i)).toBeInTheDocument();
+    // Buttons should render
+    expect(await screen.findByText(/New Quest/i)).toBeInTheDocument();
+    expect(screen.getByText(/New Safe Space/i)).toBeInTheDocument();
+    expect(screen.getByText(/New Event/i)).toBeInTheDocument();
 
     // Mocked MapView present
     expect(screen.getByTestId('mock-map-view')).toBeInTheDocument();

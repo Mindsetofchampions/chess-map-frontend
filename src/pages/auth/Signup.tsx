@@ -11,10 +11,10 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
 import GlassContainer from '@/components/GlassContainer';
+import SEO from '@/components/SEO';
 import { useToast } from '@/components/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
 import { routeForRole } from '@/lib/routes';
-import SEO from '@/components/SEO';
 
 /**
  * Signup form data interface
@@ -137,7 +137,11 @@ const Signup: React.FC = () => {
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary flex items-center justify-center py-12 px-4'>
-      <SEO title="Create your CHESS Quest account" description="Sign up to start exploring quests, earning coins, and joining the CHESS Quest community." image="/icons/google.svg" />
+      <SEO
+        title='Create your CHESS Quest account'
+        description='Sign up to start exploring quests, earning coins, and joining the CHESS Quest community.'
+        image='/icons/google.svg'
+      />
       <div className='max-w-md w-full'>
         {/* Back to Home Link */}
         <motion.div

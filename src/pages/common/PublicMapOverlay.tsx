@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+
 import { supabase } from '@/lib/supabase';
 
 interface Props {
@@ -49,7 +50,8 @@ const PublicMapOverlay: React.FC<Props> = ({ map }) => {
       if (lng && lat) {
         const el = document.createElement('div');
         el.className = 'safe-space-public';
-        el.style.cssText = 'width:16px;height:16px;border-radius:6px;background:#8B5CF6;border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.25);';
+        el.style.cssText =
+          'width:16px;height:16px;border-radius:6px;background:#8B5CF6;border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.25);';
         el.title = s.name || 'Safe Space';
         const marker = new GL.Marker(el).setLngLat([lng, lat]).addTo(map);
         markersRef.current.push(marker);
@@ -63,7 +65,8 @@ const PublicMapOverlay: React.FC<Props> = ({ map }) => {
       if (lng && lat) {
         const el = document.createElement('div');
         el.className = 'event-public';
-        el.style.cssText = 'width:14px;height:14px;border-radius:50%;background:#F43F5E;border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.25);';
+        el.style.cssText =
+          'width:14px;height:14px;border-radius:50%;background:#F43F5E;border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.25);';
         el.title = ev.title || 'Event';
         const marker = new GL.Marker(el).setLngLat([lng, lat]).addTo(map);
         markersRef.current.push(marker);

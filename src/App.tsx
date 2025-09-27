@@ -17,18 +17,18 @@ import { useEffect, useState } from 'react';
 import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom';
 
 import OnboardingGate from './components/auth/OnboardingGate';
-import SEO from './components/SEO';
 import DraggableBubbles from './components/DraggableBubbles';
+import EnvMissing from './components/EnvMissing';
 import ErrorBoundary from './components/ErrorBoundary';
 import FloatingBubbles from './components/FloatingBubbles';
 import GlassContainer from './components/GlassContainer';
 import MapView from './components/MapView';
 import ProtectedRoute from './components/ProtectedRoute';
+import SEO from './components/SEO';
 import { ToastProvider } from './components/ToastProvider';
 import MobileNav from './components/ui/MobileNav';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { routeForRole } from './lib/routes';
-import EnvMissing from './components/EnvMissing';
 import { SUPABASE_ENV_VALID } from './lib/supabase';
 import SystemDiagnostics from './pages/admin/SystemDiagnostics';
 import Login from './pages/auth/Login';
@@ -64,10 +64,10 @@ const LandingPage: React.FC = () => {
   return (
     <GlassContainer variant='page'>
       <SEO
-        title="Explore Quests and Safe Spaces"
-        description="CHESS Quest – Find safe spaces, complete quests, earn coins, and redeem rewards. Gamified learning for ES, MS, and HS."
-        image="/icons/google.svg"
-        type="website"
+        title='Explore Quests and Safe Spaces'
+        description='CHESS Quest – Find safe spaces, complete quests, earn coins, and redeem rewards. Gamified learning for ES, MS, and HS.'
+        image='/icons/google.svg'
+        type='website'
       />
       {/* Floating Bubbles Animation Layer */}
       <FloatingBubbles />
@@ -846,9 +846,9 @@ function App(): JSX.Element {
         <AuthProvider>
           <div className='relative min-h-dvh pb-safe'>
             <SEO
-              title="CHESS Quest"
-              description="Find safe spaces, complete quests, earn coins, and redeem rewards. Gamified learning for ES, MS, and HS."
-              image="/icons/google.svg"
+              title='CHESS Quest'
+              description='Find safe spaces, complete quests, earn coins, and redeem rewards. Gamified learning for ES, MS, and HS.'
+              image='/icons/google.svg'
             />
             <AppRouter />
           </div>

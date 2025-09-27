@@ -17,8 +17,14 @@ const MobileNav: React.FC = () => {
     { to: '/quests', label: 'Quests', icon: <MapPin className='w-5 h-5' /> },
   ];
 
-  if (role === 'staff' || role === 'org_admin') items.unshift({ to: '/org/dashboard', label: 'Org', icon: <User className='w-5 h-5' /> });
-  if (role === 'master_admin') items.unshift({ to: '/master/dashboard', label: 'Master', icon: <Shield className='w-5 h-5' /> });
+  if (role === 'staff' || role === 'org_admin')
+    items.unshift({ to: '/org/dashboard', label: 'Org', icon: <User className='w-5 h-5' /> });
+  if (role === 'master_admin')
+    items.unshift({
+      to: '/master/dashboard',
+      label: 'Master',
+      icon: <Shield className='w-5 h-5' />,
+    });
   items.unshift({ to: '/dashboard', label: 'Home', icon: <Home className='w-5 h-5' /> });
 
   return (

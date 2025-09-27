@@ -21,12 +21,11 @@ import { useNavigate, Link } from 'react-router-dom';
 
 import { PERSONA_GIF, getPersonaInfo } from '@/assets/personas';
 import GlassContainer from '@/components/GlassContainer';
-import { useToast } from '@/components/ToastProvider';
-import { supabase } from '@/lib/supabase';
-import { rpcReserveSeat, rpcCancelSeat } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import type { Quest } from '@/types/backend';
 import SEO from '@/components/SEO';
+import { useToast } from '@/components/ToastProvider';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase, rpcReserveSeat, rpcCancelSeat } from '@/lib/supabase';
+import type { Quest } from '@/types/backend';
 
 /**
  * Quests List Component
@@ -190,7 +189,7 @@ const QuestsList: React.FC = () => {
         setBusy((b) => ({ ...b, [id]: true }));
         // optimistic: mark reserved
         setEnrollments((m) => ({ ...m, [id]: true }));
-  await rpcReserveSeat(id);
+        await rpcReserveSeat(id);
         // Optionally refresh quests to get updated seats_taken
         await fetchQuests();
       } catch (e: any) {
@@ -220,7 +219,7 @@ const QuestsList: React.FC = () => {
           delete copy[id];
           return copy;
         });
-  await rpcCancelSeat(id);
+        await rpcCancelSeat(id);
         await fetchQuests();
       } catch (e: any) {
         // revert optimistic
@@ -235,7 +234,11 @@ const QuestsList: React.FC = () => {
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary'>
-      <SEO title="Available Quests" description="Explore available CHESS Quests by persona, grade, and location." image="/icons/google.svg" />
+      <SEO
+        title='Available Quests'
+        description='Explore available CHESS Quests by persona, grade, and location.'
+        image='/icons/google.svg'
+      />
       <div className='container mx-auto max-w-7xl p-6'>
         {/* Header */}
         <motion.div
@@ -470,7 +473,13 @@ const QuestsList: React.FC = () => {
                       {/* Seats info */}
                       {typeof quest.seats_total === 'number' && quest.seats_total > 0 && (
                         <div className='mb-4 text-sm text-gray-200'>
-                          Seats: <span className='font-semibold'>{Math.max(0, Number(quest.seats_total) - Number((quest as any).seats_taken ?? 0))}</span>
+                          Seats:{' '}
+                          <span className='font-semibold'>
+                            {Math.max(
+                              0,
+                              Number(quest.seats_total) - Number((quest as any).seats_taken ?? 0),
+                            )}
+                          </span>
                           {' / '}
                           <span>{Number(quest.seats_total)}</span>
                         </div>

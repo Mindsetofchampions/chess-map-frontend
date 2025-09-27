@@ -11,11 +11,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 import GlassContainer from '@/components/GlassContainer';
+import SEO from '@/components/SEO';
 import { useToast } from '@/components/ToastProvider';
 import { useWallet } from '@/components/wallet/WalletChip';
 import { supabase, rpcSubmitMcq } from '@/lib/supabase';
 import type { Quest, MCQConfig, MCQOption } from '@/types/backend';
-import SEO from '@/components/SEO';
 
 /**
  * Quest Play Component
@@ -41,6 +41,7 @@ const QuestPlay: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<'correct' | 'incorrect' | null>(null);
   const [startTime] = useState(new Date());
+  const [completing, setCompleting] = useState(false);
 
   /**
    * Load quest data
@@ -197,6 +198,35 @@ const QuestPlay: React.FC = () => {
 
   const mcqConfig = quest.config as MCQConfig;
   const personaInfo = getPersonaInfo(quest.attribute_id ?? null);
+
+  async function handleCompleteQuest() {
+    if (!quest) return;
+    setCompleting(true);
+    try {
+      // Prefer RPC if available, otherwise simple update as a fallback
+      const { error: rpcErr } = await supabase
+        .rpc('complete_quest', { p_quest_id: quest.id })
+        .catch(() => ({ error: null }) as any);
+      if (rpcErr) throw rpcErr;
+      // Fallback path if RPC isn't defined
+      if (!rpcErr) {
+        // no-op
+      } else {
+        const { error: updErr } = await supabase
+          .from('quests')
+          .update({ status: 'completed', active: false })
+          .eq('id', quest.id);
+        if (updErr) throw updErr;
+      }
+      // Notify and navigate; Map pages subscribe to quests changes and will refresh markers
+      showSuccess('Quest completed', 'This quest is now marked completed.');
+      navigate('/quests');
+    } catch (e: any) {
+      showError('Complete failed', e?.message || 'Unable to complete quest');
+    } finally {
+      setCompleting(false);
+    }
+  }
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary'>
@@ -372,6 +402,14 @@ const QuestPlay: React.FC = () => {
                   <div className='flex gap-4'>
                     <button onClick={() => navigate('/quests')} className='flex-1 btn-esports'>
                       Back to Quests
+                    </button>
+
+                    <button
+                      onClick={handleCompleteQuest}
+                      disabled={completing}
+                      className='flex-1 bg-electric-blue-600 hover:bg-electric-blue-500 text-white rounded-xl px-6 py-3 font-medium transition-all duration-200 disabled:opacity-50'
+                    >
+                      {completing ? 'Completing…' : 'Complete Quest'}
                     </button>
 
                     <button

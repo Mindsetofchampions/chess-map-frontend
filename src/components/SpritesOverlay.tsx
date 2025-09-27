@@ -72,9 +72,7 @@ const SpritesOverlay: React.FC<Props> = ({ onSpriteClick, showModal = true }) =>
           </motion.button>
         );
       })}
-      {showModal && (
-        <SpriteModal personaKey={activeSprite} onClose={() => setActiveSprite(null)} />
-      )}
+      {showModal && <SpriteModal personaKey={activeSprite} onClose={() => setActiveSprite(null)} />}
     </div>
   );
 };

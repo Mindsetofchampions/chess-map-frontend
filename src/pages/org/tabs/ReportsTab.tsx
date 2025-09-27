@@ -6,14 +6,18 @@ import { exportCSV } from '@/utils/exporters';
 export default function ReportsTab() {
   const [agg, setAgg] = useState<Array<Record<string, any>>>([]);
   useEffect(() => {
-    supabase.rpc('report_attendance_by_service').then(({ data }: { data: any[] | null }) => setAgg(data ?? []));
+    supabase
+      .rpc('report_attendance_by_service')
+      .then(({ data }: { data: any[] | null }) => setAgg(data ?? []));
   }, []);
   const [services, setServices] = useState<Array<{ id: string; category: string }>>([]);
   useEffect(() => {
     supabase
       .from('services')
       .select('id,category')
-      .then(({ data }: { data: Array<{ id: string; category: string }> | null }) => setServices(data ?? []));
+      .then(({ data }: { data: Array<{ id: string; category: string }> | null }) =>
+        setServices(data ?? []),
+      );
   }, []);
   const labelById = useMemo(
     () => Object.fromEntries(services.map((s) => [s.id, s.category])),
@@ -36,10 +40,7 @@ export default function ReportsTab() {
         >
           Export CSV
         </button>
-        <button
-          className='px-3 py-2 rounded bg-white/10'
-          onClick={() => window.print()}
-        >
+        <button className='px-3 py-2 rounded bg-white/10' onClick={() => window.print()}>
           Download PDF
         </button>
       </div>

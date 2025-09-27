@@ -34,10 +34,7 @@ export function mapPgError(error: any): StructuredError {
   const details = error?.details || error?.hint || '';
 
   // Permission and authorization errors
-  if (
-    message.includes('Only org staff/admin') ||
-    message.includes('org staff/admin')
-  ) {
+  if (message.includes('Only org staff/admin') || message.includes('org staff/admin')) {
     return {
       code: 'FORBIDDEN',
       message: 'Org admin or staff access required',

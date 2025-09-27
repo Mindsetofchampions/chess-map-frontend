@@ -19,7 +19,9 @@ export function loadGoogleMapsPlaces(apiKey: string): Promise<typeof google> {
       } else {
         reject(new Error('Google Maps Places failed to load'));
       }
-      try { delete (window as any)[cbName]; } catch {}
+      try {
+        delete (window as any)[cbName];
+      } catch {}
     };
     const script = document.createElement('script');
     script.async = true;

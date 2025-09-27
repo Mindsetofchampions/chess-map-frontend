@@ -9,7 +9,7 @@ export default function MasterLedger() {
     supabase
       .from('v_master_services_ledger')
       .select('*')
-  .then(({ data }: { data: any[] | null }) => setRows(data ?? []));
+      .then(({ data }: { data: any[] | null }) => setRows(data ?? []));
   }, []);
   return (
     <div className='space-y-3'>

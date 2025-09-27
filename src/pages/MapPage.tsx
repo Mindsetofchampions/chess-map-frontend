@@ -1,4 +1,3 @@
-import SEO from '@/components/SEO';
 /**
  * Map Page Component with Supabase Integration
  *
@@ -17,8 +16,10 @@ import {
   Settings,
   Users,
 } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+import SEO from '@/components/SEO';
 
 import GlassContainer from '../components/GlassContainer';
 import MapView from '../components/MapView';
@@ -81,6 +82,8 @@ const MapPage: React.FC = () => {
 
   // State management
   const [selectedPoint, setSelectedPoint] = useState<MapPoint | null>(null);
+  const [liveQuests, setLiveQuests] = useState<any[]>([]);
+  const [attrIdToName, setAttrIdToName] = useState<Record<string, string>>({});
 
   // Philadelphia bubble data hook
   const {
@@ -214,6 +217,89 @@ const MapPage: React.FC = () => {
   void _transformToMapPoints;
   void _handleMarkerClick;
   void _handleBubblePop;
+
+  // Load approved quests and attributes; subscribe to changes so updates appear in real-time
+  useEffect(() => {
+    let sub: any;
+    (async () => {
+      try {
+        const [{ data: qs }, { data: attrs }] = await Promise.all([
+          supabase
+            .from('quests')
+            .select('*')
+            .in('status', ['approved', 'active', 'pending'])
+            .order('created_at', { ascending: false }),
+          supabase.from('attributes').select('id,name'),
+        ]);
+        setLiveQuests(qs || []);
+        const map: Record<string, string> = {};
+        (attrs || []).forEach((r: any) => {
+          if (r?.id && r?.name) map[r.id] = r.name as string;
+        });
+        setAttrIdToName(map);
+      } catch {}
+      try {
+        sub = supabase
+          .channel('map_live_quests')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'quests' }, async () => {
+            try {
+              const { data } = await supabase
+                .from('quests')
+                .select('*')
+                .in('status', ['approved', 'active', 'pending'])
+                .order('created_at', { ascending: false });
+              setLiveQuests(data || []);
+            } catch {}
+          })
+          .subscribe();
+      } catch {}
+    })();
+    return () => {
+      try {
+        sub?.unsubscribe?.();
+      } catch {}
+    };
+  }, []);
+
+  const renderLiveOverlay = useCallback(
+    (map: any, gl?: any) => {
+      const GL = gl || (window as any).mapboxgl || (window as any).maplibregl;
+      if (!GL?.Marker) return null;
+      const markers: any[] = [];
+      liveQuests.forEach((q) => {
+        const lng = q?.lng ?? q?.longitude ?? q?.lon;
+        const lat = q?.lat ?? q?.latitude;
+        if (lng == null || lat == null) return;
+        const el = document.createElement('div');
+        const attrName = q.attribute_id ? (attrIdToName[q.attribute_id] || '').toLowerCase() : '';
+        const color = (() => {
+          switch (attrName) {
+            case 'character':
+              return '#A855F7';
+            case 'health':
+              return '#EC4899';
+            case 'exploration':
+              return '#3B82F6';
+            case 'stem':
+              return '#F59E0B';
+            case 'stewardship':
+              return '#10B981';
+            default:
+              return q.status === 'approved'
+                ? '#10B981'
+                : q.status === 'rejected'
+                  ? '#EF4444'
+                  : '#F59E0B';
+          }
+        })();
+        el.style.cssText = `width: 14px;height: 14px;border-radius: 50%;background:${color};border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.3);`;
+        el.title = `${q.title} (${q.status})`;
+        markers.push(new GL.Marker(el).setLngLat([lng, lat]).addTo(map));
+      });
+      return null;
+    },
+    [liveQuests, attrIdToName],
+  );
 
   /**
    * Handle quest start from bubble
@@ -389,6 +475,7 @@ const MapPage: React.FC = () => {
                 center={[-75.1652, 39.9526]} // Philadelphia coordinates
                 zoom={12}
                 onQuestComplete={handleStartQuest}
+                renderOverlay={renderLiveOverlay}
               />
             </div>
           </GlassContainer>

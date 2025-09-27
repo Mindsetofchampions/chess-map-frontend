@@ -18,11 +18,16 @@ export const SUPABASE_ENV_VALID = Boolean(supabaseUrl && supabaseAnonKey);
 // Provide a no-op client shape to avoid hard crashes when env is missing
 function createNoopClient(): any {
   const notConfigured = async () => {
-    throw new Error('Supabase is not configured: missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
+    throw new Error(
+      'Supabase is not configured: missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY',
+    );
   };
   return {
     auth: {
-      getSession: async () => ({ data: { session: null }, error: new Error('Supabase not configured') }),
+      getSession: async () => ({
+        data: { session: null },
+        error: new Error('Supabase not configured'),
+      }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
       signInWithPassword: notConfigured,
       signUp: notConfigured,
@@ -33,9 +38,13 @@ function createNoopClient(): any {
       insert: async () => ({ data: null, error: new Error('Supabase not configured') }),
       update: async () => ({ data: null, error: new Error('Supabase not configured') }),
       delete: async () => ({ data: null, error: new Error('Supabase not configured') }),
-      order: () => ({ range: async () => ({ data: null, error: new Error('Supabase not configured') }) }),
+      order: () => ({
+        range: async () => ({ data: null, error: new Error('Supabase not configured') }),
+      }),
       maybeSingle: async () => ({ data: null, error: new Error('Supabase not configured') }),
-      eq: () => ({ maybeSingle: async () => ({ data: null, error: new Error('Supabase not configured') }) }),
+      eq: () => ({
+        maybeSingle: async () => ({ data: null, error: new Error('Supabase not configured') }),
+      }),
     }),
     rpc: async () => ({ data: null, error: new Error('Supabase not configured') }),
   };
@@ -44,16 +53,16 @@ function createNoopClient(): any {
 // Single Supabase client instance (real when env is valid, noop otherwise)
 export const supabase: any = SUPABASE_ENV_VALID
   ? createClient(supabaseUrl as string, supabaseAnonKey as string, {
-  auth: {
-    persistSession: true,
-    flowType: 'pkce',
-    autoRefreshToken: true,
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
-    },
-  },
+      auth: {
+        persistSession: true,
+        flowType: 'pkce',
+        autoRefreshToken: true,
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
     })
   : createNoopClient();
 
@@ -323,8 +332,7 @@ export async function allocateUserCoins(
   email: string,
   amount: number,
   reason: string,
-): Promise<{ ok: boolean; user_id: string; amount: number }>
-{
+): Promise<{ ok: boolean; user_id: string; amount: number }> {
   try {
     const { data, error } = await supabase.rpc('allocate_user_coins', {
       p_email: email,
@@ -513,7 +521,10 @@ export async function sendSystemNotification(to: string, subject: string, text: 
 }
 
 // Org admin: org and engagement flows
-export interface MyOrg { org_id: string; name: string }
+export interface MyOrg {
+  org_id: string;
+  name: string;
+}
 export interface OrgEngagement {
   id: string;
   org_id: string;
@@ -562,7 +573,11 @@ export async function fundOrgEngagement(engagementId: string, amount: number, re
   return data as { ok: boolean; remaining: number };
 }
 
-export async function upsertEngagementRecipient(engagementId: string, email: string, amount: number) {
+export async function upsertEngagementRecipient(
+  engagementId: string,
+  email: string,
+  amount: number,
+) {
   const { data, error } = await supabase.rpc('upsert_engagement_recipient', {
     p_engagement_id: engagementId,
     p_user_email: email,
@@ -589,8 +604,15 @@ export async function distributeEngagement(engagementId: string) {
   return data as { ok: boolean; distributed: number };
 }
 
-export interface OrgWallet { org_id: string; balance: number }
-export interface EngagementRecipient { user_id: string; email: string; planned_amount: number }
+export interface OrgWallet {
+  org_id: string;
+  balance: number;
+}
+export interface EngagementRecipient {
+  user_id: string;
+  email: string;
+  planned_amount: number;
+}
 
 export async function getMyOrgWallet(): Promise<OrgWallet> {
   const { data, error } = await supabase.rpc('get_my_org_wallet');
@@ -599,10 +621,18 @@ export async function getMyOrgWallet(): Promise<OrgWallet> {
   return { org_id: obj.org_id, balance: Number(obj.balance ?? 0) };
 }
 
-export async function listEngagementRecipients(engagementId: string): Promise<EngagementRecipient[]> {
-  const { data, error } = await supabase.rpc('list_engagement_recipients', { p_engagement_id: engagementId });
+export async function listEngagementRecipients(
+  engagementId: string,
+): Promise<EngagementRecipient[]> {
+  const { data, error } = await supabase.rpc('list_engagement_recipients', {
+    p_engagement_id: engagementId,
+  });
   if (error) throw new Error(mapPgError(error).message);
-  return (data as any[]).map((r: any) => ({ user_id: r.user_id, email: r.email, planned_amount: Number(r.planned_amount ?? 0) }));
+  return (data as any[]).map((r: any) => ({
+    user_id: r.user_id,
+    email: r.email,
+    planned_amount: Number(r.planned_amount ?? 0),
+  }));
 }
 
 // Quests: creation and participation helpers
@@ -638,14 +668,22 @@ export async function rpcReserveSeat(questId: string) {
   const { data, error } = await supabase.rpc('reserve_seat', { p_quest_id: questId });
   if (error) throw new Error(mapPgError(error).message);
   const row = Array.isArray(data) ? data[0] : data;
-  return { reserved: !!row?.reserved, seats_taken: Number(row?.seats_taken ?? 0), seats_total: row?.seats_total != null ? Number(row.seats_total) : null };
+  return {
+    reserved: !!row?.reserved,
+    seats_taken: Number(row?.seats_taken ?? 0),
+    seats_total: row?.seats_total != null ? Number(row.seats_total) : null,
+  };
 }
 
 export async function rpcCancelSeat(questId: string) {
   const { data, error } = await supabase.rpc('cancel_seat', { p_quest_id: questId });
   if (error) throw new Error(mapPgError(error).message);
   const row = Array.isArray(data) ? data[0] : data;
-  return { canceled: !!row?.canceled, seats_taken: Number(row?.seats_taken ?? 0), seats_total: row?.seats_total != null ? Number(row.seats_total) : null };
+  return {
+    canceled: !!row?.canceled,
+    seats_taken: Number(row?.seats_taken ?? 0),
+    seats_total: row?.seats_total != null ? Number(row.seats_total) : null,
+  };
 }
 
 export async function rpcSubmitText(questId: string, text: string) {
@@ -655,7 +693,10 @@ export async function rpcSubmitText(questId: string, text: string) {
 }
 
 export async function rpcSubmitNumeric(questId: string, value: number) {
-  const { data, error } = await supabase.rpc('submit_numeric', { p_quest_id: questId, p_value: value });
+  const { data, error } = await supabase.rpc('submit_numeric', {
+    p_quest_id: questId,
+    p_value: value,
+  });
   if (error) throw new Error(mapPgError(error).message);
   return data as Submission;
 }

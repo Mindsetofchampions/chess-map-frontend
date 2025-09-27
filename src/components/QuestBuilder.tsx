@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
+
+import { loadGoogleMapsPlaces } from '@/lib/googleMaps';
+import { env } from '@/lib/env';
+import { uploadQuestImage } from '@/lib/storage';
+import { rpcCreateQuest, supabase } from '@/lib/supabase';
+
 import GlassContainer from './GlassContainer';
 import { useToast } from './ToastProvider';
-import { rpcCreateQuest } from '@/lib/supabase';
-import { loadGoogleMapsPlaces } from '@/lib/googleMaps';
-import { supabase } from '@/lib/supabase';
 
 interface Props {
   open: boolean;
@@ -17,7 +20,7 @@ const PERSONAS = [
   { key: 'hammer', label: 'Hammer (STEM)', attributeName: 'STEM' },
   { key: 'badge', label: 'MOC Badge (Stewardship)', attributeName: 'Stewardship' },
 ] as const;
-type PersonaKey = typeof PERSONAS[number]['key'];
+type PersonaKey = (typeof PERSONAS)[number]['key'];
 
 export default function QuestBuilder({ open, onClose }: Props) {
   const { showSuccess, showError } = useToast();
@@ -26,9 +29,11 @@ export default function QuestBuilder({ open, onClose }: Props) {
   const [persona, setPersona] = useState<PersonaKey>(PERSONAS[0].key as PersonaKey);
   const [reward, setReward] = useState('50');
   const [questType, setQuestType] = useState<'mcq' | 'text' | 'numeric'>('mcq');
-  const [grades, setGrades] = useState<{ ES: boolean; MS: boolean; HS: boolean }>(
-    () => ({ ES: true, MS: false, HS: false }),
-  );
+  const [grades, setGrades] = useState<{ ES: boolean; MS: boolean; HS: boolean }>(() => ({
+    ES: true,
+    MS: false,
+    HS: false,
+  }));
   const [seats, setSeats] = useState<string>('');
   const [lat, setLat] = useState<string>('');
   const [lng, setLng] = useState<string>('');
@@ -43,6 +48,8 @@ export default function QuestBuilder({ open, onClose }: Props) {
   const [saving, setSaving] = useState(false);
   const [attributes, setAttributes] = useState<{ id: string; name: string }[]>([]);
   const [attributesLoading, setAttributesLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -65,13 +72,11 @@ export default function QuestBuilder({ open, onClose }: Props) {
   }, []);
 
   const selectedAttributeId = useMemo(() => {
-    const personaDef = PERSONAS.find((p) => p.key === persona as PersonaKey);
+    const personaDef = PERSONAS.find((p) => p.key === (persona as PersonaKey));
     if (!personaDef) return undefined;
     const targetName = personaDef.attributeName.toLowerCase();
     return attributes.find((a) => (a.name || '').toLowerCase() === targetName)?.id;
   }, [persona, attributes]);
-
-  if (!open) return null;
 
   async function createQuest() {
     if (!title.trim()) return showError('Title required', 'Enter a quest title');
@@ -81,13 +86,14 @@ export default function QuestBuilder({ open, onClose }: Props) {
     if (!selectedAttributeId) {
       return showError(
         'Attribute lookup failed',
-        'Could not resolve CHESS attribute. Please ensure attributes are seeded and try again.'
+        'Could not resolve CHESS attribute. Please ensure attributes are seeded and try again.',
       );
     }
     const selectedGrades = Object.entries(grades)
       .filter(([, v]) => v)
       .map(([k]) => k);
-    if (selectedGrades.length === 0) return showError('Grades required', 'Select at least one grade band');
+    if (selectedGrades.length === 0)
+      return showError('Grades required', 'Select at least one grade band');
     const seatsTotal = parseInt(seats || '0', 10) || undefined;
     if (seats && (isNaN(Number(seats)) || Number(seats) < 0)) {
       return showError('Invalid seats', 'Seats must be a non-negative number');
@@ -98,7 +104,9 @@ export default function QuestBuilder({ open, onClose }: Props) {
       return showError('Invalid location', 'Latitude/Longitude must be numbers');
     }
 
-    const baseConfig: any = { meta: { grades: selectedGrades, seats_total: seatsTotal } };
+    const baseConfig: any = {
+      meta: { grades: selectedGrades, seats_total: seatsTotal, image_url: imageUrl || null },
+    };
     if (latNum !== undefined && lngNum !== undefined) {
       baseConfig.meta.location = { lat: latNum, lng: lngNum };
     }
@@ -146,9 +154,10 @@ export default function QuestBuilder({ open, onClose }: Props) {
   }
 
   async function geocodeAddress() {
-    const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+    const API_KEY = env.get('VITE_GOOGLE_MAPS_API_KEY') as string | undefined;
     if (!address.trim()) return showError('Address required', 'Enter an address to search');
-    if (!API_KEY) return showError('Missing API key', 'Set VITE_GOOGLE_MAPS_API_KEY to use geocoding');
+    if (!API_KEY)
+      return showError('Missing API key', 'Set VITE_GOOGLE_MAPS_API_KEY to use geocoding');
     setGeocoding(true);
     try {
       const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
@@ -174,7 +183,7 @@ export default function QuestBuilder({ open, onClose }: Props) {
 
   // Autocomplete: query predictions while typing
   useEffect(() => {
-    const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+    const API_KEY = env.get('VITE_GOOGLE_MAPS_API_KEY') as string | undefined;
     if (!API_KEY) return; // silent when not configured
     if (!address.trim()) {
       setAutoSuggests([]);
@@ -189,7 +198,11 @@ export default function QuestBuilder({ open, onClose }: Props) {
         service.getPlacePredictions({ input: address.trim() }, (preds: any[], status: string) => {
           if (!active) return;
           if (status === google.maps.places.PlacesServiceStatus.OK && Array.isArray(preds)) {
-            setAutoSuggests(preds.slice(0, 6).map((p: any) => ({ description: p.description, place_id: p.place_id })));
+            setAutoSuggests(
+              preds
+                .slice(0, 6)
+                .map((p: any) => ({ description: p.description, place_id: p.place_id })),
+            );
           } else {
             setAutoSuggests([]);
           }
@@ -206,25 +219,30 @@ export default function QuestBuilder({ open, onClose }: Props) {
   }, [address]);
 
   async function selectPlacePrediction(placeId: string, description: string) {
-    const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+    const API_KEY = env.get('VITE_GOOGLE_MAPS_API_KEY') as string | undefined;
     if (!API_KEY) return;
     try {
       const google = await loadGoogleMapsPlaces(API_KEY);
       const map = document.createElement('div');
       const placesSvc = new google.maps.places.PlacesService(map);
-      placesSvc.getDetails({ placeId, fields: ['geometry','formatted_address'] }, (place: any, status: string) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
-          const loc = place.geometry.location;
-          setAddress(place.formatted_address || description);
-          setLat(String(typeof loc.lat === 'function' ? loc.lat() : loc.lat));
-          setLng(String(typeof loc.lng === 'function' ? loc.lng() : loc.lng));
-          setAutoSuggests([]);
-        }
-      });
+      placesSvc.getDetails(
+        { placeId, fields: ['geometry', 'formatted_address'] },
+        (place: any, status: string) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
+            const loc = place.geometry.location;
+            setAddress(place.formatted_address || description);
+            setLat(String(typeof loc.lat === 'function' ? loc.lat() : loc.lat));
+            setLng(String(typeof loc.lng === 'function' ? loc.lng() : loc.lng));
+            setAutoSuggests([]);
+          }
+        },
+      );
     } catch (_) {
       // ignore
     }
   }
+
+  if (!open) return null;
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-auto'>
@@ -236,6 +254,38 @@ export default function QuestBuilder({ open, onClose }: Props) {
           </button>
         </div>
         <div className='grid gap-3'>
+          <div>
+            <label className='text-sm text-gray-300 block mb-1'>Image (optional)</label>
+            <div className='flex items-center gap-3'>
+              <input
+                type='file'
+                accept='image/*'
+                onChange={async (e) => {
+                  const f = e.currentTarget.files?.[0];
+                  if (!f) return;
+                  try {
+                    setUploading(true);
+                    const url = await uploadQuestImage(f, 'org');
+                    setImageUrl(url);
+                  } catch (err: any) {
+                    // Show a soft error toast using ToastProvider
+                    // Don't block quest creation without an image
+                  } finally {
+                    setUploading(false);
+                  }
+                }}
+                className='bg-glass border-glass rounded-xl px-3 py-2 text-white'
+              />
+              {imageUrl && (
+                <img
+                  src={imageUrl}
+                  alt='preview'
+                  className='w-12 h-12 rounded object-cover border border-white/20'
+                />
+              )}
+            </div>
+            {uploading && <div className='text-xs text-gray-400 mt-1'>Uploading…</div>}
+          </div>
           <label className='text-sm text-gray-300'>Title</label>
           <input
             value={title}

@@ -30,8 +30,8 @@ import GlassContainer from '@/components/GlassContainer';
 import { useToast } from '@/components/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase, rpcSubmitMcq, rpcApproveQuest } from '@/lib/supabase';
-import { getErrorMessage, getErrorDetails } from '@/utils/mapPgError';
 import type { Quest } from '@/types/backend';
+import { getErrorMessage, getErrorDetails } from '@/utils/mapPgError';
 
 /**
  * Diagnostic check result interface
@@ -326,7 +326,7 @@ const SystemDiagnostics: React.FC = () => {
         status: 'pass',
         message: 'Supabase connection successful',
         details: `Connected to database. Query returned ${(data || []).length} row(s).`,
-  verbose: JSON.stringify({ rows: data?.length || 0 }, null, 2),
+        verbose: JSON.stringify({ rows: data?.length || 0 }, null, 2),
       });
     } catch (error: any) {
       updateResult('conn', {
@@ -453,8 +453,8 @@ const SystemDiagnostics: React.FC = () => {
         throw new Error(error.message);
       }
 
-  const approved = (data || []).filter((q: any) => q.status === 'approved' && q.active);
-  const submitted = (data || []).filter((q: any) => q.status === 'submitted');
+      const approved = (data || []).filter((q: any) => q.status === 'approved' && q.active);
+      const submitted = (data || []).filter((q: any) => q.status === 'submitted');
 
       setAvailableQuests(data || []);
       setSubmittedQuests(submitted);

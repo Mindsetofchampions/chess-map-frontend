@@ -23,9 +23,12 @@ export default function AttendanceTab() {
       .order('date', { ascending: false })
       .then(({ data }: { data: any[] | null }) => setRows(data ?? []));
   }, []);
-  const selectedServiceId = useMemo(() => (studentId: string) => {
-    return serviceByStudent[studentId] || services[0]?.id || '';
-  }, [serviceByStudent, services]);
+  const selectedServiceId = useMemo(
+    () => (studentId: string) => {
+      return serviceByStudent[studentId] || services[0]?.id || '';
+    },
+    [serviceByStudent, services],
+  );
 
   async function mark(student_id: string, status: string) {
     const service_id = selectedServiceId(student_id);
