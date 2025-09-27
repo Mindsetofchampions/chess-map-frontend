@@ -528,6 +528,34 @@ export async function sendSystemNotification(to: string, subject: string, text: 
   }
 }
 
+/**
+ * Admin edge function: set or clear a user's organization membership
+ */
+export async function adminSetUserOrg(payload: {
+  email: string;
+  org_id?: string | null;
+  org_role?: 'org_admin' | 'staff' | 'student';
+}) {
+  try {
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
+    const resp = await fetch(`${supabaseUrl}/functions/v1/admin_set_user_org`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        apikey: supabaseAnonKey as string,
+      },
+      body: JSON.stringify(payload),
+    });
+    const body = await resp.json();
+    if (!resp.ok) throw new Error(body?.error || 'admin_set_user_org failed');
+    return body;
+  } catch (error: any) {
+    throw new Error(error?.message || String(error));
+  }
+}
+
 // Org admin: org and engagement flows
 export interface MyOrg {
   org_id: string;

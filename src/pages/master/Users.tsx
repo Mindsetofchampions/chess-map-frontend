@@ -12,12 +12,15 @@ import {
   adminSetPassword,
   adminDeleteUser,
   setUserRole,
+  adminSetUserOrg,
 } from '@/lib/supabase';
 
 interface Row {
   id: string;
   email: string;
   role?: string;
+  org_id?: string | null;
+  org_name?: string | null;
 }
 
 export default function MasterUsersPage() {
@@ -55,7 +58,30 @@ export default function MasterUsersPage() {
         // Prefer secure RPC for master admins
         const { data, error } = await supabase.rpc('get_admin_user_list');
         if (error) throw error;
-        if (Array.isArray(data)) setUsers(data as any);
+        let rows: Row[] = Array.isArray(data) ? (data as any) : [];
+        // Enrich with org assignment from profiles (and map to org name)
+        const ids = rows.map((r) => r.id);
+        if (ids.length) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, org_id')
+            .in('user_id', ids);
+          const profMap = new Map((profiles || []).map((p: any) => [p.user_id, p.org_id]));
+          const orgIds = Array.from(new Set((profiles || []).map((p: any) => p.org_id).filter(Boolean)));
+          let orgNameById: Record<string, string> = {};
+          if (orgIds.length) {
+            const { data: orgRows } = await supabase
+              .from('organizations')
+              .select('id,name')
+              .in('id', orgIds);
+            orgNameById = Object.fromEntries((orgRows || []).map((o: any) => [o.id, o.name]));
+          }
+          rows = rows.map((r) => {
+            const oid = (profMap.get(r.id) as string | null) || null;
+            return { ...r, org_id: oid, org_name: oid ? orgNameById[oid] || null : null };
+          });
+        }
+        setUsers(rows);
       } catch (e) {
         console.error('Load users failed', e);
       }
@@ -184,6 +210,23 @@ export default function MasterUsersPage() {
     }
   }
 
+  async function updateOrg(u: Row, newOrgId: string | null) {
+    try {
+      setSavingRole(u.id);
+      const res = await adminSetUserOrg({ email: u.email, org_id: newOrgId || null });
+      setUsers((prev) =>
+        prev.map((row) =>
+          row.id === u.id ? { ...row, org_id: res.org_id ?? null, org_name: res.org_name ?? null } : row,
+        ),
+      );
+      showSuccess('Organization updated', `${u.email} → ${res.org_name || 'None'}`);
+    } catch (e: any) {
+      showError('Org update failed', e?.message || String(e));
+    } finally {
+      setSavingRole(null);
+    }
+  }
+
   return (
     <div className='p-6 space-y-6'>
       <div className='flex items-center justify-between'>
@@ -265,6 +308,7 @@ export default function MasterUsersPage() {
               <tr>
                 <th className='text-left py-2'>Email</th>
                 <th className='text-left py-2'>Role</th>
+                <th className='text-left py-2'>Organization</th>
                 <th className='text-left py-2'>Actions</th>
               </tr>
             </thead>
@@ -289,6 +333,22 @@ export default function MasterUsersPage() {
                       <option value='staff'>staff</option>
                       <option value='org_admin'>org_admin</option>
                       <option value='master_admin'>master_admin</option>
+                    </select>
+                  </td>
+                  <td className='py-2'>
+                    <select
+                      className='bg-gray-800/70 border border-white/20 rounded-lg px-2 py-1 text-white focus:outline-none focus:ring-1 focus:ring-electric-blue-400 disabled:opacity-60'
+                      value={u.org_id ?? ''}
+                      disabled={loading || savingRole === u.id}
+                      onChange={(e) => updateOrg(u, e.target.value || null)}
+                      title='Change organization'
+                    >
+                      <option value=''>No organization</option>
+                      {orgs.map((o) => (
+                        <option key={o.id} value={o.id}>
+                          {o.name}
+                        </option>
+                      ))}
                     </select>
                   </td>
                   <td className='py-2'>
