@@ -75,6 +75,7 @@ const DiagnosticCard: React.FC<DiagnosticCardProps> = ({
   testId,
   disabled = false,
 }) => {
+  const { showSuccess, showError } = useToast();
   const buildVerbose = () => {
     if (!result) return '';
     const env: any = {
@@ -167,9 +168,42 @@ const DiagnosticCard: React.FC<DiagnosticCardProps> = ({
               ]
                 .filter(Boolean)
                 .join('\n\n');
+
+              const fallbackCopy = (t: string) => {
+                try {
+                  const ta = document.createElement('textarea');
+                  ta.value = t;
+                  ta.style.position = 'fixed';
+                  ta.style.left = '-9999px';
+                  document.body.appendChild(ta);
+                  ta.focus();
+                  ta.select();
+                  const ok = document.execCommand('copy');
+                  document.body.removeChild(ta);
+                  return ok;
+                } catch {
+                  return false;
+                }
+              };
+
               try {
-                await navigator.clipboard.writeText(text);
-              } catch {}
+                if (navigator?.clipboard?.writeText) {
+                  await navigator.clipboard.writeText(text);
+                  showSuccess('Copied to clipboard');
+                } else if (fallbackCopy(text)) {
+                  showSuccess('Copied to clipboard');
+                } else {
+                  throw new Error('Clipboard API unavailable');
+                }
+              } catch (e: any) {
+                // Attempt fallback if not already tried
+                const ok = fallbackCopy(text);
+                if (ok) {
+                  showSuccess('Copied to clipboard');
+                } else {
+                  showError('Copy failed', e?.message || 'Unable to copy');
+                }
+              }
             }}
             disabled={!result}
             className='btn-esports-secondary px-3 py-2 text-sm disabled:opacity-50'
