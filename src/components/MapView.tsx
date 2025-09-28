@@ -557,6 +557,8 @@ const MapView: React.FC<MapViewProps> = ({
       let initOsmRaster = async () => {};
 
       const handleInitTimeout = () => {
+        // If the map loaded already, ignore timeout entirely
+        if (mapLoadedRef.current) return;
         // If map hasn't loaded by now, try fallback
         if (engineRef.current === 'mapbox') {
           tryFallbackToMapLibre();
@@ -614,14 +616,15 @@ const MapView: React.FC<MapViewProps> = ({
             attributionControl: true,
           });
           attachCommonHandlers(loadingTimeout);
-          // On style load errors, fallback
+          // Only consider real, pre-load core asset errors for fallback
           mapInstance.current.on('error', (_e: any) => {
-            const status = _e?.error?.status || _e?.statusCode;
-            const resource = _e?.error?.resourceType || _e?.resourceType;
-            const url = _e?.error?.url || _e?.url || '';
-            const isTelemetry = typeof url === 'string' && /events\.mapbox\.com/.test(url);
+            const status = _e?.error?.status ?? _e?.statusCode ?? 0;
+            const resource = _e?.error?.resourceType ?? _e?.resourceType ?? '';
+            const url = String(_e?.error?.url ?? _e?.url ?? '');
+            const isTelemetry = /(^|\/)\/\/events\.mapbox\.com\//.test(url) || /events\.mapbox\.com/.test(url);
             if (isTelemetry) return; // ignore ad-blocked telemetry errors
-
+            // If the map has fully loaded once, never fallback on subsequent noise
+            if (mapLoadedRef.current) return;
             // Fallback only for auth errors affecting core style assets
             const coreResource =
               resource === 'style' ||

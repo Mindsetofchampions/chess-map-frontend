@@ -139,10 +139,16 @@ export async function rpcRejectQuest(questId: string, reason: string): Promise<a
  */
 export async function getMyWallet(): Promise<Wallet> {
   try {
-    const { data, error } = await supabase.rpc('get_my_wallet');
+    // Always send an explicit empty object for body to avoid 400 on some setups
+    const { data, error } = await supabase.rpc('get_my_wallet', {});
 
     if (error) {
+      // Surface a clearer message for common 400 responses
       const mappedError = mapPgError(error);
+      const msg = String(mappedError.message || '').toLowerCase();
+      if ((error as any)?.code === '400' || msg.includes('bad request')) {
+        throw new Error('No wallet found for this account');
+      }
       throw new Error(mappedError.message);
     }
 

@@ -85,18 +85,31 @@ const WalletChip: React.FC<WalletChipProps> = ({
    * Initial load and auto-refresh setup
    */
   useEffect(() => {
-    fetchWallet();
+    let alive = true;
+    let timer: number | undefined;
+    let backoff = 30000; // 30s default
 
-    // Set up auto-refresh if enabled
-    let interval: number | undefined;
-    if (autoRefresh) {
-      interval = window.setInterval(() => {
-        fetchWallet();
-      }, 30000); // Refresh every 30 seconds
-    }
+    const tick = async () => {
+      try {
+        await fetchWallet();
+        backoff = 15000; // faster after success
+      } catch (e: any) {
+        const msg = String(e?.message || '').toLowerCase();
+        if (msg.includes('no wallet')) backoff = 30000; // slow down if none
+        else backoff = Math.min(60000, backoff * 1.5); // mild exponential backoff
+      } finally {
+        if (!alive || !autoRefresh) return;
+        window.clearTimeout(timer);
+        timer = window.setTimeout(tick, backoff) as unknown as number;
+      }
+    };
+
+    // initial request
+    tick();
 
     return () => {
-      if (interval) clearInterval(interval);
+      alive = false;
+      if (timer) window.clearTimeout(timer);
     };
   }, [fetchWallet, autoRefresh]);
 
