@@ -38,4 +38,7 @@ These instructions are implicitly added to all future chat requests for this rep
   - Don’t exfiltrate data or secrets; don’t call external networks unless necessary.
   - Validate inputs on both client and server boundaries.
 
+- Handoffs
+  - In /Agents/Handoffs, there is a folder called handoffs which includes notes from agents as this project moves between machines. Read the readme in side and refer to the folder when prompted.
+
 That’s it. Keep changes tight, safe, and well-verified.
