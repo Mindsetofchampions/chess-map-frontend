@@ -32,6 +32,8 @@ export interface StructuredError {
 export function mapPgError(error: any): StructuredError {
   const message = error?.message || error?.toString() || '';
   const details = error?.details || error?.hint || '';
+  const lmsg = message.toLowerCase();
+  const ldet = details.toLowerCase();
 
   // Permission and authorization errors
   if (message.includes('Only org staff/admin') || message.includes('org staff/admin')) {
@@ -44,9 +46,11 @@ export function mapPgError(error: any): StructuredError {
 
   if (
     message.includes('FORBIDDEN') ||
-    message.includes('permission denied') ||
-    message.includes('master admin') ||
-    message.includes('Only master administrators')
+    lmsg.includes('forbidden') ||
+    lmsg.includes('permission denied') ||
+    lmsg.includes('master admin') ||
+    lmsg.includes('only master administrators') ||
+    ldet.includes('forbidden')
   ) {
     return {
       code: 'FORBIDDEN',
@@ -58,14 +62,23 @@ export function mapPgError(error: any): StructuredError {
   // Resource not found errors
   if (
     message.includes('NOT_FOUND') ||
-    message.includes('Quest not found') ||
-    message.includes('not found') ||
+    lmsg.includes('no org') ||
+    ldet.includes('no org') ||
+    lmsg.includes('engagement not found') ||
+    ldet.includes('engagement not found') ||
+    lmsg.includes('quest not found') ||
+    lmsg.includes('not found') ||
+    ldet.includes('not found') ||
     error?.code === 'PGRST116'
   ) {
     return {
       code: 'NOT_FOUND',
-      message: 'Resource not found',
-      details: 'The requested item could not be located',
+      message: lmsg.includes('no org') || ldet.includes('no org')
+        ? 'No organization found for your account'
+        : 'Resource not found',
+      details: lmsg.includes('no org') || ldet.includes('no org')
+        ? 'Your user is not linked to an organization yet'
+        : 'The requested item could not be located',
     };
   }
 
@@ -85,29 +98,49 @@ export function mapPgError(error: any): StructuredError {
   // Insufficient funds errors
   if (
     message.includes('INSUFFICIENT_FUNDS') ||
-    message.includes('Platform has') ||
-    message.includes('but quest requires') ||
-    message.includes('insufficient')
+    lmsg.includes('insufficient org funds') ||
+    ldet.includes('insufficient org funds') ||
+    lmsg.includes('platform has') ||
+    lmsg.includes('but quest requires') ||
+    lmsg.includes('insufficient')
   ) {
     return {
       code: 'INSUFFICIENT_FUNDS',
-      message: 'Insufficient platform coins',
-      details: 'Not enough coins available to fund this quest',
+      message: lmsg.includes('insufficient org funds') || ldet.includes('insufficient org funds')
+        ? 'Insufficient organization coins'
+        : 'Insufficient platform coins',
+      details: lmsg.includes('insufficient org funds') || ldet.includes('insufficient org funds')
+        ? 'Your organization wallet does not have enough coins for this action'
+        : 'Not enough coins available to fund this quest',
     };
   }
 
   // Invalid input errors
   if (
     message.includes('INVALID_INPUT') ||
-    message.includes('required') ||
-    message.includes('must be') ||
+    lmsg.includes('invalid amount') ||
+    ldet.includes('invalid amount') ||
+    lmsg.includes('recipient not in org') ||
+    ldet.includes('recipient not in org') ||
+    lmsg.includes('user not found') ||
+    ldet.includes('user not found') ||
+    lmsg.includes('required') ||
+    lmsg.includes('must be') ||
     error?.code === '23514'
   ) {
     // Check constraint violation
     return {
       code: 'INVALID_INPUT',
       message: 'Invalid input provided',
-      details: details || 'Please check your input and try again',
+      details:
+        details ||
+        (lmsg.includes('invalid amount') || ldet.includes('invalid amount')
+          ? 'Amount must be greater than 0'
+          : lmsg.includes('recipient not in org') || ldet.includes('recipient not in org')
+            ? 'The specified user is not part of your organization'
+            : lmsg.includes('user not found') || ldet.includes('user not found')
+              ? 'No user found for the provided email'
+              : 'Please check your input and try again'),
     };
   }
 
