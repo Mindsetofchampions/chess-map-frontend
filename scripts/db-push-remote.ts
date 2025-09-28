@@ -7,12 +7,10 @@
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
+import dotenv from 'dotenv';
 
-// Lazy load dotenv if available
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  require('dotenv').config({ path: path.resolve('.env.scripts.local') });
-} catch {}
+// Load environment variables from .env.scripts.local (ESM-friendly)
+dotenv.config({ path: path.resolve('.env.scripts.local') });
 
 function ensureSsl(url: string): string {
   return url.includes('sslmode=')
@@ -30,7 +28,8 @@ function readPoolerTemplate(): string | null {
 
 function composeDbUrl(): string {
   const direct = process.env.SUPABASE_DB_URL?.trim();
-  if (direct) {
+  // Only accept a Postgres connection string for direct DB URL
+  if (direct && /^postgres(ql)?:\/\//i.test(direct)) {
     return ensureSsl(direct);
   }
   const password = process.env.SUPABASE_DB_PASSWORD?.trim();
