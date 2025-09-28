@@ -71,15 +71,14 @@ export function mapPgError(error: any): StructuredError {
     ldet.includes('not found') ||
     error?.code === 'PGRST116'
   ) {
-    return {
-      code: 'NOT_FOUND',
-      message: lmsg.includes('no org') || ldet.includes('no org')
-        ? 'No organization found for your account'
-        : 'Resource not found',
-      details: lmsg.includes('no org') || ldet.includes('no org')
-        ? 'Your user is not linked to an organization yet'
-        : 'The requested item could not be located',
-    };
+    const isNoOrg = lmsg.includes('no org') || ldet.includes('no org');
+    let messageOut = 'Resource not found';
+    let detailsOut = 'The requested item could not be located';
+    if (isNoOrg) {
+      messageOut = 'No organization found for your account';
+      detailsOut = 'Your user is not linked to an organization yet';
+    }
+    return { code: 'NOT_FOUND', message: messageOut, details: detailsOut };
   }
 
   // Invalid state transitions
@@ -104,15 +103,15 @@ export function mapPgError(error: any): StructuredError {
     lmsg.includes('but quest requires') ||
     lmsg.includes('insufficient')
   ) {
-    return {
-      code: 'INSUFFICIENT_FUNDS',
-      message: lmsg.includes('insufficient org funds') || ldet.includes('insufficient org funds')
-        ? 'Insufficient organization coins'
-        : 'Insufficient platform coins',
-      details: lmsg.includes('insufficient org funds') || ldet.includes('insufficient org funds')
-        ? 'Your organization wallet does not have enough coins for this action'
-        : 'Not enough coins available to fund this quest',
-    };
+    const isOrgFunds =
+      lmsg.includes('insufficient org funds') || ldet.includes('insufficient org funds');
+    let messageOut = 'Insufficient platform coins';
+    let detailsOut = 'Not enough coins available to fund this quest';
+    if (isOrgFunds) {
+      messageOut = 'Insufficient organization coins';
+      detailsOut = 'Your organization wallet does not have enough coins for this action';
+    }
+    return { code: 'INSUFFICIENT_FUNDS', message: messageOut, details: detailsOut };
   }
 
   // Invalid input errors
@@ -129,19 +128,19 @@ export function mapPgError(error: any): StructuredError {
     error?.code === '23514'
   ) {
     // Check constraint violation
-    return {
-      code: 'INVALID_INPUT',
-      message: 'Invalid input provided',
-      details:
-        details ||
-        (lmsg.includes('invalid amount') || ldet.includes('invalid amount')
-          ? 'Amount must be greater than 0'
-          : lmsg.includes('recipient not in org') || ldet.includes('recipient not in org')
-            ? 'The specified user is not part of your organization'
-            : lmsg.includes('user not found') || ldet.includes('user not found')
-              ? 'No user found for the provided email'
-              : 'Please check your input and try again'),
-    };
+    let detailsOut = details as string | undefined;
+    if (!detailsOut) {
+      if (lmsg.includes('invalid amount') || ldet.includes('invalid amount')) {
+        detailsOut = 'Amount must be greater than 0';
+      } else if (lmsg.includes('recipient not in org') || ldet.includes('recipient not in org')) {
+        detailsOut = 'The specified user is not part of your organization';
+      } else if (lmsg.includes('user not found') || ldet.includes('user not found')) {
+        detailsOut = 'No user found for the provided email';
+      } else {
+        detailsOut = 'Please check your input and try again';
+      }
+    }
+    return { code: 'INVALID_INPUT', message: 'Invalid input provided', details: detailsOut };
   }
 
   // Network and connection errors

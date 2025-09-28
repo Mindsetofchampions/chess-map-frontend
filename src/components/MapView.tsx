@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   PHILADELPHIA_BUBBLES,
   QUEST_STYLES,
+  CHESS_COLORS,
   type QuestBubble,
   type QuestCategory,
 } from '@/hooks/usePhiladelphiaData';
@@ -315,6 +316,11 @@ const MapView: React.FC<MapViewProps> = ({
   const [engine, setEngine] = useState<'none' | 'mapbox' | 'maplibre' | 'osm-raster'>('none');
   const personaMarkersRef = useRef<PersonaChipMarker[]>([]);
   const clusterSourceId = useRef(`org-personas-${Math.random().toString(36).slice(2)}`);
+  const phillySourceId = useRef(`philly-bubbles-${Math.random().toString(36).slice(2)}`);
+  const phillyLayerSymbolId = useRef(
+    `philly-bubbles-symbol-${Math.random().toString(36).slice(2)}`,
+  );
+  const phillyLayerHaloId = useRef(`philly-bubbles-halo-${Math.random().toString(36).slice(2)}`);
   const [isClusteredView, setIsClusteredView] = useState(false);
   const safeSpacesSourceId = useRef(`safe-spaces-${Math.random().toString(36).slice(2)}`);
   const eventsSourceId = useRef(`events-${Math.random().toString(36).slice(2)}`);
@@ -359,6 +365,14 @@ const MapView: React.FC<MapViewProps> = ({
   const containerRectRef = useRef<DOMRect | null>(null);
   const [hoveredCount, setHoveredCount] = useState(0);
   const anyBubbleHovered = hoveredCount > 0;
+  const [useLayerBubbles] = useState(true); // feature flag: render quest bubbles as Mapbox layers
+  const phillyHoverFeatureRef = useRef<string | null>(null);
+  // Defer cleanup to avoid React 18 StrictMode effect double-invocation flicker
+  const cleanupTimerRef = useRef<number | null>(null);
+  // Bump when base style reloads so overlays/sprites are re-added
+  const [styleEpoch, setStyleEpoch] = useState(0);
+  // Track when the map has fully loaded to avoid mid-session fallbacks due to ad-blocked telemetry
+  const mapLoadedRef = useRef(false);
 
   const handleBubbleClick = useCallback(
     (bubble: QuestBubble, clickPosition: { x: number; y: number }) => {
@@ -450,6 +464,33 @@ const MapView: React.FC<MapViewProps> = ({
   useEffect(() => {
     if (!mapContainer.current) return;
 
+    // If a cleanup was scheduled (StrictMode probe), cancel it and keep the existing instance
+    if (cleanupTimerRef.current != null) {
+      try {
+        clearTimeout(cleanupTimerRef.current as any);
+      } catch {}
+      cleanupTimerRef.current = null;
+    }
+
+    // In dev StrictMode, effects run twice; if an instance already exists, skip re-init
+    if (mapInstance.current) {
+      return () => {
+        // Schedule actual disposal; if effect re-runs immediately, this will be cancelled above
+        const t = window.setTimeout(() => {
+          try {
+            personaMarkersRef.current.forEach((m) => m.remove());
+            personaMarkersRef.current = [];
+          } catch {}
+          try {
+            mapInstance.current?.remove();
+          } catch {}
+          mapInstance.current = null;
+          cleanupTimerRef.current = null;
+        }, 120);
+        cleanupTimerRef.current = t;
+      };
+    }
+
     const initializeMap = async () => {
       // Helper functions accessible across branches
       const resetMapInstance = () => {
@@ -472,19 +513,17 @@ const MapView: React.FC<MapViewProps> = ({
           clearTimeout(timeoutId);
           setIsLoading(false);
           setError(null);
+          mapLoadedRef.current = true;
           try {
             mapInstance.current.resize();
           } catch {}
         });
 
-        mapInstance.current.on('error', () => {
+        mapInstance.current.on('error', (_e: any) => {
           // Let specific init attach fallbacks; for generic errors just note
           setIsLoading(false);
         });
       };
-
-      // No-op reference to satisfy TS when tree-shaken in certain branches
-      void attachCommonHandlers;
 
       // Safer engine state setter to avoid redundant setState loops
       const setEngineOnce = (next: 'mapbox' | 'maplibre' | 'osm-raster') => {
@@ -515,7 +554,7 @@ const MapView: React.FC<MapViewProps> = ({
       let initMapLibre = async () => {};
       let initOsmRaster = async () => {};
 
-      const loadingTimeout = setTimeout(() => {
+      const handleInitTimeout = () => {
         // If map hasn't loaded by now, try fallback
         if (engineRef.current === 'mapbox') {
           tryFallbackToMapLibre();
@@ -525,13 +564,16 @@ const MapView: React.FC<MapViewProps> = ({
           setIsLoading(false);
           setError('Map timed out — showing bubbles only');
         }
-      }, 1800);
+      };
+      const ms = Number(import.meta.env.VITE_MAP_INIT_TIMEOUT_MS || 8000);
+      const loadingTimeout = window.setTimeout(handleInitTimeout, ms);
 
       try {
-        const mapboxToken =
-          import.meta.env.VITE_MAPBOX_TOKEN ||
-          import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
-          import.meta.env.VITE_MAPBOX_TOKEN_PK;
+        const mapboxToken = [
+          import.meta.env.VITE_MAPBOX_TOKEN,
+          import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN,
+          import.meta.env.VITE_MAPBOX_TOKEN_PK,
+        ].find((t): t is string => Boolean(t));
 
         // Allow forcing engine via env for local dev or restricted domains
         const forcedEngine = (import.meta.env.VITE_MAP_ENGINE || '').toLowerCase();
@@ -540,6 +582,7 @@ const MapView: React.FC<MapViewProps> = ({
           String(import.meta.env.VITE_FORCE_MAPLIBRE).toLowerCase() === 'true';
 
         initMapbox = async () => {
+          setIsLoading(true);
           const mapboxgl = await import('mapbox-gl');
           // Disable telemetry/events to avoid ad-blocker noise and potential flicker from retries
           try {
@@ -569,17 +612,29 @@ const MapView: React.FC<MapViewProps> = ({
           });
           attachCommonHandlers(loadingTimeout);
           // On style load errors, fallback
-          mapInstance.current.on('error', (e: any) => {
-            const status = e?.error?.status || e?.statusCode;
-            const resource = e?.error?.resourceType || e?.resourceType;
-            // Only fallback once on style/source auth errors (401/403) to avoid loops
-            if (resource === 'style' || resource === 'source' || status === 401 || status === 403) {
+          mapInstance.current.on('error', (_e: any) => {
+            const status = _e?.error?.status || _e?.statusCode;
+            const resource = _e?.error?.resourceType || _e?.resourceType;
+            const url = _e?.error?.url || _e?.url || '';
+            const isTelemetry = typeof url === 'string' && /events\.mapbox\.com/.test(url);
+            if (isTelemetry) return; // ignore ad-blocked telemetry errors
+
+            // Fallback only for auth errors affecting core style assets
+            const coreResource =
+              resource === 'style' ||
+              resource === 'sprite' ||
+              resource === 'glyphs' ||
+              resource === 'source' ||
+              resource === 'tile';
+            const isAuth = status === 401 || status === 403;
+            if (coreResource && isAuth) {
               tryFallbackToMapLibre();
             }
           });
         };
 
         initMapLibre = async () => {
+          setIsLoading(true);
           const maplibregl = (await import('maplibre-gl')).default;
           glNSRef.current = maplibregl;
           setEngineOnce('maplibre');
@@ -601,6 +656,7 @@ const MapView: React.FC<MapViewProps> = ({
         };
 
         initOsmRaster = async () => {
+          setIsLoading(true);
           const maplibregl = (await import('maplibre-gl')).default;
           glNSRef.current = maplibregl;
           setEngineOnce('osm-raster');
@@ -625,50 +681,6 @@ const MapView: React.FC<MapViewProps> = ({
             attributionControl: { compact: true },
           });
           attachCommonHandlers(loadingTimeout);
-        };
-
-        const resetMapInstance = () => {
-          if (mapInstance.current) {
-            try {
-              mapInstance.current.remove();
-            } catch {}
-            mapInstance.current = null;
-          }
-        };
-
-        const attachCommonHandlers = (timeoutId: any) => {
-          // Add navigation controls for better UX (zoom/rotate)
-          try {
-            const nav = new glNSRef.current.NavigationControl({ visualizePitch: true });
-            mapInstance.current.addControl(nav, 'top-right');
-          } catch {}
-
-          mapInstance.current.on('load', () => {
-            clearTimeout(timeoutId);
-            setIsLoading(false);
-            setError(null);
-          });
-
-          mapInstance.current.on('error', () => {
-            // Let specific init attach fallbacks; for generic errors just note
-            setIsLoading(false);
-          });
-        };
-
-        const tryFallbackToMapLibre = async () => {
-          if (engineRef.current !== 'mapbox') return;
-          if (didFallbackToMapLibreRef.current) return;
-          didFallbackToMapLibreRef.current = true;
-          clearTimeout(loadingTimeout);
-          await initMapLibre();
-        };
-
-        const tryFallbackToOsmRaster = async () => {
-          if (engineRef.current !== 'maplibre') return;
-          if (didFallbackToOsmRef.current) return;
-          didFallbackToOsmRef.current = true;
-          clearTimeout(loadingTimeout);
-          await initOsmRaster();
         };
 
         // Prefer Mapbox when token looks valid and not forced otherwise
@@ -715,16 +727,44 @@ const MapView: React.FC<MapViewProps> = ({
     initializeMap();
 
     return () => {
-      personaMarkersRef.current.forEach((m) => m.remove());
-      personaMarkersRef.current = [];
-      if (mapInstance.current) {
+      // Defer teardown slightly so StrictMode's immediate re-run cancels it
+      const t = window.setTimeout(() => {
         try {
-          mapInstance.current.remove();
+          personaMarkersRef.current.forEach((m) => m.remove());
+          personaMarkersRef.current = [];
         } catch {}
-        mapInstance.current = null;
-      }
+        if (mapInstance.current) {
+          try {
+            mapInstance.current.remove();
+          } catch {}
+          mapInstance.current = null;
+        }
+        cleanupTimerRef.current = null;
+      }, 120);
+      cleanupTimerRef.current = t;
     };
-  }, [center, zoom]);
+  }, []);
+
+  // Sync center/zoom to the existing map instance without re-initializing
+  useEffect(() => {
+    if (!mapInstance.current) return;
+    try {
+      if (Array.isArray(center) && center.length === 2) {
+        const [lng, lat] = center;
+        const current = mapInstance.current.getCenter?.();
+        if (!current || current.lng !== lng || current.lat !== lat) {
+          mapInstance.current.setCenter(center as [number, number]);
+        }
+      }
+    } catch {}
+    try {
+      if (typeof zoom === 'number') {
+        const currentZoom = mapInstance.current.getZoom?.();
+        if (currentZoom !== zoom) mapInstance.current.setZoom(zoom);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(center), zoom]);
 
   // Ensure map resizes with window to avoid white canvas issues
   useEffect(() => {
@@ -740,6 +780,21 @@ const MapView: React.FC<MapViewProps> = ({
   /** WHY: add persona chips after map is ready */
   useEffect(() => {
     if (!mapInstance.current || isLoading || error) return;
+
+    const map = mapInstance.current;
+    // Wait until style is fully loaded before adding sources/layers
+    if (!(map.isStyleLoaded?.() ?? true)) {
+      const rerun = () => setStyleEpoch((v) => v + 1);
+      try {
+        if (map.once) map.once('load', rerun);
+        else map.on('load', rerun);
+      } catch {}
+      return () => {
+        try {
+          map.off?.('load', rerun);
+        } catch {}
+      };
+    }
 
     personaMarkersRef.current.forEach((m) => m.remove());
     personaMarkersRef.current = [];
@@ -846,8 +901,8 @@ const MapView: React.FC<MapViewProps> = ({
     });
 
     // Click to zoom into clusters
-    mapInstance.current.on('click', `${clusterSourceId.current}-clusters`, (e: any) => {
-      const features = mapInstance.current.queryRenderedFeatures(e.point, {
+    mapInstance.current.on('click', `${clusterSourceId.current}-clusters`, (_e: any) => {
+      const features = mapInstance.current.queryRenderedFeatures(_e.point, {
         layers: [`${clusterSourceId.current}-clusters`],
       });
       const clusterId = features[0].properties.cluster_id;
@@ -911,13 +966,240 @@ const MapView: React.FC<MapViewProps> = ({
         mapInstance.current.off('zoomend', updateDeclutter);
       } catch {}
     };
-  }, [isLoading, error, enabledCategories]);
+  }, [isLoading, error, enabledCategories, styleEpoch]);
+
+  /** Render Philadelphia demo bubbles via Mapbox layers (symbol + optional halo) */
+  useEffect(() => {
+    if (!mapInstance.current || isLoading || error || !useLayerBubbles) return;
+
+    const map = mapInstance.current;
+
+    // Ensure style is ready before adding persona sprites and layers
+    if (!(map.isStyleLoaded?.() ?? true)) {
+      const rerun = () => setStyleEpoch((v) => v + 1);
+      try {
+        if (map.once) map.once('load', rerun);
+        else map.on('load', rerun);
+      } catch {}
+      return () => {
+        try {
+          map.off?.('load', rerun);
+        } catch {}
+      };
+    }
+
+    // Register persona sprites if not already
+    (async () => {
+      try {
+        const { registerPersonaSprites } = await import('@/lib/sprites');
+        await registerPersonaSprites(map);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('registerPersonaSprites failed (non-fatal):', e);
+      }
+    })();
+
+    // Helper to convert percent-based positions to lng/lat in current viewport
+    const computeFeatures = () => {
+      const rect = containerRectRef.current;
+      if (!rect) return { type: 'FeatureCollection', features: [] } as any;
+      const toLngLat = (xPct: number, yPct: number) => {
+        const px = (xPct / 100) * rect.width;
+        const py = (yPct / 100) * rect.height;
+        const lngLat = map.unproject([px, py]);
+        return [lngLat.lng, lngLat.lat] as [number, number];
+      };
+
+      const features = PHILADELPHIA_BUBBLES.filter((b) => enabledCategories[b.category]).map(
+        (b) => {
+          // Map category -> persona icon base key
+          const iconBase = (CATEGORY_TO_PERSONA[b.category] as string | undefined) || 'hootie';
+          return {
+            type: 'Feature',
+            id: b.id,
+            geometry: { type: 'Point', coordinates: toLngLat(b.position.x, b.position.y) },
+            properties: {
+              id: b.id,
+              title: b.title,
+              description: b.description,
+              category: b.category,
+              iconBase, // e.g., 'hootie'
+              reward: b.reward ?? null,
+              organization: b.organization ?? null,
+            },
+          };
+        },
+      );
+      return { type: 'FeatureCollection', features } as any;
+    };
+
+    const ensureSourceAndLayers = () => {
+      // Remove pre-existing layers if any
+      try {
+        if (map.getLayer(phillyLayerHaloId.current)) map.removeLayer(phillyLayerHaloId.current);
+        if (map.getLayer(phillyLayerSymbolId.current)) map.removeLayer(phillyLayerSymbolId.current);
+        if (map.getSource(phillySourceId.current)) map.removeSource(phillySourceId.current);
+      } catch {}
+
+      // Add source
+      map.addSource(phillySourceId.current, {
+        type: 'geojson',
+        data: computeFeatures(),
+      });
+
+      // Optional halo layer for subtle presence
+      try {
+        map.addLayer({
+          id: phillyLayerHaloId.current,
+          type: 'circle',
+          source: phillySourceId.current,
+          paint: {
+            'circle-color': [
+              'match',
+              ['get', 'category'],
+              'character',
+              CHESS_COLORS.character,
+              'health',
+              CHESS_COLORS.health,
+              'exploration',
+              CHESS_COLORS.exploration,
+              'stem',
+              CHESS_COLORS.stem,
+              'stewardship',
+              CHESS_COLORS.stewardship,
+              /* other */ '#60a5fa',
+            ],
+            'circle-radius': 12,
+            'circle-opacity': 0.2,
+          },
+        });
+      } catch {}
+
+      // Symbol layer with hoverable sprites
+      map.addLayer({
+        id: phillyLayerSymbolId.current,
+        type: 'symbol',
+        source: phillySourceId.current,
+        layout: {
+          'icon-image': [
+            'case',
+            ['boolean', ['feature-state', 'hover'], false],
+            ['concat', ['get', 'iconBase'], '-hover'],
+            ['concat', ['get', 'iconBase'], '-normal'],
+          ],
+          'icon-allow-overlap': true,
+          'icon-size': 1,
+        },
+      });
+
+      // Hover interaction
+      const onMove = (e: any) => {
+        const features = map.queryRenderedFeatures(e.point, {
+          layers: [phillyLayerSymbolId.current],
+        });
+        const feature = features[0];
+        const prevId = phillyHoverFeatureRef.current;
+        const nextId = feature?.id as string | undefined;
+        if (prevId && prevId !== nextId) {
+          try {
+            map.setFeatureState({ source: phillySourceId.current, id: prevId }, { hover: false });
+          } catch {}
+        }
+        if (nextId && prevId !== nextId) {
+          try {
+            map.setFeatureState({ source: phillySourceId.current, id: nextId }, { hover: true });
+          } catch {}
+          phillyHoverFeatureRef.current = nextId;
+          map.getCanvas().style.cursor = 'pointer';
+        }
+        if (!feature) {
+          if (prevId) {
+            try {
+              map.setFeatureState({ source: phillySourceId.current, id: prevId }, { hover: false });
+            } catch {}
+            phillyHoverFeatureRef.current = null;
+          }
+          map.getCanvas().style.cursor = '';
+        }
+      };
+      const onLeave = () => {
+        const prevId = phillyHoverFeatureRef.current;
+        if (prevId) {
+          try {
+            map.setFeatureState({ source: phillySourceId.current, id: prevId }, { hover: false });
+          } catch {}
+          phillyHoverFeatureRef.current = null;
+        }
+        map.getCanvas().style.cursor = '';
+      };
+      const onClick = (e: any) => {
+        const features = map.queryRenderedFeatures(e.point, {
+          layers: [phillyLayerSymbolId.current],
+        });
+        const f = features[0];
+        if (!f) return;
+        const id = (f.properties?.id as string) || (f.id as string);
+        const bubble = PHILADELPHIA_BUBBLES.find((b) => b.id === id);
+        if (!bubble) return;
+        // Use the same tooltip flow as before, anchored to click point
+        setTooltip({ bubble, position: { x: e.point.x, y: e.point.y } });
+      };
+
+      map.on('mousemove', phillyLayerSymbolId.current, onMove);
+      map.on('mouseleave', phillyLayerSymbolId.current, onLeave);
+      map.on('click', phillyLayerSymbolId.current, onClick);
+
+      // Recompute positions on move/resize to keep percent-based placement
+      const refreshPositions = () => {
+        try {
+          const src: any = map.getSource(phillySourceId.current);
+          if (src?.setData) src.setData(computeFeatures());
+        } catch {}
+      };
+      map.on('move', refreshPositions);
+      map.on('resize', refreshPositions);
+
+      return () => {
+        try {
+          map.off('mousemove', phillyLayerSymbolId.current, onMove);
+          map.off('mouseleave', phillyLayerSymbolId.current, onLeave);
+          map.off('click', phillyLayerSymbolId.current, onClick);
+          map.off('move', refreshPositions);
+          map.off('resize', refreshPositions);
+        } catch {}
+      };
+    };
+
+    const cleanup = ensureSourceAndLayers();
+    return () => {
+      try {
+        cleanup?.();
+      } catch {}
+      try {
+        if (map.getLayer(phillyLayerSymbolId.current)) map.removeLayer(phillyLayerSymbolId.current);
+        if (map.getLayer(phillyLayerHaloId.current)) map.removeLayer(phillyLayerHaloId.current);
+        if (map.getSource(phillySourceId.current)) map.removeSource(phillySourceId.current);
+      } catch {}
+    };
+  }, [isLoading, error, enabledCategories, useLayerBubbles, styleEpoch]);
 
   // Apply filters to sources/layers and DOM markers when selection changes
   useEffect(() => {
     if (!mapInstance.current || isLoading || error) return;
 
     const map = mapInstance.current;
+    if (!(map.isStyleLoaded?.() ?? true)) {
+      const rerun = () => setStyleEpoch((v) => v + 1);
+      try {
+        if (map.once) map.once('load', rerun);
+        else map.on('load', rerun);
+      } catch {}
+      return () => {
+        try {
+          map.off?.('load', rerun);
+        } catch {}
+      };
+    }
 
     // Toggle visibility for safe spaces and events
     try {
@@ -987,6 +1269,8 @@ const MapView: React.FC<MapViewProps> = ({
         );
       } catch {}
     } catch {}
+
+    return () => {};
   }, [enabledCategories, isLoading, error]);
 
   /** Realtime: safe_spaces and events live updates */
@@ -1109,6 +1393,21 @@ const MapView: React.FC<MapViewProps> = ({
         if (map.getSource(eventsSourceId.current)) map.removeSource(eventsSourceId.current);
       } catch {}
     };
+  }, [isLoading, error, styleEpoch]);
+
+  // Re-add overlays/sprites after base style is replaced/reloaded (Mapbox clears images/layers)
+  useEffect(() => {
+    if (!mapInstance.current || isLoading || error) return;
+    const map = mapInstance.current;
+    const onStyleLoad = () => setStyleEpoch((v) => v + 1);
+    try {
+      map.on('style.load', onStyleLoad);
+    } catch {}
+    return () => {
+      try {
+        map.off('style.load', onStyleLoad);
+      } catch {}
+    };
   }, [isLoading, error]);
 
   return (
@@ -1126,52 +1425,58 @@ const MapView: React.FC<MapViewProps> = ({
         style={{ height: '100%', minHeight: isMobile ? '70dvh' : '500px' }}
       />
 
-      {/* Quest Bubbles Overlay */}
-      <div className='absolute inset-0 pointer-events-none overflow-hidden z-[55]'>
-        {PHILADELPHIA_BUBBLES.filter((b) => enabledCategories[b.category]).map((bubble) => (
-          <QuestBubbleComponent
-            key={bubble.id}
-            bubble={bubble}
-            mousePosition={mousePosition}
-            containerRect={containerRect}
-            onClick={handleBubbleClick}
-            onHoverChange={(hovered) => setHoveredCount((c) => Math.max(0, c + (hovered ? 1 : -1)))}
-          />
-        ))}
+      {/* Map-driven layers replace only the old DOM quest bubbles overlay */}
+      {!useLayerBubbles && (
+        <div className='absolute inset-0 pointer-events-none overflow-hidden z-[55]'>
+          {PHILADELPHIA_BUBBLES.filter((b) => enabledCategories[b.category]).map((bubble) => (
+            <QuestBubbleComponent
+              key={bubble.id}
+              bubble={bubble}
+              mousePosition={mousePosition}
+              containerRect={containerRect}
+              onClick={handleBubbleClick}
+              onHoverChange={(hovered) =>
+                setHoveredCount((c) => Math.max(0, c + (hovered ? 1 : -1)))
+              }
+            />
+          ))}
+        </div>
+      )}
 
-        {/* Student-only dynamic overlay */}
-        {user?.role === 'student' && mapInstance.current && (
-          <QuestMapOverlay map={mapInstance.current} />
-        )}
+      {/* Student-only dynamic overlay */}
+      {user?.role === 'student' && mapInstance.current && (
+        <QuestMapOverlay map={mapInstance.current} />
+      )}
 
-        {/* Public overlay for safe spaces and events (all roles) */}
-        {mapInstance.current ? <PublicMapOverlay map={mapInstance.current} /> : null}
+      {/* Public overlay for safe spaces and events (all roles) */}
+      {mapInstance.current ? <PublicMapOverlay map={mapInstance.current} /> : null}
 
-        {/* Custom overlay from parent (e.g., master admin map tools) */}
-        {(() => {
-          if (!renderOverlay || !mapInstance.current) return null;
-          try {
-            return renderOverlay(mapInstance.current, glNSRef.current);
-          } catch (e) {
-            // Avoid crashing the whole page if an overlay throws
-            // eslint-disable-next-line no-console
-            console.error('renderOverlay failed:', e);
-            return null;
-          }
-        })()}
-      </div>
+      {/* Custom overlay from parent (e.g., master admin map tools) */}
+      {(() => {
+        if (!renderOverlay || !mapInstance.current) return null;
+        try {
+          return renderOverlay(mapInstance.current, glNSRef.current);
+        } catch (e) {
+          // Avoid crashing the whole page if an overlay throws
+          // eslint-disable-next-line no-console
+          console.error('renderOverlay failed:', e);
+          return null;
+        }
+      })()}
 
       {/* Mobile Legend Toggle */}
       {isMobile && (
-        <motion.button
-          className='absolute top-4 right-4 z-30 bg-glass-dark border-glass-dark rounded-full p-3 text-white min-w-touch min-h-touch touch-manipulation'
-          onClick={() => setShowLegend((s) => !s)}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          aria-label='Toggle legend'
-        >
-          <Target className='w-5 h-5' />
-        </motion.button>
+        <>
+          <motion.button
+            className='absolute top-4 right-4 z-30 bg-glass-dark border-glass-dark rounded-full p-3 text-white min-w-touch min-h-touch touch-manipulation'
+            onClick={() => setShowLegend((s) => !s)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            aria-label='Toggle legend'
+          >
+            <Target className='w-5 h-5' />
+          </motion.button>
+        </>
       )}
 
       {/* Desktop Legend */}

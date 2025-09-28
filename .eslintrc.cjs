@@ -97,7 +97,9 @@ module.exports = {
     'jsx-a11y/no-static-element-interactions': 'warn',
     'react/jsx-no-bind': 'warn',
     'react/jsx-no-constructed-context-values': 'error',
-    'prettier/prettier': 'error',
+    // Ensure Prettier plugin respects Windows CRLF vs LF by deferring to project Prettier config
+    // This avoids false-positive diffs like "Insert ␍⏎" on Windows when endOfLine is set to 'auto'
+    'prettier/prettier': ['error', { endOfLine: 'auto' }],
   },
   settings: {
     react: { version: 'detect' },
