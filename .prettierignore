@@ -76,6 +76,7 @@ LICENSE
 .dockerignore
 .eslintrc.js
 prettier.config.js
+.eslintrc.*
 
 # Generated files
 *.d.ts.map

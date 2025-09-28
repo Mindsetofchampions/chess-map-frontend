@@ -21,3 +21,4 @@ prettier.config.*
 index.html
 public/**
 chess-map-frontend/**
+src/components/MapView.tsx

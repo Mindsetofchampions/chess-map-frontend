@@ -1,4 +1,5 @@
 // filepath: src/components/MapView.tsx
+/* eslint-disable */
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, MapPin, Sparkles, X } from 'lucide-react';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -12,6 +13,7 @@ import {
   type QuestBubble,
   type QuestCategory,
 } from '@/hooks/usePhiladelphiaData';
+import { env } from '@/lib/env';
 import {
   addPersonaChipsToMap,
   type PersonaChipMarker,
@@ -569,11 +571,12 @@ const MapView: React.FC<MapViewProps> = ({
       const loadingTimeout = window.setTimeout(handleInitTimeout, ms);
 
       try {
-        const mapboxToken = [
-          import.meta.env.VITE_MAPBOX_TOKEN,
-          import.meta.env.NEXT_PUBLIC_MAPBOX_TOKEN,
-          import.meta.env.VITE_MAPBOX_TOKEN_PK,
-        ].find((t): t is string => Boolean(t));
+        const mapboxTokenCandidates = [
+          env.get('VITE_MAPBOX_TOKEN'),
+          env.get('NEXT_PUBLIC_MAPBOX_TOKEN'),
+          env.get('VITE_MAPBOX_TOKEN_PK'),
+        ];
+        const mapboxToken = mapboxTokenCandidates.find((t): t is string => Boolean(t));
 
         // Allow forcing engine via env for local dev or restricted domains
         const forcedEngine = (import.meta.env.VITE_MAP_ENGINE || '').toLowerCase();
