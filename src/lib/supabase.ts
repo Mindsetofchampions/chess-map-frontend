@@ -363,6 +363,47 @@ export async function allocateUserCoins(
 
 export default supabase;
 
+// Approve/Reject Parent Consent RPCs
+export async function approveParentConsent(
+  id: string,
+  adminMessage?: string,
+  awardCoins?: number,
+): Promise<{
+  id: string;
+  student_id: string;
+  status: string;
+  admin_notes?: string;
+  awarded?: number;
+}> {
+  try {
+    const { data, error } = await supabase.rpc('approve_parent_consent', {
+      p_id: id,
+      p_admin_message: adminMessage ?? null,
+      p_award_coins: Number(awardCoins ?? 0),
+    });
+    if (error) throw new Error(mapPgError(error).message);
+    return data as any;
+  } catch (error) {
+    throw new Error(mapPgError(error).message);
+  }
+}
+
+export async function rejectParentConsent(
+  id: string,
+  adminMessage?: string,
+): Promise<{ id: string; student_id: string; status: string; admin_notes?: string }> {
+  try {
+    const { data, error } = await supabase.rpc('reject_parent_consent', {
+      p_id: id,
+      p_admin_message: adminMessage ?? null,
+    });
+    if (error) throw new Error(mapPgError(error).message);
+    return data as any;
+  } catch (error) {
+    throw new Error(mapPgError(error).message);
+  }
+}
+
 /**
  * Admin edge function: create user with service role.
  * Returns parsed JSON from the function (may include temporaryPassword)

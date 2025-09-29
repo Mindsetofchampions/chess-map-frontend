@@ -94,3 +94,7 @@ playwright/.cache/
 
 # TypeScript incremental build info
 *.tsbuildinfo
+
+# Temporarily ignore large dashboard file to avoid churn in formatting
+src/pages/master/MasterDashboard.tsx
+src/pages/master/ParentConsents.tsx

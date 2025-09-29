@@ -64,11 +64,72 @@
   /* Dark themed selects globally */
   select,
   .select-dark {
-    @apply bg-gray-800/70 text-gray-100 border border-white/20 rounded;
+    /* Increased contrast for readability */
+    @apply bg-gray-900/90 text-gray-100 border border-white/30 rounded;
   }
 
   select:focus {
-    @apply outline-none ring-1 ring-electric-blue-400;
+    @apply outline-none ring-2 ring-electric-blue-400 border-white/40;
+  }
+
+  /* High-contrast menu/popup surfaces where possible */
+  [role="dialog"] {
+    /* Force readable contrast for modal/popup content without changing component classNames */
+    background: rgba(17, 24, 39, 0.92) !important; /* gray-900 */
+    color: #e5e7eb !important; /* gray-200 */
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+
+  /* Buttons/links inside popups should have visible focus outline */
+  [role="dialog"] button,
+  [role="dialog"] a {
+    @apply focus:outline-none focus:ring-2 focus:ring-electric-blue-400 focus:ring-offset-0;
+  }
+
+  /* Typography tweaks inside popups for readability */
+  [role="dialog"] h1,
+  [role="dialog"] h2,
+  [role="dialog"] h3 {
+    color: #ffffff;
+  }
+  [role="dialog"] .opacity-80,
+  [role="dialog"] .text-muted-foreground {
+    color: #cbd5e1; /* slate-300 */
+  }
+
+  /* Elevate contrast for common glass combos used by inline tooltips/popovers */
+  .backdrop-blur-2xl.bg-white\/30,
+  .backdrop-blur-xl.bg-white\/10 {
+    background: rgba(17, 24, 39, 0.9) !important; /* gray-900 */
+    color: #e5e7eb !important; /* gray-200 */
+    border-color: rgba(255, 255, 255, 0.25) !important;
+  }
+
+  /* High-contrast dropdown/listbox/menus */
+  [role="menu"],
+  [role="listbox"],
+  .dropdown-menu,
+  .menu {
+    background: rgba(17, 24, 39, 0.98);
+    color: #f3f4f6; /* gray-100 */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  [role="menu"] [role="menuitem"],
+  [role="listbox"] [role="option"] {
+    color: inherit;
+  }
+
+  /* Placeholder contrast */
+  input::placeholder,
+  textarea::placeholder,
+  .select-dark::placeholder {
+    color: #cbd5e1; /* slate-300 */
+    opacity: 0.9;
   }
 
   /* Dropdown option panel colors (browser support varies) */
@@ -176,35 +237,62 @@
 
 /* Remove custom fade classes to prevent unintended opacity toggles that cause flicker */
 
-/* Custom Mapbox popup styling */
-.mapbox-popup-glass .mapboxgl-popup-content {
-  background: rgba(255, 255, 255, 0.1) !important;
-  backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+/* Custom Mapbox/MapLibre popup styling (high-contrast) */
+.mapbox-popup-glass .mapboxgl-popup-content,
+.mapbox-popup-glass .maplibregl-popup-content {
+  background: rgba(17, 24, 39, 0.92) !important; /* gray-900 */
+  color: #e5e7eb !important; /* gray-200 */
+  -webkit-backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
   border-radius: 12px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45) !important;
   padding: 0 !important;
 }
 
-.mapbox-popup-glass .mapboxgl-popup-tip {
-  border-top-color: rgba(255, 255, 255, 0.1) !important;
+.mapbox-popup-glass .mapboxgl-popup-tip,
+.mapbox-popup-glass .maplibregl-popup-tip {
+  border-top-color: rgba(17, 24, 39, 0.92) !important;
 }
 
-.mapbox-popup-glass .mapboxgl-popup-close-button {
-  color: white !important;
+.mapbox-popup-glass .mapboxgl-popup-close-button,
+.mapbox-popup-glass .maplibregl-popup-close-button {
+  color: #e5e7eb !important;
   font-size: 16px !important;
   padding: 8px !important;
   border-radius: 50% !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
   backdrop-filter: blur(10px) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   right: 8px !important;
   top: 8px !important;
 }
 
-.mapbox-popup-glass .mapboxgl-popup-close-button:hover {
-  background: rgba(255, 255, 255, 0.2) !important;
+.mapbox-popup-glass .mapboxgl-popup-close-button:hover,
+.mapbox-popup-glass .maplibregl-popup-close-button:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
   color: #fff !important;
+}
+
+/* Ensure headings and subtle text inside popups are legible */
+.mapbox-popup-glass .popup-title {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+.mapbox-popup-glass .popup-subtle {
+  color: #cbd5e1 !important;
+}
+.mapbox-popup-glass .popup-desc {
+  color: #e5e7eb !important;
+}
+.mapbox-popup-glass .popup-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.06);
 }
 /* Custom scrollbar styles */
 ::-webkit-scrollbar {
@@ -212,7 +300,8 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100 rounded-full;
+  /* Darken to avoid glare against dark UI */
+  @apply bg-gray-800 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb {

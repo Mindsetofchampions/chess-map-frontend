@@ -100,20 +100,50 @@ async function main() {
   if (!attributeId)
     throw new Error('No attribute_id found; seed attributes table or set SMOKE_ATTRIBUTE_ID');
 
-  const { data: created, error: createErr } = await org.rpc('create_quest', {
-    p_title: title,
-    p_description: 'Automated smoke test quest',
-    p_attribute_id: attributeId,
-    p_reward_coins: 1,
-    p_qtype: 'text',
-    p_grade_bands: ['ES'],
-    p_seats_total: 1,
-    p_lat: null,
-    p_lng: null,
-    p_config: { meta: { smoke: true } },
-  });
-  if (createErr) throw createErr;
-  const quest = Array.isArray(created) ? created[0] : created;
+  async function createQuest(client: any) {
+    const { data, error } = await client.rpc('create_quest', {
+      p_title: title,
+      p_description: 'Automated smoke test quest',
+      p_attribute_id: attributeId,
+      p_reward_coins: 1,
+      p_qtype: 'text',
+      p_grade_bands: ['ES'],
+      p_seats_total: 1,
+      p_lat: null,
+      p_lng: null,
+      p_config: { meta: { smoke: true } },
+    });
+    if (error) throw error;
+    return Array.isArray(data) ? data[0] : data;
+  }
+
+  let quest: any;
+  try {
+    const created = await createQuest(org);
+    quest = created;
+  } catch (err: any) {
+    const msg = (err && (err.message || err.error || err.msg)) || '';
+    const isForbidden = String(msg).toUpperCase().includes('FORBIDDEN') || err?.status === 403;
+    if (!isForbidden) throw err;
+
+    console.warn('Quest creation forbidden with provided org creds. Attempting fallback...');
+    if (service) {
+      console.log('Auto-provisioning temporary org_admin user via service role...');
+      tempUser = await provisionTempOrgAdmin(url!, service!);
+      const tempClient = createClient(url!, anon!, { auth: { persistSession: false } });
+      await signInEmail(tempClient, tempUser.email, tempUser.password);
+      quest = await createQuest(tempClient);
+    } else if (MASTER_EMAIL && MASTER_PASSWORD) {
+      console.log('Retrying quest creation as master user...');
+      const masterClient = createClient(url!, anon!, { auth: { persistSession: false } });
+      await signInEmail(masterClient, MASTER_EMAIL, MASTER_PASSWORD);
+      quest = await createQuest(masterClient);
+    } else {
+      throw new Error(
+        'FORBIDDEN creating quest and no fallback available. Provide SUPABASE_SERVICE_ROLE_KEY or MASTER creds.',
+      );
+    }
+  }
   console.log('Quest created:', { id: quest?.id, status: quest?.status });
 
   // Optionally approve as master

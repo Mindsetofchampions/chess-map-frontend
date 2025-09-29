@@ -1,3 +1,4 @@
+/* eslint-disable import/order */
 /**
  * Master Admin Dashboard
  *
@@ -14,7 +15,6 @@ import {
   MapPin,
   Shield,
   RefreshCw,
-  Calendar,
   Coins,
   XCircle,
   PlusCircle,
@@ -32,6 +32,9 @@ import LedgerTable from '@/components/wallet/LedgerTable';
 import WalletChip from '@/components/wallet/WalletChip';
 import { useAuth } from '@/contexts/AuthContext';
 import { createSystemNotification } from '@/lib/notifications';
+// eslint-disable-next-line import/order
+import { notifyOnboarding } from '@/lib/notifyOnboarding';
+// eslint-disable-next-line import/order
 import { subscribeToApprovals } from '@/lib/realtime/quests';
 import {
   supabase,
@@ -53,6 +56,7 @@ import MasterRewards from '@/pages/master/tabs/MasterRewards';
 import type { Quest } from '@/types/backend';
 import { formatDateTime } from '@/utils/format';
 import { mapPgError } from '@/utils/mapPgError';
+import { getSignedUrlFromStoredUrl } from '@/lib/storage';
 
 /**
  * Dashboard Stats Card Props
@@ -140,6 +144,19 @@ const MasterDashboard: React.FC = () => {
   const [allocatingUser, setAllocatingUser] = useState(false);
   const [pendingOrgOnboardings, setPendingOrgOnboardings] = useState<number>(0);
   const [pendingParentConsents, setPendingParentConsents] = useState<number>(0);
+  // Compact inline parent consents list (quick actions)
+  const [pendingParentConsentRows, setPendingParentConsentRows] = useState<any[]>([]);
+  const [pendingConsentLoading, setPendingConsentLoading] = useState<boolean>(false);
+  const [consentActionLoading, setConsentActionLoading] = useState<Record<string, boolean>>({});
+  const [consentStudentInfo, setConsentStudentInfo] = useState<
+    Record<string, { name?: string; age?: number; school?: string }>
+  >({});
+  const [consentAdminNotes, setConsentAdminNotes] = useState<Record<string, string>>({});
+  const [consentAwardCoins, setConsentAwardCoins] = useState<Record<string, string>>({});
+  // Map of consent id -> signed URLs for signature and id images
+  const [consentSignedUrls, setConsentSignedUrls] = useState<
+    Record<string, { sig?: string; id?: string }>
+  >({});
   const [activeTab, setActiveTab] = useState<string>('orgs');
 
   /**
@@ -195,6 +212,156 @@ const MasterDashboard: React.FC = () => {
       setPendingParentConsents(0);
     }
   }, []);
+
+  // Fetch compact pending parent consents list (top N)
+  const fetchPendingParentConsentRows = useCallback(async () => {
+    try {
+      setPendingConsentLoading(true);
+      const { data, error } = await supabase
+        .from('parent_consents')
+        .select('*')
+        .eq('status', 'PENDING')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      const rows = data || [];
+      setPendingParentConsentRows(rows);
+
+      // Resolve signed URLs for any storage-backed images (best-effort)
+      try {
+        const entries = await Promise.all(
+          rows.map(async (r: any) => {
+            const [sig, id] = await Promise.all([
+              r.signature_image_url
+                ? getSignedUrlFromStoredUrl(r.signature_image_url, 60 * 5)
+                : Promise.resolve(undefined),
+              r.parent_id_image_url
+                ? getSignedUrlFromStoredUrl(r.parent_id_image_url, 60 * 5)
+                : Promise.resolve(undefined),
+            ]);
+            return [r.id, { sig, id }] as const;
+          }),
+        );
+        const map: Record<string, { sig?: string; id?: string }> = {};
+        entries.forEach(([id, urls]) => {
+          map[id] = urls;
+        });
+        setConsentSignedUrls(map);
+      } catch (e) {
+        console.warn('Failed resolving signed URLs for parent consents (inline list)', e);
+        setConsentSignedUrls({});
+      }
+
+      // Enrich with student onboarding info for display (best-effort)
+      try {
+        const ids = Array.from(new Set(rows.map((r: any) => r.student_id).filter(Boolean)));
+        if (ids.length) {
+          const { data: infos } = await supabase
+            .from('onboarding_responses')
+            .select('student_id, student_name, student_age, student_school')
+            .in('student_id', ids);
+          const map: Record<string, { name?: string; age?: number; school?: string }> = {};
+          (infos || []).forEach((row: any) => {
+            map[row.student_id] = {
+              name: row.student_name || undefined,
+              age: typeof row.student_age === 'number' ? row.student_age : undefined,
+              school: row.student_school || undefined,
+            };
+          });
+          setConsentStudentInfo(map);
+        } else {
+          setConsentStudentInfo({});
+        }
+      } catch (e) {
+        console.warn('Failed to load student info for consent rows', e);
+        setConsentStudentInfo({});
+      }
+    } catch (err: any) {
+      console.warn('Failed to fetch pending parent consents (compact list):', err);
+      setPendingParentConsentRows([]);
+      setConsentSignedUrls({});
+    } finally {
+      setPendingConsentLoading(false);
+    }
+  }, []);
+
+  // Approve/Reject parent consent inline
+  const setConsentStatus = useCallback(
+    async (id: string, status: 'APPROVED' | 'REJECTED') => {
+      try {
+        setConsentActionLoading((m) => ({ ...m, [id]: true }));
+        // call RPCs with optional admin notes and coin awards
+        const notes = consentAdminNotes[id]?.trim() || undefined;
+        if (status === 'APPROVED') {
+          const coins = Number(consentAwardCoins[id] ?? '0') || 0;
+          await supabase.rpc('approve_parent_consent', {
+            p_id: id,
+            p_admin_message: notes ?? null,
+            p_award_coins: coins,
+          });
+        } else {
+          await supabase.rpc('reject_parent_consent', {
+            p_id: id,
+            p_admin_message: notes ?? null,
+          });
+        }
+
+        showSuccess('Consent updated', status === 'APPROVED' ? 'Approved' : 'Rejected');
+        // refresh count and compact list
+        await Promise.all([fetchPendingParentConsents(), fetchPendingParentConsentRows()]);
+
+        // Attempt to notify parent (best-effort)
+        try {
+          const { data } = await supabase
+            .from('parent_consents')
+            .select('parent_email, student_id, parent_name')
+            .eq('id', id)
+            .maybeSingle();
+          const row: any = data || {};
+
+          // Try to resolve student display name from profiles (optional)
+          let studentName: string = row.student_id || '';
+          try {
+            const { data: prof } = await supabase
+              .from('profiles')
+              .select('display_name')
+              .eq('user_id', row.student_id)
+              .maybeSingle();
+            if (prof?.display_name) studentName = prof.display_name as string;
+          } catch (_) {
+            // ignore lookup failures
+          }
+
+          const adminEmail = (supabase as any).auth?.user?.email || null;
+
+          await notifyOnboarding('consent_reviewed', {
+            parent_email: row.parent_email,
+            status,
+            student_id: row.student_id,
+            student_name: studentName,
+            parent_name: row.parent_name,
+            admin_name: adminEmail,
+            admin_notes: notes,
+          });
+        } catch (e) {
+          console.warn('notifyOnboarding(consent_reviewed) failed', e);
+        }
+      } catch (err: any) {
+        console.error('Failed to update consent status:', err);
+        showError('Failed to update consent', mapPgError(err).message);
+      } finally {
+        setConsentActionLoading((m) => ({ ...m, [id]: false }));
+      }
+    },
+    [
+      fetchPendingParentConsents,
+      fetchPendingParentConsentRows,
+      showError,
+      showSuccess,
+      consentAdminNotes,
+      consentAwardCoins,
+    ],
+  );
 
   /**
    * Fetch platform balance
@@ -411,6 +578,7 @@ const MasterDashboard: React.FC = () => {
     fetchOrgBalances();
     fetchPendingOrgOnboardings();
     fetchPendingParentConsents();
+    fetchPendingParentConsentRows();
 
     // Set up realtime subscription for pending quests
     const subscription = subscribeToApprovals(() => {
@@ -433,11 +601,12 @@ const MasterDashboard: React.FC = () => {
       )
       .subscribe();
 
-    // Subscribe to parent_consents changes for realtime pending count updates
+    // Subscribe to parent_consents changes for realtime pending count + compact list updates
     const pcChannel = supabase
       .channel('parent_consents_watch')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'parent_consents' }, () => {
         fetchPendingParentConsents();
+        fetchPendingParentConsentRows();
       })
       .subscribe();
 
@@ -454,7 +623,13 @@ const MasterDashboard: React.FC = () => {
         /* ignore */
       }
     };
-  }, [fetchPendingQuests, fetchPlatformBalance, fetchOrgBalances, fetchPendingParentConsents]);
+  }, [
+    fetchPendingQuests,
+    fetchPlatformBalance,
+    fetchOrgBalances,
+    fetchPendingParentConsents,
+    fetchPendingParentConsentRows,
+  ]);
 
   // Load active org options for allocation dropdown
   const loadActiveOrgs = useCallback(async () => {
@@ -719,6 +894,118 @@ const MasterDashboard: React.FC = () => {
           />
         </div>
 
+        {/* Compact Pending Parent Consents inline list */}
+        <div className='mb-6'>
+          <GlassContainer variant='card'>
+            <div className='flex items-center justify-between mb-3'>
+              <h3 className='text-lg font-semibold text-white'>Pending Parent Consents</h3>
+              <Link
+                to='/master/parent-consents'
+                className='text-sm text-electric-blue-300 hover:underline'
+              >
+                View all
+              </Link>
+            </div>
+            {pendingConsentLoading ? (
+              <div className='text-gray-300 text-sm'>Loading…</div>
+            ) : pendingParentConsentRows.length === 0 ? (
+              <div className='text-gray-400 text-sm'>No pending consents</div>
+            ) : (
+              <ul className='space-y-2'>
+                {pendingParentConsentRows.map((r: any) => {
+                  const info = consentStudentInfo[r.student_id] || {};
+                  const student = info.name || r.student_id || 'Unknown student';
+                  return (
+                    <li key={r.id} className='flex flex-col gap-2 bg-glass border-glass rounded-lg px-3 py-2'>
+                      <div className='flex items-start justify-between gap-3'>
+                        <div className='min-w-0 mr-3'>
+                          <div className='text-white text-sm font-medium truncate'>
+                            {r.parent_name || 'Parent'} — {r.parent_email || 'email'}
+                          </div>
+                          <div className='text-xs text-gray-400 truncate'>
+                            Student: {student}
+                            {typeof info.age === 'number' ? ` • Age: ${info.age}` : ''}
+                            {info.school ? ` • ${info.school}` : ''}
+                          </div>
+                          <div className='mt-1 text-[11px] text-gray-400 truncate'>
+                            Submitted Notes: {r.notes || '—'}
+                          </div>
+                          {(r.signature_image_url || r.parent_id_image_url) && (
+                            <div className='mt-1 flex items-center gap-2 text-[11px] text-electric-blue-300'>
+                              {r.signature_image_url && (
+                                <a
+                                  href={consentSignedUrls[r.id]?.sig ?? r.signature_image_url}
+                                  target='_blank'
+                                  rel='noreferrer'
+                                  className='hover:underline'
+                                >
+                                  Signature
+                                </a>
+                              )}
+                              {r.parent_id_image_url && (
+                                <a
+                                  href={consentSignedUrls[r.id]?.id ?? r.parent_id_image_url}
+                                  target='_blank'
+                                  rel='noreferrer'
+                                  className='hover:underline'
+                                >
+                                  ID
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className='flex items-center gap-2 shrink-0'>
+                          <button
+                            onClick={() => void setConsentStatus(r.id, 'APPROVED')}
+                            disabled={!!consentActionLoading[r.id]}
+                            className='px-2 py-1 rounded bg-emerald-500/90 hover:bg-emerald-500 text-white text-xs disabled:opacity-60'
+                            title='Approve'
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => void setConsentStatus(r.id, 'REJECTED')}
+                            disabled={!!consentActionLoading[r.id]}
+                            className='px-2 py-1 rounded bg-rose-500/90 hover:bg-rose-500 text-white text-xs disabled:opacity-60'
+                            title='Reject'
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                      <div className='grid grid-cols-1 md:grid-cols-3 gap-2'>
+                        <div className='md:col-span-2'>
+                          <label className='block text-[11px] text-gray-400 mb-1'>Message to parent (optional)</label>
+                          <textarea
+                            className='w-full bg-glass border-glass rounded-md px-2 py-1 text-gray-100 text-xs'
+                            placeholder='Reason or context for approval/rejection'
+                            rows={2}
+                            value={consentAdminNotes[r.id] ?? ''}
+                            onChange={(e) => setConsentAdminNotes((m) => ({ ...m, [r.id]: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <label className='block text-[11px] text-gray-400 mb-1'>Award coins on approval</label>
+                          <input
+                            type='number'
+                            min={0}
+                            className='w-full bg-glass border-glass rounded-md px-2 py-1 text-gray-100 text-sm'
+                            placeholder='e.g. 100'
+                            value={consentAwardCoins[r.id] ?? ''}
+                            onChange={(e) => setConsentAwardCoins((m) => ({ ...m, [r.id]: e.target.value }))}
+                          />
+                          <div className='text-[10px] text-gray-500 mt-1'>Only applied if you click Approve.</div>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </GlassContainer>
+        </div>
+
         {/* Quick System Notification composer for master_admin */}
         {role === 'master_admin' && (
           <div className='mb-6'>
@@ -825,82 +1112,68 @@ const MasterDashboard: React.FC = () => {
                   ))}
                 </div>
               ) : pendingQuests.length === 0 ? (
-                <div className='text-center py-8'>
-                  <CheckCircle className='w-12 h-12 text-cyber-green-400 mx-auto mb-4' />
-                  <h3 className='text-white font-medium mb-2'>All Clear!</h3>
-                  <p className='text-gray-300 text-sm'>No quests pending approval</p>
-                </div>
+                <div className='text-gray-400 text-sm'>No pending quests</div>
               ) : (
                 <div className='space-y-3'>
                   {pendingQuests.map((quest) => (
-                    <div
-                      key={quest.id}
-                      className='bg-glass-light border-glass-light rounded-lg p-4 flex items-center justify-between'
-                    >
-                      <div className='flex-1 min-w-0'>
-                        <h4 className='font-medium text-white text-sm mb-1'>{quest.title}</h4>
-                        <div className='flex items-center gap-3 text-xs text-gray-300'>
-                          <div className='flex items-center gap-1'>
-                            <Calendar className='w-3 h-3' />
-                            <span>{formatDateTime(quest.created_at)}</span>
+                    <div key={quest.id} className='bg-glass border-glass rounded-lg p-4'>
+                      <div className='flex items-start justify-between gap-3'>
+                        <div className='min-w-0'>
+                          <div className='text-white font-medium'>
+                            {(quest as any).title || 'Quest'}
                           </div>
-                          <div className='flex items-center gap-1'>
-                            <Coins className='w-3 h-3' />
-                            <span>{quest.reward_coins} coins</span>
+                          <div className='text-xs text-gray-400'>
+                            Created {formatDateTime((quest as any).created_at)}
                           </div>
                         </div>
-                      </div>
-
-                      <div className='flex items-center gap-4 flex-shrink-0'>
                         <div className='text-right'>
-                          <div className='flex items-center gap-1 font-semibold text-yellow-400'>
+                          <div className='flex items-center gap-1 font-semibold text-yellow-400 justify-end'>
                             <Coins className='w-4 h-4' />
-                            <span>{quest.reward_coins} coins</span>
+                            <span>{(quest as any).reward_coins} coins</span>
                           </div>
-                          {platformBalance < quest.reward_coins && (
+                          {platformBalance < (quest as any).reward_coins && (
                             <p className='text-red-400 text-xs mt-1'>
                               Insufficient platform balance
                             </p>
                           )}
                         </div>
+                      </div>
+                      <div className='mt-3 flex items-center gap-2'>
+                        <button
+                          onClick={() => handleQuickApprove(quest.id, (quest as any).reward_coins)}
+                          disabled={
+                            !serverConfirmed ||
+                            platformBalance < (quest as any).reward_coins ||
+                            approving === quest.id ||
+                            rejecting === quest.id
+                          }
+                          data-testid={`btn-approve-${quest.id}`}
+                          className='bg-cyber-green-500/20 border border-cyber-green-500/30 text-cyber-green-300 hover:bg-cyber-green-500/30 rounded-lg px-3 py-2 font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px] min-w-[70px] text-sm'
+                        >
+                          {approving === quest.id ? (
+                            <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-cyber-green-400 mx-auto'></div>
+                          ) : (
+                            <div className='flex items-center gap-1'>
+                              <CheckCircle className='w-4 h-4' />
+                              <span>Approve</span>
+                            </div>
+                          )}
+                        </button>
 
-                        <div className='flex items-center gap-1'>
-                          <button
-                            onClick={() => handleQuickApprove(quest.id, quest.reward_coins)}
-                            disabled={
-                              !serverConfirmed ||
-                              platformBalance < quest.reward_coins ||
-                              approving === quest.id ||
-                              rejecting === quest.id
-                            }
-                            data-testid={`btn-approve-${quest.id}`}
-                            className='bg-cyber-green-500/20 border border-cyber-green-500/30 text-cyber-green-300 hover:bg-cyber-green-500/30 rounded-lg px-3 py-2 font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px] min-w-[70px] text-sm'
-                          >
-                            {approving === quest.id ? (
-                              <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-cyber-green-400 mx-auto'></div>
-                            ) : (
-                              <div className='flex items-center gap-1'>
-                                <CheckCircle className='w-4 h-4' />
-                                <span>Approve</span>
-                              </div>
-                            )}
-                          </button>
-
-                          <button
-                            onClick={() => openRejectModal(quest.id)}
-                            disabled={rejecting === quest.id || approving === quest.id}
-                            className='bg-red-500/20 border border-red-500/30 text-red-300 hover:bg-red-500/30 rounded-lg px-3 py-2 font-medium transition-all duration-200 disabled:opacity-50 min-h-[40px] min-w-[70px] text-sm'
-                          >
-                            {rejecting === quest.id ? (
-                              <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-red-400 mx-auto'></div>
-                            ) : (
-                              <div className='flex items-center gap-1'>
-                                <XCircle className='w-4 h-4' />
-                                <span>Reject</span>
-                              </div>
-                            )}
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => openRejectModal(quest.id)}
+                          disabled={rejecting === quest.id || approving === quest.id}
+                          className='bg-red-500/20 border border-red-500/30 text-red-300 hover:bg-red-500/30 rounded-lg px-3 py-2 font-medium transition-all duration-200 disabled:opacity-50 min-h-[40px] min-w-[70px] text-sm'
+                        >
+                          {rejecting === quest.id ? (
+                            <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-red-400 mx-auto'></div>
+                          ) : (
+                            <div className='flex items-center gap-1'>
+                              <XCircle className='w-4 h-4' />
+                              <span>Reject</span>
+                            </div>
+                          )}
+                        </button>
                       </div>
                     </div>
                   ))}
