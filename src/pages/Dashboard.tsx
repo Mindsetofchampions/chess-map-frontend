@@ -75,8 +75,16 @@ const Dashboard: React.FC = () => {
       try {
         const studentId = user.id;
         const [{ data: onb }, { data: pc }] = await Promise.all([
-          supabase.from('onboarding_responses').select('eligible').eq('student_id', studentId).maybeSingle(),
-          supabase.from('parent_consents').select('status').eq('student_id', studentId).maybeSingle(),
+          supabase
+            .from('onboarding_responses')
+            .select('eligible')
+            .eq('student_id', studentId)
+            .maybeSingle(),
+          supabase
+            .from('parent_consents')
+            .select('status')
+            .eq('student_id', studentId)
+            .maybeSingle(),
         ]);
         setEligible(!!onb?.eligible);
         setConsentStatus((pc?.status as string) ?? null);
@@ -107,14 +115,30 @@ const Dashboard: React.FC = () => {
         {role === 'student' && eligible && consentStatus === 'PENDING' && (
           <div className='mb-4 bg-yellow-500/10 border border-yellow-500/30 text-yellow-200 rounded-xl p-4'>
             <div className='flex items-start gap-3'>
-              <svg className='w-5 h-5 mt-0.5 text-yellow-300 flex-shrink-0' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
-                <path d='M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round'/>
+              <svg
+                className='w-5 h-5 mt-0.5 text-yellow-300 flex-shrink-0'
+                viewBox='0 0 24 24'
+                fill='none'
+                xmlns='http://www.w3.org/2000/svg'
+              >
+                <path
+                  d='M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z'
+                  stroke='currentColor'
+                  strokeWidth='1.5'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                />
               </svg>
               <div>
                 <div className='font-semibold text-white'>Awaiting Parent Approval</div>
-                <div className='text-sm text-yellow-100/90'>Your parent/guardian consent was submitted and is pending review. Quests will unlock once approved.</div>
+                <div className='text-sm text-yellow-100/90'>
+                  Your parent/guardian consent was submitted and is pending review. Quests will
+                  unlock once approved.
+                </div>
                 <div className='mt-2'>
-                  <Link to='/onboarding/parent' className='text-yellow-200 underline'>View consent details</Link>
+                  <Link to='/onboarding/parent' className='text-yellow-200 underline'>
+                    View consent details
+                  </Link>
                 </div>
               </div>
             </div>

@@ -100,8 +100,11 @@ export default function ParentConsent() {
     if (!parentName || !parentEmail) return alert('Parent name and email required.');
     if (!sigPad || sigPad.isEmpty()) return alert('Signature is required.');
 
-    setSubmitting(true);
-    try {
+  setSubmitting(true);
+  // Keep track of uploaded asset URLs for possible fallback usage
+  let latestSigUrl: string | undefined;
+  let latestParentIdUrl: string | undefined;
+  try {
       // rasterize signature and upload to storage
       const signatureDataUrl = sigPad.toDataURL('image/png');
       // Convert dataURL to blob
@@ -112,13 +115,15 @@ export default function ParentConsent() {
         .from('parent_ids')
         .upload(sigPath, blob, { upsert: false });
       if (sigErr) throw sigErr;
-      const { data: sigPub } = await supabase.storage.from('parent_ids').getPublicUrl(sigPath);
+  const { data: sigPub } = await supabase.storage.from('parent_ids').getPublicUrl(sigPath);
+  latestSigUrl = sigPub.publicUrl;
 
       // Try uploading parent ID if provided; handle guidance error for missing bucket
       let parentIdUrl: string | undefined;
       if (file) {
         try {
           parentIdUrl = await uploadParentId();
+          latestParentIdUrl = parentIdUrl;
         } catch (idErr: any) {
           // If it's our guidance error about the missing bucket, surface it to the user and stop
           if (idErr?.message?.includes("Storage bucket 'parent_ids' not found")) {
@@ -133,8 +138,8 @@ export default function ParentConsent() {
         student_id: studentId,
         parent_name: parentName,
         parent_email: parentEmail,
-        signature_image_url: sigPub.publicUrl,
-        parent_id_image_url: parentIdUrl,
+        signature_image_url: latestSigUrl,
+        parent_id_image_url: latestParentIdUrl,
         consent_signed: true,
         status: 'PENDING',
       };
@@ -158,7 +163,35 @@ export default function ParentConsent() {
       alert('Consent submitted. Awaiting review.');
       navigate('/dashboard');
     } catch (e: any) {
-      alert(e.message);
+      const msg = String(e?.message || e || 'Unknown error');
+      // Temporary safety net: if database trigger references a non-existent student_name column,
+      // retry with consent_signed=false to persist the record and unblock the student.
+      if (msg.toLowerCase().includes('record "new" has no field "student_name"')) {
+        try {
+          const fallback = {
+            student_id: studentId,
+            parent_name: parentName,
+            parent_email: parentEmail,
+            signature_image_url: latestSigUrl,
+            parent_id_image_url: latestParentIdUrl,
+            consent_signed: false,
+            status: 'PENDING',
+          } as any;
+          const { error: upErr } = await supabase
+            .from('parent_consents')
+            .upsert(fallback, { onConflict: 'student_id' });
+          if (upErr) throw upErr;
+          alert(
+            'Consent received and pending. We hit a server-side update issue; an admin will finalize your approval shortly.'
+          );
+          navigate('/dashboard');
+          return;
+        } catch (inner: any) {
+          alert(inner?.message || msg);
+          return;
+        }
+      }
+      alert(msg);
     } finally {
       setSubmitting(false);
     }

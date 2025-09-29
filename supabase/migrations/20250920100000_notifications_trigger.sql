@@ -16,9 +16,9 @@ BEGIN
     -- Build a notification row
     INSERT INTO public.system_notifications (title, body, metadata, created_by)
     VALUES (
-      concat('Parent consent ', NEW.status, ' for ', COALESCE(NEW.student_name::text, NEW.student_id::text)),
-      concat('Parent consent for ', COALESCE(NEW.student_name::text, NEW.student_id::text), ' is ', NEW.status),
-      jsonb_build_object('event', 'consent_'+lower(NEW.status::text), 'parent_email', NEW.parent_email, 'student_id', NEW.student_id, 'student_name', NEW.student_name, 'consent_status', NEW.status),
+      concat('Parent consent ', NEW.status, ' for ', COALESCE(NEW.student_id::text, '')),
+      concat('Parent consent for ', COALESCE(NEW.student_id::text, ''), ' is ', NEW.status),
+      jsonb_build_object('event', 'consent_'+lower(NEW.status::text), 'parent_email', NEW.parent_email, 'student_id', NEW.student_id, 'consent_status', NEW.status),
       NEW.submitted_by
     );
 

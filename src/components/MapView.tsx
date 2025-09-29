@@ -378,6 +378,42 @@ const MapView: React.FC<MapViewProps> = ({
   // Track when the map has fully loaded to avoid mid-session fallbacks due to ad-blocked telemetry
   const mapLoadedRef = useRef(false);
 
+  /** Inject once: dark themed popup styles for both Mapbox GL and MapLibre popups */
+  useEffect(() => {
+    const id = 'chess-map-popup-styles';
+    if (typeof document === 'undefined' || document.getElementById(id)) return;
+    const style = document.createElement('style');
+    style.id = id;
+    style.textContent = `
+      .chess-popup .mapboxgl-popup-content,
+      .chess-popup .maplibregl-popup-content {
+        background: rgba(17, 24, 39, 0.92); /* gray-900 */
+        color: #e5e7eb; /* gray-200 */
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 12px;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+      }
+      .chess-popup .mapboxgl-popup-close-button,
+      .chess-popup .maplibregl-popup-close-button {
+        color: #e5e7eb;
+      }
+      .chess-popup .mapboxgl-popup-tip,
+      .chess-popup .maplibregl-popup-tip {
+        border-top-color: rgba(17, 24, 39, 0.92) !important;
+      }
+      .chess-popup .popup-title { color: #ffffff; font-weight: 700; }
+      .chess-popup .popup-subtle { color: #cbd5e1; }
+      .chess-popup .popup-desc { color: #e5e7eb; }
+      .chess-popup .popup-logo {
+        width: 36px; height: 36px; object-fit: cover; border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.3);
+        background: rgba(255,255,255,0.06);
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
+
   const handleBubbleClick = useCallback(
     (bubble: QuestBubble, clickPosition: { x: number; y: number }) => {
       setTooltip({ bubble, position: clickPosition });
@@ -1331,13 +1367,13 @@ const MapView: React.FC<MapViewProps> = ({
               const addr = props.address || '';
               const logo = props.logo_url || '';
               const html = `
-                <div style="max-width:260px">
-                  <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
-                    ${logo ? `<img src="${logo}" alt="logo" style="width:32px;height:32px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.4)"/>` : ''}
-                    <div style="font-weight:700;color:#fff;">${name}</div>
+                <div style="max-width:280px">
+                  <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+                    ${logo ? `<img class="popup-logo" src="${logo}" alt="logo"/>` : ''}
+                    <div class="popup-title">${name}</div>
                   </div>
-                  ${desc ? `<div style=\"font-size:12px;color:#e5e7eb;line-height:1.3;margin-bottom:4px;\">${desc}</div>` : ''}
-                  ${addr ? `<div style=\"font-size:12px;color:#cbd5e1;\">${addr}</div>` : ''}
+                  ${desc ? `<div class="popup-desc" style=\"font-size:13px;line-height:1.45;margin-bottom:6px;\">${desc}</div>` : ''}
+                  ${addr ? `<div class="popup-subtle" style=\"font-size:12px;\">${addr}</div>` : ''}
                 </div>`;
 
               if (safeSpacesPopupRef.current) {
@@ -1348,7 +1384,11 @@ const MapView: React.FC<MapViewProps> = ({
               }
               const PopupCtor = glNSRef.current?.Popup || glNSRef.current?.default?.Popup;
               if (!PopupCtor) return;
-              safeSpacesPopupRef.current = new PopupCtor({ closeButton: true, closeOnClick: true })
+              safeSpacesPopupRef.current = new PopupCtor({
+                className: 'chess-popup',
+                closeButton: true,
+                closeOnClick: true,
+              })
                 .setLngLat(coords)
                 .setHTML(html)
                 .addTo(map);
@@ -1408,11 +1448,11 @@ const MapView: React.FC<MapViewProps> = ({
                 }
               } catch {}
               const html = `
-                <div style="max-width:260px">
-                  <div style="font-weight:700;color:#fff;margin-bottom:6px;">${title}</div>
-                  ${when ? `<div style=\"font-size:12px;color:#e5e7eb;margin-bottom:4px;\">${when}</div>` : ''}
-                  ${desc ? `<div style=\"font-size:12px;color:#cbd5e1;line-height:1.3;\">${desc}</div>` : ''}
-                </div>`;
+                    <div style=\"max-width:280px\">
+                      <div class=\"popup-title\" style=\"margin-bottom:6px;\">${title}</div>
+                      ${when ? `<div class=\"popup-subtle\" style=\"font-size:12px;margin-bottom:6px;\">${when}</div>` : ''}
+                      ${desc ? `<div class=\"popup-desc\" style=\"font-size:13px;line-height:1.45;\">${desc}</div>` : ''}
+                    </div>`;
 
               if (eventsPopupRef.current) {
                 try {
@@ -1422,7 +1462,11 @@ const MapView: React.FC<MapViewProps> = ({
               }
               const PopupCtor = glNSRef.current?.Popup || glNSRef.current?.default?.Popup;
               if (!PopupCtor) return;
-              eventsPopupRef.current = new PopupCtor({ closeButton: true, closeOnClick: true })
+              eventsPopupRef.current = new PopupCtor({
+                className: 'chess-popup',
+                closeButton: true,
+                closeOnClick: true,
+              })
                 .setLngLat(coords)
                 .setHTML(html)
                 .addTo(map);
@@ -1527,11 +1571,15 @@ const MapView: React.FC<MapViewProps> = ({
       } catch {}
       try {
         if (safeSpacesPopupRef.current) {
-          try { safeSpacesPopupRef.current.remove(); } catch {}
+          try {
+            safeSpacesPopupRef.current.remove();
+          } catch {}
           safeSpacesPopupRef.current = null;
         }
         if (eventsPopupRef.current) {
-          try { eventsPopupRef.current.remove(); } catch {}
+          try {
+            eventsPopupRef.current.remove();
+          } catch {}
           eventsPopupRef.current = null;
         }
         if (map.getLayer(`${safeSpacesSourceId.current}-circles`))
