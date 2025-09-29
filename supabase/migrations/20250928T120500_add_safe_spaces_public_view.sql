@@ -6,6 +6,13 @@ DO $$ BEGIN
   ) THEN
     ALTER TABLE public.safe_spaces ADD COLUMN contact_info jsonb;
   END IF;
+  -- Some environments may be missing the address column; add it defensively
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='safe_spaces' AND column_name='address'
+  ) THEN
+    ALTER TABLE public.safe_spaces ADD COLUMN address text;
+  END IF;
 END $$;
 
 -- Ensure contact_info is a JSON object by default (avoid null->> access errors)

@@ -4,7 +4,14 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
-export default function OnboardingGate({ children }: { children: React.ReactNode }) {
+export default function OnboardingGate({
+  children,
+  requireApproved = false,
+}: {
+  children: React.ReactNode;
+  /** If true, students must have APPROVED parent consent (PENDING not enough). */
+  requireApproved?: boolean;
+}) {
   const { user, role } = useAuth() as any;
   const [ok, setOk] = useState<boolean | null>(null);
 
@@ -43,11 +50,13 @@ export default function OnboardingGate({ children }: { children: React.ReactNode
       // Allow access when student completed the checklist and either
       // (a) parent consent is approved, or (b) parent consent is pending review.
       const consentStatus = pc?.status ?? null;
-      const consentAllowed = consentStatus === 'APPROVED' || consentStatus === 'PENDING';
+      const consentApproved = consentStatus === 'APPROVED';
+      const consentAllowed = consentApproved || consentStatus === 'PENDING';
 
-      setOk(eligible && consentAllowed);
+      // If strict gating requested, require explicit APPROVED
+      setOk(eligible && (requireApproved ? consentApproved : consentAllowed));
     })();
-  }, [user?.id, role]);
+  }, [user?.id, role, requireApproved]);
 
   if (ok === null) return <div className='p-6 text-white'>Checking onboarding…</div>;
 

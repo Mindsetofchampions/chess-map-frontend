@@ -328,6 +328,7 @@ const MapView: React.FC<MapViewProps> = ({
   const eventsSourceId = useRef(`events-${Math.random().toString(36).slice(2)}`);
   const organizationsRef = useRef<OrganizationWithPersonas[]>([]);
   const safeSpacesPopupRef = useRef<any>(null);
+  const eventsPopupRef = useRef<any>(null);
 
   // Category filters (all on by default)
   const allCategories: QuestCategory[] = [
@@ -1377,6 +1378,62 @@ const MapView: React.FC<MapViewProps> = ({
               'circle-opacity': 0.9,
             },
           });
+
+          // Interactions: hover cursor + popup on click for events
+          const eLayerId = `${eventsSourceId.current}-circles`;
+          const onEEnter = () => {
+            try {
+              map.getCanvas().style.cursor = 'pointer';
+            } catch {}
+          };
+          const onELeave = () => {
+            try {
+              map.getCanvas().style.cursor = '';
+            } catch {}
+          };
+          const onEClick = (e: any) => {
+            try {
+              const f = e?.features?.[0];
+              if (!f) return;
+              const coords = f.geometry?.coordinates as [number, number];
+              const props = f.properties || {};
+              const title = props.title || 'Event';
+              const desc = props.description || '';
+              const startsAt = props.starts_at || '';
+              let when = '';
+              try {
+                if (startsAt) {
+                  const d = new Date(startsAt);
+                  if (!isNaN(d.getTime())) when = d.toLocaleString();
+                }
+              } catch {}
+              const html = `
+                <div style="max-width:260px">
+                  <div style="font-weight:700;color:#fff;margin-bottom:6px;">${title}</div>
+                  ${when ? `<div style=\"font-size:12px;color:#e5e7eb;margin-bottom:4px;\">${when}</div>` : ''}
+                  ${desc ? `<div style=\"font-size:12px;color:#cbd5e1;line-height:1.3;\">${desc}</div>` : ''}
+                </div>`;
+
+              if (eventsPopupRef.current) {
+                try {
+                  eventsPopupRef.current.remove();
+                } catch {}
+                eventsPopupRef.current = null;
+              }
+              const PopupCtor = glNSRef.current?.Popup || glNSRef.current?.default?.Popup;
+              if (!PopupCtor) return;
+              eventsPopupRef.current = new PopupCtor({ closeButton: true, closeOnClick: true })
+                .setLngLat(coords)
+                .setHTML(html)
+                .addTo(map);
+            } catch {}
+          };
+
+          try {
+            map.on('mouseenter', eLayerId, onEEnter);
+            map.on('mouseleave', eLayerId, onELeave);
+            map.on('click', eLayerId, onEClick);
+          } catch {}
         }
       } catch (e) {
         // ignore if style not ready yet
@@ -1469,6 +1526,14 @@ const MapView: React.FC<MapViewProps> = ({
         unsubEvents?.();
       } catch {}
       try {
+        if (safeSpacesPopupRef.current) {
+          try { safeSpacesPopupRef.current.remove(); } catch {}
+          safeSpacesPopupRef.current = null;
+        }
+        if (eventsPopupRef.current) {
+          try { eventsPopupRef.current.remove(); } catch {}
+          eventsPopupRef.current = null;
+        }
         if (map.getLayer(`${safeSpacesSourceId.current}-circles`))
           map.removeLayer(`${safeSpacesSourceId.current}-circles`);
         if (map.getLayer(`${eventsSourceId.current}-circles`))

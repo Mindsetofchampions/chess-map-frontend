@@ -79,7 +79,9 @@ export async function fetchSafeSpaces(): Promise<SafeSpaceRow[]> {
     if (error) console.warn('fetchSafeSpaces error:', error.message);
     return [];
   }
-  return (data as SafeSpaceRow[]).filter((r) => r.lat != null && r.lng != null && r.approved !== false);
+  return (data as SafeSpaceRow[]).filter(
+    (r) => r.lat != null && r.lng != null && r.approved !== false,
+  );
 }
 
 export async function fetchEvents(): Promise<EventRow[]> {

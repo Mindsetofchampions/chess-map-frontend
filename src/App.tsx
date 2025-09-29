@@ -716,7 +716,9 @@ const AppRouter: React.FC = () => {
             element={
               <ErrorBoundary>
                 <ProtectedRoute>
-                  <QuestsList />
+                  <OnboardingGate requireApproved>
+                    <QuestsList />
+                  </OnboardingGate>
                 </ProtectedRoute>
               </ErrorBoundary>
             }
@@ -726,7 +728,9 @@ const AppRouter: React.FC = () => {
             element={
               <ErrorBoundary>
                 <ProtectedRoute>
-                  <QuestPlay />
+                  <OnboardingGate requireApproved>
+                    <QuestPlay />
+                  </OnboardingGate>
                 </ProtectedRoute>
               </ErrorBoundary>
             }
@@ -737,7 +741,9 @@ const AppRouter: React.FC = () => {
             element={
               <ErrorBoundary>
                 <ProtectedRoute>
-                  <QuestPlay />
+                  <OnboardingGate requireApproved>
+                    <QuestPlay />
+                  </OnboardingGate>
                 </ProtectedRoute>
               </ErrorBoundary>
             }

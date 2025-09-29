@@ -7,7 +7,7 @@
 
 import { motion } from 'framer-motion';
 import { MapPin, Award, TrendingUp, Play } from 'lucide-react';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 
 import GlassContainer from '@/components/GlassContainer';
@@ -19,6 +19,7 @@ import LedgerTable from '@/components/wallet/LedgerTable';
 import WalletChip from '@/components/wallet/WalletChip';
 import { useAuth } from '@/contexts/AuthContext';
 import { routeForRole } from '@/lib/routes';
+import { supabase } from '@/lib/supabase';
 
 /**
  * Dashboard Stats Card Props
@@ -64,6 +65,26 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, delay 
  */
 const Dashboard: React.FC = () => {
   const { user, role, roleLoading } = useAuth();
+  const [consentStatus, setConsentStatus] = useState<string | null>(null);
+  const [eligible, setEligible] = useState<boolean | null>(null);
+
+  // Load student consent status to show banner when pending
+  useEffect(() => {
+    (async () => {
+      if (!user?.id || role !== 'student') return;
+      try {
+        const studentId = user.id;
+        const [{ data: onb }, { data: pc }] = await Promise.all([
+          supabase.from('onboarding_responses').select('eligible').eq('student_id', studentId).maybeSingle(),
+          supabase.from('parent_consents').select('status').eq('student_id', studentId).maybeSingle(),
+        ]);
+        setEligible(!!onb?.eligible);
+        setConsentStatus((pc?.status as string) ?? null);
+      } catch (e) {
+        // non-fatal
+      }
+    })();
+  }, [user?.id, role]);
 
   // Redirect admin roles to their appropriate dashboard
   if (!roleLoading && (role === 'master_admin' || role === 'org_admin' || role === 'staff')) {
@@ -82,6 +103,23 @@ const Dashboard: React.FC = () => {
   return (
     <div className='min-h-screen bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-tertiary'>
       <div className='container mx-auto max-w-7xl p-6'>
+        {/* Pending approval banner for students */}
+        {role === 'student' && eligible && consentStatus === 'PENDING' && (
+          <div className='mb-4 bg-yellow-500/10 border border-yellow-500/30 text-yellow-200 rounded-xl p-4'>
+            <div className='flex items-start gap-3'>
+              <svg className='w-5 h-5 mt-0.5 text-yellow-300 flex-shrink-0' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
+                <path d='M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round'/>
+              </svg>
+              <div>
+                <div className='font-semibold text-white'>Awaiting Parent Approval</div>
+                <div className='text-sm text-yellow-100/90'>Your parent/guardian consent was submitted and is pending review. Quests will unlock once approved.</div>
+                <div className='mt-2'>
+                  <Link to='/onboarding/parent' className='text-yellow-200 underline'>View consent details</Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Header */}
         <motion.div
           className='flex items-center justify-between mb-8'
@@ -151,7 +189,11 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div>
                     <h3 className='text-white font-medium'>Explore Quests</h3>
-                    <p className='text-gray-300 text-sm'>Find new learning challenges</p>
+                    {role === 'student' && eligible && consentStatus === 'PENDING' ? (
+                      <p className='text-yellow-200 text-sm'>Locked until approval</p>
+                    ) : (
+                      <p className='text-gray-300 text-sm'>Find new learning challenges</p>
+                    )}
                   </div>
                 </Link>
                 <Link
