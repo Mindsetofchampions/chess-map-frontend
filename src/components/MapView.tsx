@@ -327,6 +327,7 @@ const MapView: React.FC<MapViewProps> = ({
   const safeSpacesSourceId = useRef(`safe-spaces-${Math.random().toString(36).slice(2)}`);
   const eventsSourceId = useRef(`events-${Math.random().toString(36).slice(2)}`);
   const organizationsRef = useRef<OrganizationWithPersonas[]>([]);
+  const safeSpacesPopupRef = useRef<any>(null);
 
   // Category filters (all on by default)
   const allCategories: QuestCategory[] = [
@@ -1297,13 +1298,67 @@ const MapView: React.FC<MapViewProps> = ({
             type: 'circle',
             source: safeSpacesSourceId.current,
             paint: {
-              'circle-color': '#06D6A0',
+              // Use master color for Safe Spaces consistent with legend/UI
+              'circle-color': QUEST_STYLES.safe_space.color,
               'circle-radius': 7,
               'circle-stroke-width': 2,
               'circle-stroke-color': '#ffffff',
               'circle-opacity': 0.9,
             },
           });
+
+          // Interactions: pointer cursor + popup on click
+          const layerId = `${safeSpacesSourceId.current}-circles`;
+          const onEnter = () => {
+            try {
+              map.getCanvas().style.cursor = 'pointer';
+            } catch {}
+          };
+          const onLeave = () => {
+            try {
+              map.getCanvas().style.cursor = '';
+            } catch {}
+          };
+          const onClick = (e: any) => {
+            try {
+              const f = e?.features?.[0];
+              if (!f) return;
+              const coords = f.geometry?.coordinates as [number, number];
+              const props = f.properties || {};
+              const name = props.name || 'Safe Space';
+              const desc = props.description || '';
+              const addr = props.address || '';
+              const logo = props.logo_url || '';
+              const html = `
+                <div style="max-width:260px">
+                  <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+                    ${logo ? `<img src="${logo}" alt="logo" style="width:32px;height:32px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.4)"/>` : ''}
+                    <div style="font-weight:700;color:#fff;">${name}</div>
+                  </div>
+                  ${desc ? `<div style=\"font-size:12px;color:#e5e7eb;line-height:1.3;margin-bottom:4px;\">${desc}</div>` : ''}
+                  ${addr ? `<div style=\"font-size:12px;color:#cbd5e1;\">${addr}</div>` : ''}
+                </div>`;
+
+              if (safeSpacesPopupRef.current) {
+                try {
+                  safeSpacesPopupRef.current.remove();
+                } catch {}
+                safeSpacesPopupRef.current = null;
+              }
+              const PopupCtor = glNSRef.current?.Popup || glNSRef.current?.default?.Popup;
+              if (!PopupCtor) return;
+              safeSpacesPopupRef.current = new PopupCtor({ closeButton: true, closeOnClick: true })
+                .setLngLat(coords)
+                .setHTML(html)
+                .addTo(map);
+            } catch {}
+          };
+
+          try {
+            map.on('mouseenter', layerId, onEnter);
+            map.on('mouseleave', layerId, onLeave);
+            map.on('click', layerId, onClick);
+          } catch {}
         }
         if (!map.getSource(eventsSourceId.current)) {
           map.addSource(eventsSourceId.current, {
@@ -1328,14 +1383,36 @@ const MapView: React.FC<MapViewProps> = ({
       }
     };
 
-    const toFC = (rows: { id: string; lat: number | null; lng: number | null }[]) => ({
+    const toSafeFC = (rows: any[]) => ({
       type: 'FeatureCollection',
       features: rows
         .filter((r) => r.lat != null && r.lng != null)
         .map((r) => ({
           type: 'Feature',
           geometry: { type: 'Point', coordinates: [Number(r.lng), Number(r.lat)] },
-          properties: { id: r.id },
+          properties: {
+            id: r.id,
+            name: r.name ?? '',
+            description: r.description ?? '',
+            address: r.address ?? '',
+            logo_url: r.logo_url ?? null,
+          },
+        })),
+    });
+
+    const toEventsFC = (rows: any[]) => ({
+      type: 'FeatureCollection',
+      features: rows
+        .filter((r) => r.lat != null && r.lng != null)
+        .map((r) => ({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [Number(r.lng), Number(r.lat)] },
+          properties: {
+            id: r.id,
+            title: r.title ?? '',
+            description: r.description ?? '',
+            starts_at: r.starts_at ?? null,
+          },
         })),
     });
 
@@ -1350,9 +1427,9 @@ const MapView: React.FC<MapViewProps> = ({
         try {
           const [srows, erows] = await Promise.all([fetchSafeSpaces(), fetchEvents()]);
           const ssrc: any = map.getSource(safeSpacesSourceId.current);
-          if (ssrc?.setData) ssrc.setData(toFC(srows));
+          if (ssrc?.setData) ssrc.setData(toSafeFC(srows));
           const esrc: any = map.getSource(eventsSourceId.current);
-          if (esrc?.setData) esrc.setData(toFC(erows));
+          if (esrc?.setData) esrc.setData(toEventsFC(erows));
         } catch {}
 
         // debounced updater
@@ -1366,14 +1443,14 @@ const MapView: React.FC<MapViewProps> = ({
           try {
             const srows = await fetchSafeSpaces();
             const ssrc: any = map.getSource(safeSpacesSourceId.current);
-            if (ssrc?.setData) ssrc.setData(toFC(srows));
+            if (ssrc?.setData) ssrc.setData(toSafeFC(srows));
           } catch {}
         };
         const refreshEvents = async () => {
           try {
             const erows = await fetchEvents();
             const esrc: any = map.getSource(eventsSourceId.current);
-            if (esrc?.setData) esrc.setData(toFC(erows));
+            if (esrc?.setData) esrc.setData(toEventsFC(erows));
           } catch {}
         };
 

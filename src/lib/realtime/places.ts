@@ -12,6 +12,8 @@ export interface SafeSpaceRow {
   lat: number | null;
   lng: number | null;
   approved?: boolean | null;
+  address?: string | null;
+  logo_url?: string | null;
 }
 
 export interface EventRow {
@@ -69,16 +71,15 @@ export function subscribeToEvents(
 }
 
 export async function fetchSafeSpaces(): Promise<SafeSpaceRow[]> {
+  // Prefer view that provides derived logo_url from contact_info->>logo_url or image_url
   const { data, error } = await supabase
-    .from('safe_spaces')
-    .select('id,name,description,lat,lng,approved');
+    .from('v_safe_spaces_public')
+    .select('id,name,description,lat,lng,approved,address,logo_url');
   if (error || !SUPABASE_ENV_VALID) {
     if (error) console.warn('fetchSafeSpaces error:', error.message);
     return [];
   }
-  return (data as SafeSpaceRow[]).filter(
-    (r) => r.lat != null && r.lng != null && r.approved !== false,
-  );
+  return (data as SafeSpaceRow[]).filter((r) => r.lat != null && r.lng != null && r.approved !== false);
 }
 
 export async function fetchEvents(): Promise<EventRow[]> {

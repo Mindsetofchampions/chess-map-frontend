@@ -92,7 +92,8 @@ export const QUEST_STYLES: Record<
     gradient: 'from-red-400/30 to-red-600/30',
   },
   safe_space: {
-    color: '#06D6A0',
+    // Master Safe Space color (violet) to match map layers and legend
+    color: '#8B5CF6',
     sprite: PERSONA_GIF.badge,
     label: 'Safe Space',
     character: 'Protected Learning Zone',
