@@ -406,11 +406,21 @@ do $plpgsql$ begin
     execute 'drop policy "user_roles_select_own" on public.user_roles';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='user_roles' and policyname='user_roles_select_own') then
+    execute 'drop policy "user_roles_select_own" on public.user_roles';
+  end if;
+end $plpgsql$;
 create policy "user_roles_select_own" on public.user_roles 
 for select using (auth.uid() = user_id);
 
 -- Master admins can read all roles
 drop policy if exists "user_roles_select_master" on public.user_roles;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='user_roles' and policyname='user_roles_select_master') then
+    execute 'drop policy "user_roles_select_master" on public.user_roles';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='user_roles' and policyname='user_roles_select_master') then
     execute 'drop policy "user_roles_select_master" on public.user_roles';
@@ -426,6 +436,11 @@ for select using (
 
 -- Only master admins can INSERT/UPDATE/DELETE roles
 drop policy if exists "user_roles_master_write" on public.user_roles;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='user_roles' and policyname='user_roles_master_write') then
+    execute 'drop policy "user_roles_master_write" on public.user_roles';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='user_roles' and policyname='user_roles_master_write') then
     execute 'drop policy "user_roles_master_write" on public.user_roles';
@@ -454,6 +469,11 @@ do $plpgsql$ begin
     execute 'drop policy "platform_balance_master_only" on public.platform_balance';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='platform_balance' and policyname='platform_balance_master_only') then
+    execute 'drop policy "platform_balance_master_only" on public.platform_balance';
+  end if;
+end $plpgsql$;
 create policy "platform_balance_master_only" on public.platform_balance 
 for all using (
   exists (
@@ -477,6 +497,11 @@ do $plpgsql$ begin
     execute 'drop policy "platform_ledger_master_only" on public.platform_ledger';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='platform_ledger' and policyname='platform_ledger_master_only') then
+    execute 'drop policy "platform_ledger_master_only" on public.platform_ledger';
+  end if;
+end $plpgsql$;
 create policy "platform_ledger_master_only" on public.platform_ledger 
 for all using (
   exists (
@@ -494,6 +519,11 @@ with check (
 -- Enhance existing quests RLS policies
 drop policy if exists "quests_select_approved" on public.quests;
 drop policy if exists "quests_select_approved_or_admin" on public.quests;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='quests' and policyname='quests_select_approved_or_admin') then
+    execute 'drop policy "quests_select_approved_or_admin" on public.quests';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='quests' and policyname='quests_select_approved_or_admin') then
     execute 'drop policy "quests_select_approved_or_admin" on public.quests';

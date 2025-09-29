@@ -155,12 +155,22 @@ do $plpgsql$ begin
     execute 'drop policy "platform_balance_master_select" on public.platform_balance';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='platform_balance' and policyname='platform_balance_master_select') then
+    execute 'drop policy "platform_balance_master_select" on public.platform_balance';
+  end if;
+end $plpgsql$;
 create policy "platform_balance_master_select" on public.platform_balance 
   for select
   using (public.is_master_admin());
 
 -- Master admin can update platform balance
 drop policy if exists "platform_balance_master_update" on public.platform_balance;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='platform_balance' and policyname='platform_balance_master_update') then
+    execute 'drop policy "platform_balance_master_update" on public.platform_balance';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='platform_balance' and policyname='platform_balance_master_update') then
     execute 'drop policy "platform_balance_master_update" on public.platform_balance';
@@ -182,12 +192,22 @@ do $plpgsql$ begin
     execute 'drop policy "platform_ledger_master_select" on public.platform_ledger';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='platform_ledger' and policyname='platform_ledger_master_select') then
+    execute 'drop policy "platform_ledger_master_select" on public.platform_ledger';
+  end if;
+end $plpgsql$;
 create policy "platform_ledger_master_select" on public.platform_ledger 
   for select
   using (public.is_master_admin());
 
 -- Master admin can insert ledger entries
 drop policy if exists "platform_ledger_master_insert" on public.platform_ledger;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='platform_ledger' and policyname='platform_ledger_master_insert') then
+    execute 'drop policy "platform_ledger_master_insert" on public.platform_ledger';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='platform_ledger' and policyname='platform_ledger_master_insert') then
     execute 'drop policy "platform_ledger_master_insert" on public.platform_ledger';
@@ -228,6 +248,11 @@ do $plpgsql$ begin
     execute 'drop policy "quests_admin_read_all" on public.quests';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='quests' and policyname='quests_admin_read_all') then
+    execute 'drop policy "quests_admin_read_all" on public.quests';
+  end if;
+end $plpgsql$;
 create policy "quests_admin_read_all" on public.quests 
   for select
   using (
@@ -241,12 +266,22 @@ do $plpgsql$ begin
     execute 'drop policy "quests_authenticated_create" on public.quests';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='quests' and policyname='quests_authenticated_create') then
+    execute 'drop policy "quests_authenticated_create" on public.quests';
+  end if;
+end $plpgsql$;
 create policy "quests_authenticated_create" on public.quests 
   for insert
   to authenticated
   with check (true);
 
 -- Creators can update their own quests when in draft/rejected status
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='quests' and policyname='quests_creator_update_own') then
+    execute 'drop policy "quests_creator_update_own" on public.quests';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='quests' and policyname='quests_creator_update_own') then
     execute 'drop policy "quests_creator_update_own" on public.quests';
@@ -264,6 +299,11 @@ create policy "quests_creator_update_own" on public.quests
   );
 
 -- Admins can update any quest
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='quests' and policyname='quests_admin_update_any') then
+    execute 'drop policy "quests_admin_update_any" on public.quests';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='quests' and policyname='quests_admin_update_any') then
     execute 'drop policy "quests_admin_update_any" on public.quests';

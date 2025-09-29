@@ -20,6 +20,9 @@ export default function StudentOnboarding() {
   const navigate = useNavigate();
   const [checks, setChecks] = useState<Record<string, boolean>>({});
   const [eligible, setEligible] = useState(false);
+  const [studentName, setStudentName] = useState('');
+  const [studentAge, setStudentAge] = useState<string>('');
+  const [studentSchool, setStudentSchool] = useState('');
   const [saving, setSaving] = useState(false);
   const allChecked = useMemo(() => CHECKS.every((c) => checks[c.key]), [checks]);
 
@@ -39,13 +42,16 @@ export default function StudentOnboarding() {
     +(async () => {
       const { data } = await supabase
         .from('onboarding_responses')
-        .select('*')
+        .select('*, student_name, student_age, student_school')
         .eq('student_id', studentId)
         .maybeSingle();
       if (cancelled) return;
       if (data) {
         setChecks(data.checkboxes || {});
         setEligible(!!data.eligible);
+        if (data.student_name) setStudentName(data.student_name);
+        if (typeof data.student_age === 'number') setStudentAge(String(data.student_age));
+        if (data.student_school) setStudentSchool(data.student_school);
       }
     })();
 
@@ -58,7 +64,15 @@ export default function StudentOnboarding() {
     if (!studentId) return;
     setSaving(true);
     try {
-      const payload = { student_id: studentId, checkboxes: checks, eligible: allChecked };
+      const ageVal = studentAge ? Math.max(0, Number(studentAge)) : null;
+      const payload = {
+        student_id: studentId,
+        checkboxes: checks,
+        eligible: allChecked,
+        student_name: studentName || null,
+        student_age: Number.isFinite(ageVal as number) ? (ageVal as number) : null,
+        student_school: studentSchool || null,
+      } as any;
       const { data, error } = await supabase
         .from('onboarding_responses')
         .upsert(payload, { onConflict: 'student_id' })
@@ -81,6 +95,27 @@ export default function StudentOnboarding() {
   return (
     <div className='max-w-xl mx-auto p-6 space-y-4'>
       <h1 className='text-2xl font-bold text-white'>Student Onboarding</h1>
+      <div className='bg-glass border-glass rounded-xl p-4 space-y-3'>
+        <input
+          className='w-full bg-glass border-glass rounded-lg px-3 py-2 text-white'
+          placeholder='Your full name'
+          value={studentName}
+          onChange={(e) => setStudentName(e.target.value)}
+        />
+        <input
+          className='w-full bg-glass border-glass rounded-lg px-3 py-2 text-white'
+          placeholder='Your age'
+          inputMode='numeric'
+          value={studentAge}
+          onChange={(e) => setStudentAge(e.target.value.replace(/[^0-9]/g, ''))}
+        />
+        <input
+          className='w-full bg-glass border-glass rounded-lg px-3 py-2 text-white'
+          placeholder='Your school (optional)'
+          value={studentSchool}
+          onChange={(e) => setStudentSchool(e.target.value)}
+        />
+      </div>
       <div className='bg-glass border-glass rounded-xl p-4 space-y-3'>
         {CHECKS.map((item) => (
           <label key={item.key} className='flex gap-3 text-white items-center'>

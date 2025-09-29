@@ -24,6 +24,11 @@ do $plpgsql$ begin
     execute 'drop policy "memberships_self_select" on public.memberships';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='memberships' and policyname='memberships_self_select') then
+    execute 'drop policy "memberships_self_select" on public.memberships';
+  end if;
+end $plpgsql$;
 create policy "memberships_self_select" on public.memberships 
   for select
   to authenticated
@@ -35,6 +40,11 @@ do $plpgsql$ begin
   end if;
 end $plpgsql$;
 
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='memberships' and policyname='memberships_admin_all') then
+    execute 'drop policy "memberships_admin_all" on public.memberships';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='memberships' and policyname='memberships_admin_all') then
     execute 'drop policy "memberships_admin_all" on public.memberships';
@@ -57,6 +67,11 @@ do $plpgsql$ begin
     execute 'drop policy "app_routes: role >= min_role" on public.app_routes';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='app_routes' and policyname='app_routes: role >= min_role') then
+    execute 'drop policy "app_routes: role >= min_role" on public.app_routes';
+  end if;
+end $plpgsql$;
 create policy "app_routes: role >= min_role" on public.app_routes 
   for select
   to public
@@ -69,6 +84,11 @@ do $plpgsql$ begin
   end if;
 end $plpgsql$;
 
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='app_defaults' and policyname='app_defaults: select self role') then
+    execute 'drop policy "app_defaults: select self role" on public.app_defaults';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='app_defaults' and policyname='app_defaults: select self role') then
     execute 'drop policy "app_defaults: select self role" on public.app_defaults';
@@ -91,6 +111,11 @@ do $plpgsql$ begin
     execute 'drop policy "audit: select master only" on public.audit_role_changes';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='audit_role_changes' and policyname='audit: select master only') then
+    execute 'drop policy "audit: select master only" on public.audit_role_changes';
+  end if;
+end $plpgsql$;
 create policy "audit: select master only" on public.audit_role_changes 
   for select
   to public
@@ -102,6 +127,11 @@ do $plpgsql$ begin
   end if;
 end $plpgsql$;
 
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='audit_role_changes' and policyname='audit: insert via definer function') then
+    execute 'drop policy "audit: insert via definer function" on public.audit_role_changes';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='audit_role_changes' and policyname='audit: insert via definer function') then
     execute 'drop policy "audit: insert via definer function" on public.audit_role_changes';

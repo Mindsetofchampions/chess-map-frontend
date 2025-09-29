@@ -21,7 +21,12 @@ begin
       and tablename = 'objects'
       and policyname = 'map_assets_select_public'
   ) then
-    create policy "map_assets_select_public" on storage.objects
+    do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='map_assets_select_public') then
+    execute 'drop policy "map_assets_select_public" on storage.objects';
+  end if;
+end $plpgsql$;
+create policy "map_assets_select_public" on storage.objects 
       for select using (bucket_id = 'map_assets');
   end if;
 end$$;
@@ -34,7 +39,12 @@ begin
       and tablename = 'objects'
       and policyname = 'map_assets_insert_authenticated'
   ) then
-    create policy "map_assets_insert_authenticated" on storage.objects
+    do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='map_assets_insert_authenticated') then
+    execute 'drop policy "map_assets_insert_authenticated" on storage.objects';
+  end if;
+end $plpgsql$;
+create policy "map_assets_insert_authenticated" on storage.objects 
       for insert
       with check (
         bucket_id = 'map_assets' AND auth.role() = 'authenticated' AND (metadata->>'uploader_id')::uuid = auth.uid()
@@ -56,7 +66,12 @@ begin
       join pg_namespace n on n.oid = pg_proc.pronamespace
       where n.nspname = 'public' and proname = 'is_user_in_roles'
     ) then
-      execute $ddl$create policy "map_assets_update_owner_or_master" on storage.objects
+      execute $ddl$do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='map_assets_update_owner_or_master') then
+    execute 'drop policy "map_assets_update_owner_or_master" on storage.objects';
+  end if;
+end $plpgsql$;
+create policy "map_assets_update_owner_or_master" on storage.objects 
         for update
         using (
           bucket_id = 'map_assets' AND (
@@ -71,7 +86,12 @@ begin
           )
         );$ddl$;
     else
-      execute $ddl$create policy "map_assets_update_owner_or_master" on storage.objects
+      execute $ddl$do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='map_assets_update_owner_or_master') then
+    execute 'drop policy "map_assets_update_owner_or_master" on storage.objects';
+  end if;
+end $plpgsql$;
+create policy "map_assets_update_owner_or_master" on storage.objects 
         for update
         using (
           bucket_id = 'map_assets' AND (
@@ -100,7 +120,12 @@ begin
       join pg_namespace n on n.oid = pg_proc.pronamespace
       where n.nspname = 'public' and proname = 'is_user_in_roles'
     ) then
-      execute $ddl$create policy "map_assets_delete_owner_or_master" on storage.objects
+      execute $ddl$do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='map_assets_delete_owner_or_master') then
+    execute 'drop policy "map_assets_delete_owner_or_master" on storage.objects';
+  end if;
+end $plpgsql$;
+create policy "map_assets_delete_owner_or_master" on storage.objects 
         for delete
         using (
           bucket_id = 'map_assets' AND (
@@ -109,7 +134,12 @@ begin
           )
         );$ddl$;
     else
-      execute $ddl$create policy "map_assets_delete_owner_or_master" on storage.objects
+      execute $ddl$do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='map_assets_delete_owner_or_master') then
+    execute 'drop policy "map_assets_delete_owner_or_master" on storage.objects';
+  end if;
+end $plpgsql$;
+create policy "map_assets_delete_owner_or_master" on storage.objects 
         for delete
         using (
           bucket_id = 'map_assets' AND (

@@ -13,8 +13,12 @@ begin
       and tablename = 'objects'
       and policyname = 'Public read access (map_assets)'
   ) then
-    create policy "Public read access (map_assets)"
-      on storage.objects for select
+    do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='Public read access (map_assets)') then
+    execute 'drop policy "Public read access (map_assets)" on storage.objects';
+  end if;
+end $plpgsql$;
+create policy "Public read access (map_assets)" on storage.objects for select
       using (bucket_id = 'map_assets');
   end if;
 end$$;
@@ -28,8 +32,12 @@ begin
       and tablename = 'objects'
       and policyname = 'Authenticated insert (map_assets)'
   ) then
-    create policy "Authenticated insert (map_assets)"
-      on storage.objects for insert
+    do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='Authenticated insert (map_assets)') then
+    execute 'drop policy "Authenticated insert (map_assets)" on storage.objects';
+  end if;
+end $plpgsql$;
+create policy "Authenticated insert (map_assets)" on storage.objects for insert
       to authenticated
       with check (bucket_id = 'map_assets');
   end if;
@@ -44,8 +52,12 @@ begin
       and tablename = 'objects'
       and policyname = 'Authenticated update own (map_assets)'
   ) then
-    create policy "Authenticated update own (map_assets)"
-      on storage.objects for update
+    do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='Authenticated update own (map_assets)') then
+    execute 'drop policy "Authenticated update own (map_assets)" on storage.objects';
+  end if;
+end $plpgsql$;
+create policy "Authenticated update own (map_assets)" on storage.objects for update
       to authenticated
       using (bucket_id = 'map_assets' and (auth.uid() = owner or owner is null))
       with check (bucket_id = 'map_assets');

@@ -20,7 +20,12 @@ do $$ begin
   if not exists (
     select 1 from pg_policies where schemaname = 'public' and tablename = 'events' and policyname = 'Read events'
   ) then
-    create policy "Read events" on public.events
+    do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='events' and policyname='Read events') then
+    execute 'drop policy "Read events" on public.events';
+  end if;
+end $plpgsql$;
+create policy "Read events" on public.events 
       for select using (true);
   end if;
 end $$;
@@ -30,7 +35,12 @@ do $$ begin
   if not exists (
     select 1 from pg_policies where schemaname = 'public' and tablename = 'events' and policyname = 'Modify events (master)'
   ) then
-    create policy "Modify events (master)" on public.events
+    do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='events' and policyname='Modify events (master)') then
+    execute 'drop policy "Modify events (master)" on public.events';
+  end if;
+end $plpgsql$;
+create policy "Modify events (master)" on public.events 
       for all
       using (public.is_user_in_roles(auth.uid(), array['master_admin']))
       with check (public.is_user_in_roles(auth.uid(), array['master_admin']));

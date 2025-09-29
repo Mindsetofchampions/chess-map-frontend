@@ -6,6 +6,9 @@ import { supabase } from '@/lib/supabase';
 
 export default function ParentConsentsPage() {
   const [rows, setRows] = useState<any[]>([]);
+  const [studentInfo, setStudentInfo] = useState<
+    Record<string, { name?: string; age?: number; school?: string }>
+  >({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -21,7 +24,32 @@ export default function ParentConsentsPage() {
     if (error) {
       console.error(error);
     } else {
-      setRows(data || []);
+      const list = data || [];
+      setRows(list);
+      // Enrich with student onboarding info for display
+      try {
+        const ids = Array.from(new Set(list.map((r: any) => r.student_id).filter(Boolean)));
+        if (ids.length) {
+          const { data: infos } = await supabase
+            .from('onboarding_responses')
+            .select('student_id, student_name, student_age, student_school')
+            .in('student_id', ids);
+          const map: Record<string, { name?: string; age?: number; school?: string }> = {};
+          (infos || []).forEach((row: any) => {
+            map[row.student_id] = {
+              name: row.student_name || undefined,
+              age: typeof row.student_age === 'number' ? row.student_age : undefined,
+              school: row.student_school || undefined,
+            };
+          });
+          setStudentInfo(map);
+        } else {
+          setStudentInfo({});
+        }
+      } catch (e) {
+        console.warn('Failed to load student info', e);
+        setStudentInfo({});
+      }
     }
     setLoading(false);
   }
@@ -80,7 +108,17 @@ export default function ParentConsentsPage() {
                 <div className='text-white font-semibold'>
                   {r.parent_name} — {r.parent_email}
                 </div>
-                <div className='text-sm text-gray-300'>Student: {r.student_id}</div>
+                <div className='text-sm text-gray-300'>
+                  {(() => {
+                    const info = studentInfo[r.student_id] || {};
+                    const parts = [
+                      info.name ? `Student: ${info.name}` : `Student: ${r.student_id}`,
+                      typeof info.age === 'number' ? `Age: ${info.age}` : undefined,
+                      info.school ? `School: ${info.school}` : undefined,
+                    ].filter(Boolean);
+                    return parts.join(' • ');
+                  })()}
+                </div>
                 <div className='text-sm text-gray-300 mt-2'>Status: {r.status}</div>
               </div>
               <div className='flex gap-2'>

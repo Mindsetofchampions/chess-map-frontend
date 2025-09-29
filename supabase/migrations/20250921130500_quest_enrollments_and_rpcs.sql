@@ -38,13 +38,23 @@ begin
   if exists (
     select 1 from pg_policies where schemaname='public' and tablename='quest_enrollments' and policyname='enroll: insert own'
   ) then execute 'drop policy "enroll: insert own" on public.quest_enrollments'; end if;
-  create policy "enroll: insert own" on public.quest_enrollments
+  do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='quest_enrollments' and policyname='enroll: insert own') then
+    execute 'drop policy "enroll: insert own" on public.quest_enrollments';
+  end if;
+end $plpgsql$;
+create policy "enroll: insert own" on public.quest_enrollments 
     for insert to authenticated with check (user_id = auth.uid());
 
   if exists (
     select 1 from pg_policies where schemaname='public' and tablename='quest_enrollments' and policyname='enroll: select own or staff+'
   ) then execute 'drop policy "enroll: select own or staff+" on public.quest_enrollments'; end if;
-  create policy "enroll: select own or staff+" on public.quest_enrollments
+  do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='quest_enrollments' and policyname='enroll: select own or staff+') then
+    execute 'drop policy "enroll: select own or staff+" on public.quest_enrollments';
+  end if;
+end $plpgsql$;
+create policy "enroll: select own or staff+" on public.quest_enrollments 
     for select to authenticated using (
       user_id = auth.uid() or public.is_user_in_roles(auth.uid()::uuid, array['master_admin','org_admin','staff'])
     );
@@ -52,7 +62,12 @@ begin
   if exists (
     select 1 from pg_policies where schemaname='public' and tablename='quest_enrollments' and policyname='enroll: delete own or staff+'
   ) then execute 'drop policy "enroll: delete own or staff+" on public.quest_enrollments'; end if;
-  create policy "enroll: delete own or staff+" on public.quest_enrollments
+  do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='quest_enrollments' and policyname='enroll: delete own or staff+') then
+    execute 'drop policy "enroll: delete own or staff+" on public.quest_enrollments';
+  end if;
+end $plpgsql$;
+create policy "enroll: delete own or staff+" on public.quest_enrollments 
     for delete to authenticated using (
       user_id = auth.uid() or public.is_user_in_roles(auth.uid()::uuid, array['master_admin','org_admin','staff'])
     );

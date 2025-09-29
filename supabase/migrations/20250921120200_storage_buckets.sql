@@ -22,10 +22,20 @@ do $plpgsql$ begin
 end $plpgsql$;
 
 -- Allow master full access
-create policy "master all parent_ids" on storage.objects
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='master all parent_ids') then
+    execute 'drop policy "master all parent_ids" on storage.objects';
+  end if;
+end $plpgsql$;
+create policy "master all parent_ids" on storage.objects 
 for all using (public.jwt_role() = 'master_admin') with check (true);
 
-create policy "org read/write parent_ids" on storage.objects
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='org read/write parent_ids') then
+    execute 'drop policy "org read/write parent_ids" on storage.objects';
+  end if;
+end $plpgsql$;
+create policy "org read/write parent_ids" on storage.objects 
 for all using (
   public.jwt_role() in ('org_admin','staff')
   and bucket_id = 'parent_ids'
@@ -35,10 +45,20 @@ for all using (
   and (storage.foldername(name))[1] = coalesce(public.jwt_org_id()::text, '')
 );
 
-create policy "master all signatures" on storage.objects
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='master all signatures') then
+    execute 'drop policy "master all signatures" on storage.objects';
+  end if;
+end $plpgsql$;
+create policy "master all signatures" on storage.objects 
 for all using (public.jwt_role() = 'master_admin') with check (true);
 
-create policy "org read/write signatures" on storage.objects
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='org read/write signatures') then
+    execute 'drop policy "org read/write signatures" on storage.objects';
+  end if;
+end $plpgsql$;
+create policy "org read/write signatures" on storage.objects 
 for all using (
   public.jwt_role() in ('org_admin','staff')
   and bucket_id = 'signatures'

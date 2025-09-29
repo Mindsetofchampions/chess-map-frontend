@@ -26,6 +26,11 @@ do $plpgsql$ begin
     execute 'drop policy "store_items_read" on public.store_items';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='store_items' and policyname='store_items_read') then
+    execute 'drop policy "store_items_read" on public.store_items';
+  end if;
+end $plpgsql$;
 create policy "store_items_read" on public.store_items 
   for select
   to authenticated
@@ -37,6 +42,11 @@ do $plpgsql$ begin
   end if;
 end $plpgsql$;
 
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='store_items' and policyname='store_items_admin_cud') then
+    execute 'drop policy "store_items_admin_cud" on public.store_items';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='store_items' and policyname='store_items_admin_cud') then
     execute 'drop policy "store_items_admin_cud" on public.store_items';
@@ -55,6 +65,11 @@ do $plpgsql$ begin
   end if;
 end $plpgsql$;
 
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='store_orders' and policyname='store_orders_select_self_or_org') then
+    execute 'drop policy "store_orders_select_self_or_org" on public.store_orders';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='store_orders' and policyname='store_orders_select_self_or_org') then
     execute 'drop policy "store_orders_select_self_or_org" on public.store_orders';
@@ -80,6 +95,11 @@ do $plpgsql$ begin
     execute 'drop policy "personas: select (jwt authed)" on public.personas';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='personas' and policyname='personas: select (jwt authed)') then
+    execute 'drop policy "personas: select (jwt authed)" on public.personas';
+  end if;
+end $plpgsql$;
 create policy "personas: select (jwt authed)" on public.personas 
   for select
   to public
@@ -96,6 +116,11 @@ do $plpgsql$ begin
     execute 'drop policy "personas: insert (master only)" on public.personas';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='personas' and policyname='personas: insert (master only)') then
+    execute 'drop policy "personas: insert (master only)" on public.personas';
+  end if;
+end $plpgsql$;
 create policy "personas: insert (master only)" on public.personas 
   for insert
   to public
@@ -107,6 +132,11 @@ do $plpgsql$ begin
   end if;
 end $plpgsql$;
 
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='personas' and policyname='personas: update (master only)') then
+    execute 'drop policy "personas: update (master only)" on public.personas';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='personas' and policyname='personas: update (master only)') then
     execute 'drop policy "personas: update (master only)" on public.personas';
@@ -129,6 +159,11 @@ do $plpgsql$ begin
     execute 'drop policy "personas: delete (master only)" on public.personas';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='personas' and policyname='personas: delete (master only)') then
+    execute 'drop policy "personas: delete (master only)" on public.personas';
+  end if;
+end $plpgsql$;
 create policy "personas: delete (master only)" on public.personas 
   for delete
   to public
@@ -146,6 +181,11 @@ do $plpgsql$ begin
     execute 'drop policy "Allow users to insert own analytics logs" on public.analytics_logs';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='analytics_logs' and policyname='Allow users to insert own analytics logs') then
+    execute 'drop policy "Allow users to insert own analytics logs" on public.analytics_logs';
+  end if;
+end $plpgsql$;
 create policy "Allow users to insert own analytics logs" on public.analytics_logs 
   for insert
   to authenticated
@@ -157,6 +197,11 @@ do $plpgsql$ begin
   end if;
 end $plpgsql$;
 
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='analytics_logs' and policyname='Admins manage analytics') then
+    execute 'drop policy "Admins manage analytics" on public.analytics_logs';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='analytics_logs' and policyname='Admins manage analytics') then
     execute 'drop policy "Admins manage analytics" on public.analytics_logs';
@@ -180,6 +225,11 @@ do $plpgsql$ begin
     execute 'drop policy "Students insert completions" on public.completions';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='completions' and policyname='Students insert completions') then
+    execute 'drop policy "Students insert completions" on public.completions';
+  end if;
+end $plpgsql$;
 create policy "Students insert completions" on public.completions 
   for insert
   to authenticated
@@ -196,6 +246,11 @@ do $plpgsql$ begin
     execute 'drop policy "Students view own completions" on public.completions';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='completions' and policyname='Students view own completions') then
+    execute 'drop policy "Students view own completions" on public.completions';
+  end if;
+end $plpgsql$;
 create policy "Students view own completions" on public.completions 
   for select
   to authenticated
@@ -207,6 +262,11 @@ do $plpgsql$ begin
   end if;
 end $plpgsql$;
 
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='completions' and policyname='Admins manage completions') then
+    execute 'drop policy "Admins manage completions" on public.completions';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='completions' and policyname='Admins manage completions') then
     execute 'drop policy "Admins manage completions" on public.completions';

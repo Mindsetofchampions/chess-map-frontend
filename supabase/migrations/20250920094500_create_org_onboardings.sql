@@ -21,11 +21,21 @@ do $plpgsql$ begin
     execute 'drop policy "Allow authenticated inserts" on public.org_onboardings';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='org_onboardings' and policyname='Allow authenticated inserts') then
+    execute 'drop policy "Allow authenticated inserts" on public.org_onboardings';
+  end if;
+end $plpgsql$;
 create policy "Allow authenticated inserts" on public.org_onboardings 
   for insert
   with check (auth.uid() IS NOT NULL);
 
 drop policy if exists "Select own or master_admins" on public.org_onboardings;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='org_onboardings' and policyname='Select own or master_admins') then
+    execute 'drop policy "Select own or master_admins" on public.org_onboardings';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='org_onboardings' and policyname='Select own or master_admins') then
     execute 'drop policy "Select own or master_admins" on public.org_onboardings';
@@ -48,6 +58,11 @@ do $plpgsql$ begin
     execute 'drop policy "org_onboardings_insert_own" on public.org_onboardings';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='org_onboardings' and policyname='org_onboardings_insert_own') then
+    execute 'drop policy "org_onboardings_insert_own" on public.org_onboardings';
+  end if;
+end $plpgsql$;
 create policy "org_onboardings_insert_own" on public.org_onboardings 
   for insert
   to authenticated
@@ -60,6 +75,11 @@ do $plpgsql$ begin
     execute 'drop policy "org_onboardings_select_owner" on public.org_onboardings';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='org_onboardings' and policyname='org_onboardings_select_owner') then
+    execute 'drop policy "org_onboardings_select_owner" on public.org_onboardings';
+  end if;
+end $plpgsql$;
 create policy "org_onboardings_select_owner" on public.org_onboardings 
   for select
   to authenticated
@@ -67,6 +87,11 @@ create policy "org_onboardings_select_owner" on public.org_onboardings
 
 -- Allow master_admins to select and update all onboarding rows
 drop policy if exists "org_onboardings_master_admin_rw" on public.org_onboardings;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='org_onboardings' and policyname='org_onboardings_master_admin_rw') then
+    execute 'drop policy "org_onboardings_master_admin_rw" on public.org_onboardings';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='org_onboardings' and policyname='org_onboardings_master_admin_rw') then
     execute 'drop policy "org_onboardings_master_admin_rw" on public.org_onboardings';

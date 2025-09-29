@@ -1,0 +1,8 @@
+-- Neutralized on 2025-09-20: abandoning attempt to change return type of get_admin_user_list
+-- This migration intentionally left blank to allow subsequent migrations to proceed.
+
+DO $do$
+BEGIN
+	-- no-op
+END
+$do$;

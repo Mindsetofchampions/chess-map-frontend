@@ -100,11 +100,11 @@ export default function ParentConsent() {
     if (!parentName || !parentEmail) return alert('Parent name and email required.');
     if (!sigPad || sigPad.isEmpty()) return alert('Signature is required.');
 
-  setSubmitting(true);
-  // Keep track of uploaded asset URLs for possible fallback usage
-  let latestSigUrl: string | undefined;
-  let latestParentIdUrl: string | undefined;
-  try {
+    setSubmitting(true);
+    // Keep track of uploaded asset URLs for possible fallback usage
+    let latestSigUrl: string | undefined;
+    let latestParentIdUrl: string | undefined;
+    try {
       // rasterize signature and upload to storage
       const signatureDataUrl = sigPad.toDataURL('image/png');
       // Convert dataURL to blob
@@ -115,8 +115,8 @@ export default function ParentConsent() {
         .from('parent_ids')
         .upload(sigPath, blob, { upsert: false });
       if (sigErr) throw sigErr;
-  const { data: sigPub } = await supabase.storage.from('parent_ids').getPublicUrl(sigPath);
-  latestSigUrl = sigPub.publicUrl;
+      const { data: sigPub } = await supabase.storage.from('parent_ids').getPublicUrl(sigPath);
+      latestSigUrl = sigPub.publicUrl;
 
       // Try uploading parent ID if provided; handle guidance error for missing bucket
       let parentIdUrl: string | undefined;
@@ -149,11 +149,27 @@ export default function ParentConsent() {
         .upsert(payload, { onConflict: 'student_id' });
       if (error) throw error;
 
-      // best-effort notification to parent/admin
+      // best-effort notification to parent/admin with student context
       try {
+        let extra: Record<string, any> = {};
+        try {
+          const { data: ob } = await supabase
+            .from('onboarding_responses')
+            .select('student_name, student_age, student_school')
+            .eq('student_id', studentId)
+            .maybeSingle();
+          if (ob)
+            extra = {
+              student_name: ob.student_name,
+              student_age: ob.student_age,
+              student_school: ob.student_school,
+            };
+        } catch (_) {}
+
         await notifyOnboarding('consent_submitted', {
           parent_email: parentEmail,
           student_id: studentId,
+          ...extra,
         });
       } catch (e) {
         // swallow notify failures
@@ -182,7 +198,7 @@ export default function ParentConsent() {
             .upsert(fallback, { onConflict: 'student_id' });
           if (upErr) throw upErr;
           alert(
-            'Consent received and pending. We hit a server-side update issue; an admin will finalize your approval shortly.'
+            'Consent received and pending. A server update issue occurred; an admin will finalize shortly.',
           );
           navigate('/dashboard');
           return;

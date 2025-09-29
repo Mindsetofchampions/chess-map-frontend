@@ -20,7 +20,12 @@ do $$ begin
   if not exists (
     select 1 from pg_policies where schemaname = 'public' and tablename = 'safe_spaces' and policyname = 'Read safe_spaces'
   ) then
-    create policy "Read safe_spaces" on public.safe_spaces
+    do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='safe_spaces' and policyname='Read safe_spaces') then
+    execute 'drop policy "Read safe_spaces" on public.safe_spaces';
+  end if;
+end $plpgsql$;
+create policy "Read safe_spaces" on public.safe_spaces 
       for select using (true);
   end if;
 end $$;
@@ -30,7 +35,12 @@ do $$ begin
   if not exists (
     select 1 from pg_policies where schemaname = 'public' and tablename = 'safe_spaces' and policyname = 'Modify safe_spaces (master)'
   ) then
-    create policy "Modify safe_spaces (master)" on public.safe_spaces
+    do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='safe_spaces' and policyname='Modify safe_spaces (master)') then
+    execute 'drop policy "Modify safe_spaces (master)" on public.safe_spaces';
+  end if;
+end $plpgsql$;
+create policy "Modify safe_spaces (master)" on public.safe_spaces 
       for all
       using (public.is_user_in_roles(auth.uid(), array['master_admin']))
       with check (public.is_user_in_roles(auth.uid(), array['master_admin']));

@@ -20,6 +20,11 @@ do $plpgsql$ begin
     execute 'drop policy "system_notifications_master_rw" on public.system_notifications';
   end if;
 end $plpgsql$;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='system_notifications' and policyname='system_notifications_master_rw') then
+    execute 'drop policy "system_notifications_master_rw" on public.system_notifications';
+  end if;
+end $plpgsql$;
 create policy "system_notifications_master_rw" on public.system_notifications 
   for all
   to authenticated
@@ -28,6 +33,11 @@ create policy "system_notifications_master_rw" on public.system_notifications
 
 -- Allow everyone to select notifications
 drop policy if exists "system_notifications_select_public" on public.system_notifications;
+do $plpgsql$ begin
+  if exists (select 1 from pg_policies where schemaname='public' and tablename='system_notifications' and policyname='system_notifications_select_public') then
+    execute 'drop policy "system_notifications_select_public" on public.system_notifications';
+  end if;
+end $plpgsql$;
 do $plpgsql$ begin
   if exists (select 1 from pg_policies where schemaname='public' and tablename='system_notifications' and policyname='system_notifications_select_public') then
     execute 'drop policy "system_notifications_select_public" on public.system_notifications';
