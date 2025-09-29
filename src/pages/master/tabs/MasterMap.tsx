@@ -229,7 +229,29 @@ export default function MasterMap() {
         el.title = s.name || 'Safe Space';
         const GL = gl || (window as any).mapboxgl || (window as any).maplibregl;
         if (!GL?.Marker) return;
-        markers.push(new GL.Marker(el).setLngLat([Number(lng), Number(lat)]).addTo(map));
+        const marker = new GL.Marker(el).setLngLat([Number(lng), Number(lat)]).addTo(map);
+        // Popup with description + optional logo thumbnail
+        try {
+          const logo = s?.contact_info?.logo_url || s?.image_url || '';
+          const desc = s?.description || '';
+          const html = `
+            <div style="max-width:240px;">
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+                ${logo ? `<img src="${logo}" alt="logo" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.2);" />` : ''}
+                <div style="font-weight:600;">${s?.name || 'Safe Space'}</div>
+              </div>
+              ${desc ? `<div style="font-size:12px;line-height:1.4;color:#333;">${desc}</div>` : ''}
+            </div>`;
+          el.addEventListener('click', () => {
+            try {
+              new GL.Popup({ offset: 12 })
+                .setLngLat([Number(lng), Number(lat)])
+                .setHTML(html)
+                .addTo(map);
+            } catch {}
+          });
+        } catch {}
+        markers.push(marker);
       }
     });
 
@@ -247,8 +269,8 @@ export default function MasterMap() {
       }
     });
 
-    // Click-to-place handler
-    if (placeMode) {
+    // Click-to-place handler (disabled for safe spaces per product requirement)
+    if (placeMode && placeMode !== 'safe') {
       const clickHandler = async (e: any) => {
         const { lng, lat } = e.lngLat || {};
         if (lng == null || lat == null) return;
@@ -270,18 +292,6 @@ export default function MasterMap() {
             attribute_id: qAttribute || undefined,
             image_url: uploadedUrl || undefined,
             config: buildQuestConfig(),
-          });
-        } else if (placeMode === 'safe') {
-          await createSafeSpace({
-            lat,
-            lng,
-            name: sName || 'Safe Space',
-            description: sDesc || null,
-            grade_level: sGrade || null,
-            contact_info: {
-              ...(sContact || {}),
-              logo_url: uploadedUrl || undefined,
-            },
           });
         } else if (placeMode === 'event') {
           await createEvent({
@@ -386,6 +396,7 @@ export default function MasterMap() {
       const { error } = await supabase.from('safe_spaces').insert(row);
       if (error) throw error;
       showSuccess('Safe space created');
+      setPendingLoc(null);
     } catch (e: any) {
       showError('Create safe space failed', e.message || String(e));
     }
@@ -633,29 +644,28 @@ export default function MasterMap() {
               </div>
               {uploading && <div className='text-xs text-gray-400 mt-1'>Uploading...</div>}
             </div>
-            <div className='text-right'>
-              <button
-                disabled={placeMode != null}
-                className={`px-3 py-2 rounded ${placeMode ? 'bg-white/10 text-white/60' : 'bg-white/20 text-white hover:bg-white/30'}`}
-                onClick={() => {
-                  // Enter place mode after basic validation
-                  if (createType === 'quest') {
-                    if (!qTitle.trim())
-                      return showError('Missing title', 'Please enter a quest title.');
-                  } else if (createType === 'safe') {
-                    if (!sName.trim())
-                      return showError('Missing name', 'Please enter a safe space name.');
-                  } else if (createType === 'event') {
-                    if (!eTitle.trim())
-                      return showError('Missing title', 'Please enter an event title.');
-                  }
-                  setPlaceMode(createType);
-                  showSuccess('Placement mode', 'Click on the map to place the item.');
-                }}
-              >
-                Next: Click map to place
-              </button>
-            </div>
+            {createType !== 'safe' && (
+              <div className='text-right'>
+                <button
+                  disabled={placeMode != null}
+                  className={`px-3 py-2 rounded ${placeMode ? 'bg-white/10 text-white/60' : 'bg-white/20 text-white hover:bg-white/30'}`}
+                  onClick={() => {
+                    // Enter place mode after basic validation
+                    if (createType === 'quest') {
+                      if (!qTitle.trim())
+                        return showError('Missing title', 'Please enter a quest title.');
+                    } else if (createType === 'event') {
+                      if (!eTitle.trim())
+                        return showError('Missing title', 'Please enter an event title.');
+                    }
+                    setPlaceMode(createType);
+                    showSuccess('Placement mode', 'Click on the map to place the item.');
+                  }}
+                >
+                  Next: Click map to place
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Type-specific fields */}
@@ -955,6 +965,86 @@ export default function MasterMap() {
                     className='w-full bg-white/10 rounded px-3 py-2 text-white'
                   />
                 </div>
+              </div>
+              {/* Address search and placement for Safe Space */}
+              <div className='md:col-span-3'>
+                <label className='block text-xs text-gray-300 mb-1'>Address</label>
+                <div className='grid md:grid-cols-[1fr_auto_auto] gap-2'>
+                  <input
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder='Enter address or place name'
+                    className='w-full bg-white/10 rounded px-3 py-2 text-white'
+                  />
+                  <button
+                    className='px-3 py-2 rounded bg-white/20 text-white hover:bg-white/30'
+                    onClick={async () => {
+                      await geocodeAddress();
+                    }}
+                    disabled={geocoding}
+                  >
+                    {geocoding ? 'Finding…' : 'Find'}
+                  </button>
+                  <button
+                    className='px-3 py-2 rounded bg-violet-700 text-white disabled:opacity-50'
+                    disabled={!pendingLoc}
+                    onClick={async () => {
+                      if (!pendingLoc) return;
+                      if (!sName.trim())
+                        return showError('Missing name', 'Please enter a safe space name.');
+                      await createSafeSpace({
+                        lat: pendingLoc.lat,
+                        lng: pendingLoc.lng,
+                        name: sName || 'Safe Space',
+                        description: sDesc || null,
+                        grade_level: sGrade || null,
+                        contact_info: {
+                          ...(sContact || {}),
+                          logo_url: uploadedUrl || undefined,
+                        },
+                      });
+                    }}
+                  >
+                    Create at address
+                  </button>
+                </div>
+                {!!autoSuggests.length && (
+                  <div className='mt-2 bg-black/20 border border-white/10 rounded-xl p-2 max-h-40 overflow-auto'>
+                    {autoSuggests.map((s) => (
+                      <button
+                        key={s.place_id}
+                        className='block w-full text-left text-sm text-gray-200 hover:bg-white/10 rounded px-2 py-1'
+                        onClick={() => selectPlacePrediction(s.place_id, s.description)}
+                      >
+                        {s.description}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {!!geocodeResults.length && (
+                  <div className='mt-2 bg-black/20 border border-white/10 rounded-xl p-2 max-h-40 overflow-auto'>
+                    {geocodeResults.map((r, i) => (
+                      <button
+                        key={i}
+                        className='block w-full text-left text-sm text-gray-200 hover:bg-white/10 rounded px-2 py-1'
+                        onClick={() => {
+                          const loc = r.geometry?.location;
+                          if (loc) {
+                            const lat = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+                            const lng = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+                            setPendingLoc({ lat, lng });
+                            setAddress(r.formatted_address || address);
+                            try {
+                              mapRef.current?.flyTo?.({ center: [lng, lat], zoom: 15 });
+                            } catch {}
+                          }
+                        }}
+                      >
+                        {r.formatted_address || 'Unknown address'}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -59,14 +59,14 @@ const WalletChip: React.FC<WalletChipProps> = ({
       try {
         const walletData = await getMyWallet();
         setWallet(walletData);
+        setLoading(false);
+        setRefreshing(false);
       } catch (error: any) {
         console.error('Failed to fetch wallet:', error);
-
         // Only show error toast for manual refresh
         if (isRefresh) {
           showError('Failed to refresh balance', error.message);
         }
-      } finally {
         setLoading(false);
         setRefreshing(false);
       }
@@ -90,18 +90,22 @@ const WalletChip: React.FC<WalletChipProps> = ({
     let backoff = 30000; // 30s default
 
     const tick = async () => {
+      let next = backoff;
       try {
         await fetchWallet();
-        backoff = 15000; // faster after success
+        next = 15000; // faster after success
       } catch (e: any) {
         const msg = String(e?.message || '').toLowerCase();
-        if (msg.includes('no wallet')) backoff = 30000; // slow down if none
-        else backoff = Math.min(60000, backoff * 1.5); // mild exponential backoff
-      } finally {
-        if (!alive || !autoRefresh) return;
-        window.clearTimeout(timer);
-        timer = window.setTimeout(tick, backoff) as unknown as number;
+        if (msg.includes('no wallet'))
+          next = 30000; // slow down if none
+        else next = Math.min(60000, backoff * 1.5); // mild exponential backoff
       }
+      // schedule next run if still active
+      if (alive && autoRefresh) {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(tick, next) as unknown as number;
+      }
+      backoff = next;
     };
 
     // initial request
@@ -183,9 +187,9 @@ export const useWallet = () => {
     try {
       const walletData = await getMyWallet();
       setWallet(walletData);
+      setLoading(false);
     } catch (error) {
       console.error('Failed to refresh wallet:', error);
-    } finally {
       setLoading(false);
     }
   }, []);

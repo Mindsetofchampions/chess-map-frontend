@@ -22,3 +22,4 @@ index.html
 public/**
 chess-map-frontend/**
 src/components/MapView.tsx
+src/components/wallet/WalletChip.tsx

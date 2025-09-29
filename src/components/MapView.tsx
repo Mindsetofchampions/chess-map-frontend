@@ -621,7 +621,8 @@ const MapView: React.FC<MapViewProps> = ({
             const status = _e?.error?.status ?? _e?.statusCode ?? 0;
             const resource = _e?.error?.resourceType ?? _e?.resourceType ?? '';
             const url = String(_e?.error?.url ?? _e?.url ?? '');
-            const isTelemetry = /(^|\/)\/\/events\.mapbox\.com\//.test(url) || /events\.mapbox\.com/.test(url);
+            const isTelemetry =
+              /(^|\/)\/\/events\.mapbox\.com\//.test(url) || /events\.mapbox\.com/.test(url);
             if (isTelemetry) return; // ignore ad-blocked telemetry errors
             // If the map has fully loaded once, never fallback on subsequent noise
             if (mapLoadedRef.current) return;
