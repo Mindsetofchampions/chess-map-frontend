@@ -96,7 +96,17 @@ module.exports = {
     'import/no-default-export': 'off',
     semi: ['error', 'always'],
     quotes: ['error', 'single', { avoidEscape: true }],
-    'comma-dangle': ['error', 'always-multiline'],
+    // Align with project style: allow trailing commas in multiline constructs, including functions
+    'comma-dangle': [
+      'error',
+      {
+        arrays: 'always-multiline',
+        objects: 'always-multiline',
+        imports: 'always-multiline',
+        exports: 'always-multiline',
+        functions: 'always-multiline',
+      },
+    ],
     'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
     'object-curly-spacing': ['error', 'always'],
@@ -206,5 +216,4 @@ module.exports = {
       },
     },
   ],
-  ignorePatterns: ['dist/', 'build/', 'node_modules/', '*.min.js', 'coverage/', '.eslintrc.js'],
 };

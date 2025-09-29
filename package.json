@@ -34,6 +34,7 @@
     "sanity:cams": "node --loader ts-node/esm scripts/sanity-cams.ts",
     "sanity:quests": "node --loader ts-node/esm scripts/sanity-quests.ts",
     "smoke:quests": "node --loader ts-node/esm scripts/smoke-quests-e2e.ts",
+    "smoke:onboarding": "node --loader ts-node/esm scripts/smoke-onboarding.ts",
     "smoke:map": "node --loader ts-node/esm scripts/smoke-map-layers.ts",
     "smoke:magic-link": "node --loader ts-node/esm scripts/smoke-magic-link.ts",
     "check:mapbox": "node --loader ts-node/esm scripts/check-mapbox-token.ts",

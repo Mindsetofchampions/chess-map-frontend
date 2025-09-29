@@ -1,3 +1,4 @@
+// Prettier is the single source of truth for formatting. ESLint formatting rules should defer to these.
 module.exports = {
   singleQuote: true,
   semi: true,
@@ -5,7 +6,8 @@ module.exports = {
   useTabs: false,
   printWidth: 100,
   proseWrap: 'preserve',
-  trailingComma: 'es5',
+  // Align with ESLint comma-dangle configuration and existing code style
+  trailingComma: 'all',
   bracketSpacing: true,
   bracketSameLine: false,
   jsxSingleQuote: true,
