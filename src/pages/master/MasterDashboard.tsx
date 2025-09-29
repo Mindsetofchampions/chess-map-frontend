@@ -139,6 +139,7 @@ const MasterDashboard: React.FC = () => {
   const [userReason, setUserReason] = useState('Direct user allocation');
   const [allocatingUser, setAllocatingUser] = useState(false);
   const [pendingOrgOnboardings, setPendingOrgOnboardings] = useState<number>(0);
+  const [pendingParentConsents, setPendingParentConsents] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<string>('orgs');
 
   /**
@@ -177,6 +178,21 @@ const MasterDashboard: React.FC = () => {
     } catch (err) {
       // non-fatal for dashboard
       setPendingOrgOnboardings(0);
+    }
+  }, []);
+
+  // Fetch pending parent consents count for quick stats
+  const fetchPendingParentConsents = useCallback(async () => {
+    try {
+      const { count, error } = await supabase
+        .from('parent_consents')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'PENDING');
+      if (error) throw error;
+      setPendingParentConsents(Number(count ?? 0));
+    } catch (err) {
+      // non-fatal for dashboard
+      setPendingParentConsents(0);
     }
   }, []);
 
@@ -394,6 +410,7 @@ const MasterDashboard: React.FC = () => {
     fetchPlatformBalance();
     fetchOrgBalances();
     fetchPendingOrgOnboardings();
+    fetchPendingParentConsents();
 
     // Set up realtime subscription for pending quests
     const subscription = subscribeToApprovals(() => {
@@ -416,6 +433,14 @@ const MasterDashboard: React.FC = () => {
       )
       .subscribe();
 
+    // Subscribe to parent_consents changes for realtime pending count updates
+    const pcChannel = supabase
+      .channel('parent_consents_watch')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'parent_consents' }, () => {
+        fetchPendingParentConsents();
+      })
+      .subscribe();
+
     return () => {
       subscription.unsubscribe();
       try {
@@ -423,8 +448,13 @@ const MasterDashboard: React.FC = () => {
       } catch (e) {
         /* ignore */
       }
+      try {
+        supabase.removeChannel(pcChannel);
+      } catch (e) {
+        /* ignore */
+      }
     };
-  }, [fetchPendingQuests, fetchPlatformBalance, fetchOrgBalances]);
+  }, [fetchPendingQuests, fetchPlatformBalance, fetchOrgBalances, fetchPendingParentConsents]);
 
   // Load active org options for allocation dropdown
   const loadActiveOrgs = useCallback(async () => {
@@ -649,12 +679,20 @@ const MasterDashboard: React.FC = () => {
             delay={0.15}
           />
           <StatsCard
+            title='Pending Parent Consents'
+            value={pendingParentConsents.toString()}
+            icon={<Shield className='w-6 h-6 text-white' />}
+            color='bg-electric-blue-500/20 border border-electric-blue-500/30'
+            href='/master/parent-consents'
+            delay={0.2}
+          />
+          <StatsCard
             title='System Diagnostics'
             value='Check'
             icon={<Settings className='w-6 h-6 text-white' />}
             color='bg-electric-blue-500/20 border border-electric-blue-500/30'
             href='/admin/diagnostics'
-            delay={0.2}
+            delay={0.25}
           />
           <StatsCard
             title='All Quests'
@@ -891,7 +929,7 @@ const MasterDashboard: React.FC = () => {
           <GlassContainer variant='card'>
             <h3 className='text-xl font-semibold text-white mb-4'>Quick Navigation</h3>
 
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
               <Link
                 to='/master/quests/approvals'
                 className='flex items-center gap-3 bg-glass-light border-glass hover:bg-glass-dark rounded-xl p-4 text-gray-300 hover:text-white transition-all duration-200 group'
@@ -915,6 +953,19 @@ const MasterDashboard: React.FC = () => {
                 <div>
                   <h4 className='font-medium text-white'>All Quests</h4>
                   <p className='text-gray-300 text-sm'>Browse all available quests</p>
+                </div>
+              </Link>
+
+              <Link
+                to='/master/parent-consents'
+                className='flex items-center gap-3 bg-glass-light border-glass hover:bg-glass-dark rounded-xl p-4 text-gray-300 hover:text-white transition-all duration-200 group'
+              >
+                <div className='p-2 bg-electric-blue-500/20 rounded-lg group-hover:bg-electric-blue-500/30 transition-colors'>
+                  <Shield className='w-5 h-5 text-electric-blue-400' />
+                </div>
+                <div>
+                  <h4 className='font-medium text-white'>Parent Consents</h4>
+                  <p className='text-gray-300 text-sm'>Review student onboarding consents</p>
                 </div>
               </Link>
 
