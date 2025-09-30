@@ -167,6 +167,16 @@ const WalletChip: React.FC<WalletChipProps> = ({
             <RefreshCw className={`w-3 h-3 text-gray-400 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
         )}
+
+        {/* subtle helper badge: coin award visibility */}
+        {!loading && (
+          <span
+            title='Admin coin awards on approval are deposited here. See Ledger for details.'
+            className='hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-gray-300 border border-white/10'
+          >
+            awards auto-credited
+          </span>
+        )}
       </div>
     </motion.div>
   );

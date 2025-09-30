@@ -6,7 +6,9 @@ if (fs.existsSync('.env.scripts.local')) dotenvConfig({ path: '.env.scripts.loca
 else dotenvConfig();
 
 function randId(len = 8) {
-  return Math.random().toString(36).slice(2, 2 + len);
+  return Math.random()
+    .toString(36)
+    .slice(2, 2 + len);
 }
 
 async function ensureBucket(url: string, service: string, bucket = 'parent_ids') {

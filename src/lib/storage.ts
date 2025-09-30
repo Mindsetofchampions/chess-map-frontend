@@ -54,9 +54,17 @@ export async function getSignedUrlFromStoredUrl(
 
   // Guard 2: already signed (common Supabase pattern includes token or /object/sign/)
   try {
-    const u = new URL(url, typeof window !== 'undefined' ? window.location.origin : 'https://local');
+    const u = new URL(
+      url,
+      typeof window !== 'undefined' ? window.location.origin : 'https://local',
+    );
     const qs = u.searchParams;
-    if (qs.has('token') || qs.has('signature') || qs.has('expires') || u.pathname.includes('/storage/v1/object/sign/')) {
+    if (
+      qs.has('token') ||
+      qs.has('signature') ||
+      qs.has('expires') ||
+      u.pathname.includes('/storage/v1/object/sign/')
+    ) {
       return url; // already signed, just use it
     }
   } catch {
