@@ -1,3 +1,4 @@
+/* prettier-ignore-start */
 import { motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 
@@ -5,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import useStudentProgress from '@/hooks/useStudentProgress';
 import CHESS_COLORS from '@/lib/chessColors';
 import { getMyWallet } from '@/lib/supabase';
+import { useWallet } from '@/components/wallet/WalletChip';
 
 const categories = [
   { key: 'character', label: 'Character', color: CHESS_COLORS.character },
@@ -20,59 +22,20 @@ const StudentProfileCard: React.FC = () => {
     user?.user_metadata?.full_name ||
     user?.user_metadata?.displayName ||
     user?.email?.split('@')[0];
-  const [coins, setCoins] = useState<number>(0);
-  const [walletLoading, setWalletLoading] = useState(false);
+  const { balance, loading: walletLoading, refreshWallet } = useWallet();
   const [walletError, setWalletError] = useState<string | null>(null);
   const { progress, loading } = useStudentProgress();
 
-  const fetchWallet = async () => {
-    setWalletLoading(true);
-    setWalletError(null);
-    try {
-      const w = await getMyWallet();
-      setCoins(Number((w as any)?.balance ?? 0));
-    } catch (err: any) {
-      console.error('Failed to fetch wallet', err);
-      setWalletError(err?.message || 'Failed to fetch wallet');
-    } finally {
-      setWalletLoading(false);
-    }
-  };
-
+  // Keep local error message synced on failures of manual refresh
   useEffect(() => {
-    fetchWallet();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Realtime: subscribe to my wallet and update coins immediately
-  useEffect(() => {
-    let sub: any;
     (async () => {
       try {
-        const { supabase } = await import('@/lib/supabase');
-        const session = await supabase.auth.getSession();
-        const uid = session?.data?.session?.user?.id;
-        if (!uid) return;
-        sub = supabase
-          .channel('user_wallet_card_channel')
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'coin_wallets', filter: `user_id=eq.${uid}` },
-            async () => {
-              try {
-                const w = await getMyWallet();
-                setCoins(Number((w as any)?.balance ?? 0));
-              } catch {}
-            },
-          )
-          .subscribe();
-      } catch {}
+        await getMyWallet();
+        setWalletError(null);
+      } catch (err: any) {
+        setWalletError(err?.message || 'Failed to fetch wallet');
+      }
     })();
-    return () => {
-      try {
-        sub?.unsubscribe?.();
-      } catch {}
-    };
   }, []);
 
   return (
@@ -94,11 +57,11 @@ const StudentProfileCard: React.FC = () => {
           <div className='text-right'>
             <div className='flex items-center gap-2 justify-end'>
               <div className='text-lg font-semibold text-yellow-300'>
-                {walletLoading ? '...' : `${coins} ✦`}
+                {walletLoading ? '...' : `${balance} ✦`}
               </div>
               <button
                 title='Refresh wallet'
-                onClick={fetchWallet}
+                onClick={refreshWallet}
                 className='text-gray-300 hover:text-white text-xs'
               >
                 Refresh
@@ -138,3 +101,4 @@ const StudentProfileCard: React.FC = () => {
 };
 
 export default StudentProfileCard;
+/* prettier-ignore-end */

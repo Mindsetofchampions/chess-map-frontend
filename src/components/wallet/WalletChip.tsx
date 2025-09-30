@@ -230,24 +230,82 @@ export default WalletChip;
  */
 export const useWallet = () => {
   const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [balance, setBalance] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const refreshWallet = useCallback(async () => {
     setLoading(true);
     try {
       const walletData = await getMyWallet();
       setWallet(walletData);
-      setLoading(false);
+      setBalance(Number(walletData?.balance ?? 0));
     } catch (error) {
-      console.error('Failed to refresh wallet:', error);
+      // If wallet row doesn't exist yet, keep current balance (may be fed by ledger events)
+      console.warn('useWallet: failed to fetch wallet, falling back to live balance', error);
+    } finally {
       setLoading(false);
     }
   }, []);
 
-  return {
-    wallet,
-    loading,
-    refreshWallet,
-    balance: wallet?.balance || 0,
-  };
+  // Initial fetch
+  useEffect(() => {
+    refreshWallet();
+  }, [refreshWallet]);
+
+  // Realtime subscriptions: coin_wallets (authoritative) and coin_ledger (optimistic)
+  useEffect(() => {
+    let channel: any | undefined;
+    (async () => {
+      try {
+        const { supabase } = await import('@/lib/supabase');
+        const session = await supabase.auth.getSession();
+        const uid = session?.data?.session?.user?.id;
+        if (!uid) return;
+
+        channel = supabase
+          .channel('user_wallet_shared_channel')
+          // Authoritative wallet changes
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'coin_wallets',
+              filter: `user_id=eq.${uid}`,
+            },
+            () => {
+              // Re-fetch authoritative balance
+              void refreshWallet();
+            },
+          )
+          // Optimistic updates from ledger inserts
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'coin_ledger',
+              filter: `user_id=eq.${uid}`,
+            },
+            (payload: any) => {
+              const delta = Number(payload?.new?.delta ?? 0);
+              if (!isNaN(delta) && delta !== 0) {
+                setBalance((b) => Number(b) + delta);
+              }
+            },
+          )
+          .subscribe();
+      } catch (e) {
+        // non-fatal
+      }
+    })();
+
+    return () => {
+      try {
+        channel?.unsubscribe?.();
+      } catch {}
+    };
+  }, [refreshWallet]);
+
+  return { wallet, balance, loading, refreshWallet };
 };

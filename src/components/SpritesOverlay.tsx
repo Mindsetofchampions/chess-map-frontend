@@ -1,4 +1,4 @@
-// prettier-ignore
+/* prettier-ignore-start */
 import { motion } from 'framer-motion';
 import React, { useState } from 'react';
 
@@ -94,3 +94,4 @@ const SpritesOverlay: React.FC<Props> = ({ onSpriteClick, showModal = true }) =>
 };
 
 export default SpritesOverlay;
+/* prettier-ignore-end */
