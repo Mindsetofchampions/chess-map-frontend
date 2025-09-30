@@ -117,6 +117,46 @@ const WalletChip: React.FC<WalletChipProps> = ({
     };
   }, [fetchWallet, autoRefresh]);
 
+  // Realtime: subscribe to my coin_wallet changes and refresh immediately
+  useEffect(() => {
+    let subscription: any;
+    (async () => {
+      try {
+        const { supabase } = await import('@/lib/supabase');
+        const session = await supabase.auth.getSession();
+        const uid = session?.data?.session?.user?.id;
+        if (!uid) return;
+
+        const channel = supabase
+          .channel('user_wallet_channel')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'coin_wallets',
+              filter: `user_id=eq.${uid}`,
+            },
+            () => {
+              // refresh balance on any change to my wallet row
+              void fetchWallet(true);
+            },
+          )
+          .subscribe();
+
+        subscription = channel;
+      } catch (e) {
+        // non-fatal
+      }
+    })();
+
+    return () => {
+      try {
+        subscription?.unsubscribe?.();
+      } catch {}
+    };
+  }, [fetchWallet]);
+
   /**
    * Format balance for display
    */

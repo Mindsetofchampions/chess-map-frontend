@@ -20,7 +20,7 @@ const StudentProfileCard: React.FC = () => {
     user?.user_metadata?.full_name ||
     user?.user_metadata?.displayName ||
     user?.email?.split('@')[0];
-  const [coins, setCoins] = useState<number>((user && (user as any).app_metadata?.coins) || 0);
+  const [coins, setCoins] = useState<number>(0);
   const [walletLoading, setWalletLoading] = useState(false);
   const [walletError, setWalletError] = useState<string | null>(null);
   const { progress, loading } = useStudentProgress();
@@ -30,7 +30,7 @@ const StudentProfileCard: React.FC = () => {
     setWalletError(null);
     try {
       const w = await getMyWallet();
-      setCoins(Number((w as any)?.coins ?? 0));
+      setCoins(Number((w as any)?.balance ?? 0));
     } catch (err: any) {
       console.error('Failed to fetch wallet', err);
       setWalletError(err?.message || 'Failed to fetch wallet');
@@ -42,6 +42,37 @@ const StudentProfileCard: React.FC = () => {
   useEffect(() => {
     fetchWallet();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Realtime: subscribe to my wallet and update coins immediately
+  useEffect(() => {
+    let sub: any;
+    (async () => {
+      try {
+        const { supabase } = await import('@/lib/supabase');
+        const session = await supabase.auth.getSession();
+        const uid = session?.data?.session?.user?.id;
+        if (!uid) return;
+        sub = supabase
+          .channel('user_wallet_card_channel')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'coin_wallets', filter: `user_id=eq.${uid}` },
+            async () => {
+              try {
+                const w = await getMyWallet();
+                setCoins(Number((w as any)?.balance ?? 0));
+              } catch {}
+            },
+          )
+          .subscribe();
+      } catch {}
+    })();
+    return () => {
+      try {
+        sub?.unsubscribe?.();
+      } catch {}
+    };
   }, []);
 
   return (

@@ -1,3 +1,4 @@
+// prettier-ignore
 import { motion } from 'framer-motion';
 import React, { useState } from 'react';
 
@@ -41,6 +42,8 @@ const SpritesOverlay: React.FC<Props> = ({ onSpriteClick, showModal = true }) =>
     setActiveSprite(k);
   };
 
+  const hasModal = Boolean(activeSprite && showModal);
+
   return (
     <div className='absolute inset-0 pointer-events-none z-[60]'>
       {SPRITES.map((s, i) => {
@@ -49,17 +52,28 @@ const SpritesOverlay: React.FC<Props> = ({ onSpriteClick, showModal = true }) =>
         return (
           <motion.button
             key={s.key}
-            className='pointer-events-auto p-0 touch-manipulation'
+            className={
+              `p-0 touch-manipulation ${
+                hasModal ? 'pointer-events-none opacity-60' : 'pointer-events-auto'
+              }`
+            }
             style={{ left, top, position: 'absolute', zIndex: 40 }}
             initial={{ scale: 0 }}
             animate={{ scale: [1, 1.05, 1], y: [0, -6, 0] }}
             whileTap={{ scale: 0.9 }}
-            transition={{ delay: i * 0.2, duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            transition={{
+              delay: i * 0.2,
+              duration: 3,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
             onClick={() => handleClick(s.key)}
             aria-label={`${s.label} sprite`}
           >
             <div
-              className={`w-16 h-16 md:w-20 md:h-20 rounded-full border-2 flex items-center justify-center shadow-xl ${s.colorClass} bg-black/10`}
+              className={
+                `w-16 h-16 md:w-20 md:h-20 rounded-full border-2 flex items-center justify-center shadow-xl ${s.colorClass} bg-black/10`
+              }
             >
               <img
                 src={s.src}
@@ -72,7 +86,9 @@ const SpritesOverlay: React.FC<Props> = ({ onSpriteClick, showModal = true }) =>
           </motion.button>
         );
       })}
-      {showModal && <SpriteModal personaKey={activeSprite} onClose={() => setActiveSprite(null)} />}
+      {showModal && (
+        <SpriteModal personaKey={activeSprite} onClose={() => setActiveSprite(null)} />
+      )}
     </div>
   );
 };

@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/rules-of-hooks, jsx-a11y/no-noninteractive-element-interactions */
 import { motion } from 'framer-motion';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { getPersonaInfo } from '@/assets/personas';
@@ -9,14 +10,36 @@ interface Props {
   onClose: () => void;
 }
 
-const SpriteModal: React.FC<Props> = ({ personaKey, onClose }) => {
+const ModalBody: React.FC<Required<Props>> = ({ personaKey, onClose }) => {
   const navigate = useNavigate();
-  if (!personaKey) return null;
+
+  // Close on Escape key
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const info = getPersonaInfo(personaKey as any);
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm'>
+    <div
+      className='fixed inset-0 z-[90] flex items-center justify-center p-4'
+      role='dialog'
+      aria-modal='true'
+    >
+      {/* Backdrop that closes on click or Enter/Space */}
+      <button
+        type='button'
+        className='absolute inset-0 bg-black/50 backdrop-blur-sm'
+        aria-label='Close modal'
+        onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') onClose();
+        }}
+      />
       <motion.div
         className='bg-glass-dark border-glass-dark rounded-2xl p-6 max-w-sm w-full'
         initial={{ scale: 0.9, opacity: 0 }}
@@ -82,6 +105,11 @@ const SpriteModal: React.FC<Props> = ({ personaKey, onClose }) => {
       </motion.div>
     </div>
   );
+};
+
+const SpriteModal: React.FC<Props> = ({ personaKey, onClose }) => {
+  if (!personaKey) return null;
+  return <ModalBody personaKey={personaKey} onClose={onClose} />;
 };
 
 export default SpriteModal;

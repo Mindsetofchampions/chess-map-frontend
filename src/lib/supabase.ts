@@ -152,7 +152,13 @@ export async function getMyWallet(): Promise<Wallet> {
       throw new Error(mappedError.message);
     }
 
-    return data as Wallet;
+    // Normalize shape: ensure `balance` exists (fallback to legacy `coins`)
+    const normalized: any = { ...(data as any) };
+    if (typeof normalized?.balance !== 'number' && typeof normalized?.coins === 'number') {
+      normalized.balance = Number(normalized.coins);
+    }
+    if (typeof normalized?.balance !== 'number') normalized.balance = 0;
+    return normalized as Wallet;
   } catch (error) {
     const mappedError = mapPgError(error);
     throw new Error(mappedError.message);
