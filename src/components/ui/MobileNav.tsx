@@ -8,9 +8,11 @@ const MobileNav: React.FC = () => {
   const { role } = useAuth();
   const location = useLocation();
 
-  // Hide on landing/auth pages
+  // Hide on landing/auth/onboarding pages to avoid covering critical actions
   const hideOnPaths = ['/', '/login', '/signup'];
-  if (hideOnPaths.includes(location.pathname)) return null;
+  const isHidden =
+    hideOnPaths.includes(location.pathname) || location.pathname.startsWith('/onboarding');
+  if (isHidden) return null;
 
   const items = [
     { to: '/map', label: 'Map', icon: <Map className='w-5 h-5' /> },

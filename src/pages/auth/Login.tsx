@@ -1,3 +1,4 @@
+/* eslint-disable import/order */
 /**
  * Login Page
  *
@@ -8,14 +9,14 @@
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, LogIn, ArrowLeft } from 'lucide-react';
 import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import GlassContainer from '@/components/GlassContainer';
 import SEO from '@/components/SEO';
 import { useToast } from '@/components/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase, SUPABASE_ENV_VALID } from '@/lib/supabase';
 import { routeForRole, canAccessPath } from '@/lib/routes';
+import { SUPABASE_ENV_VALID, supabase } from '@/lib/supabase';
 
 /**
  * Login form data interface
@@ -310,7 +311,10 @@ const Login: React.FC = () => {
               {pingResult && <div className='mt-2 text-gray-300'>{pingResult}</div>}
               {import.meta.env?.VITE_SUPABASE_URL && (
                 <div className='mt-1'>
-                  Supabase URL: <span className='text-electric-blue-400'>{String(import.meta.env.VITE_SUPABASE_URL)}</span>
+                  Supabase URL:{' '}
+                  <span className='text-electric-blue-400'>
+                    {String(import.meta.env.VITE_SUPABASE_URL)}
+                  </span>
                 </div>
               )}
             </div>

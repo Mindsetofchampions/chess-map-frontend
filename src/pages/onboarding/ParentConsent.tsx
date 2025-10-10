@@ -257,12 +257,17 @@ export default function ParentConsent() {
         </div>
       </div>
 
+      <div className='text-gray-300 text-sm'>
+        When you submit, we'll securely save your signature and ID, notify the master admin for
+        review, and take you to your dashboard while your consent is pending.
+      </div>
+
       <button
         onClick={submit}
         disabled={submitting}
         className='bg-cyber-green-500/20 border border-cyber-green-500/30 text-cyber-green-300 hover:bg-cyber-green-500/30 rounded-lg px-4 py-2'
       >
-        {submitting ? 'Submitting…' : 'Submit Consent'}
+        {submitting ? 'Submitting…' : 'Save & Send for Review'}
       </button>
     </div>
   );
