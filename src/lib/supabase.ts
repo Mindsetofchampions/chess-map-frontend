@@ -13,7 +13,16 @@ import { mapPgError } from '@/utils/mapPgError';
 // Environment validation
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-export const SUPABASE_ENV_VALID = Boolean(supabaseUrl && supabaseAnonKey);
+// Stronger validation: avoid truthy-but-placeholder values
+const urlValid =
+  typeof supabaseUrl === 'string' &&
+  /^https?:\/\//.test(supabaseUrl) &&
+  !/YOUR-PROJECT/i.test(supabaseUrl);
+const keyValid =
+  typeof supabaseAnonKey === 'string' &&
+  supabaseAnonKey.length > 20 &&
+  !/YOUR_ANON_KEY/i.test(supabaseAnonKey);
+export const SUPABASE_ENV_VALID = Boolean(urlValid && keyValid);
 
 // Provide a no-op client shape to avoid hard crashes when env is missing
 function createNoopClient(): any {
