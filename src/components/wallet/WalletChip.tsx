@@ -10,6 +10,7 @@ import { Coins, RefreshCw } from 'lucide-react';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { useToast } from '@/components/ToastProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import { getMyWallet } from '@/lib/supabase';
 import type { Wallet } from '@/types/backend';
 
@@ -40,122 +41,28 @@ const WalletChip: React.FC<WalletChipProps> = ({
   ...props
 }) => {
   const { showError } = useToast();
-
-  const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { balance, loading, refreshWallet } = useWallet();
   const [refreshing, setRefreshing] = useState(false);
 
-  /**
-   * Fetch wallet data
-   */
-  const fetchWallet = useCallback(
-    async (isRefresh = false) => {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refreshWallet();
+    } catch (e: any) {
+      showError('Failed to refresh balance', e?.message || 'Unknown error');
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshWallet, showError]);
 
-      try {
-        const walletData = await getMyWallet();
-        setWallet(walletData);
-        setLoading(false);
-        setRefreshing(false);
-      } catch (error: any) {
-        console.error('Failed to fetch wallet:', error);
-        // Only show error toast for manual refresh
-        if (isRefresh) {
-          showError('Failed to refresh balance', error.message);
-        }
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [showError],
-  );
-
-  /**
-   * Manual refresh handler
-   */
-  const handleRefresh = useCallback(() => {
-    fetchWallet(true);
-  }, [fetchWallet]);
-
-  /**
-   * Initial load and auto-refresh setup
-   */
+  // Optional periodic refresh, in case realtime misses
   useEffect(() => {
-    let alive = true;
-    let timer: number | undefined;
-    let backoff = 30000; // 30s default
-
-    const tick = async () => {
-      let next = backoff;
-      try {
-        await fetchWallet();
-        next = 15000; // faster after success
-      } catch (e: any) {
-        const msg = String(e?.message || '').toLowerCase();
-        if (msg.includes('no wallet'))
-          next = 30000; // slow down if none
-        else next = Math.min(60000, backoff * 1.5); // mild exponential backoff
-      }
-      // schedule next run if still active
-      if (alive && autoRefresh) {
-        window.clearTimeout(timer);
-        timer = window.setTimeout(tick, next) as unknown as number;
-      }
-      backoff = next;
-    };
-
-    // initial request
-    tick();
-
-    return () => {
-      alive = false;
-      if (timer) window.clearTimeout(timer);
-    };
-  }, [fetchWallet, autoRefresh]);
-
-  // Realtime: subscribe to my coin_wallet changes and refresh immediately
-  useEffect(() => {
-    let subscription: any;
-    (async () => {
-      try {
-        const { supabase } = await import('@/lib/supabase');
-        const session = await supabase.auth.getSession();
-        const uid = session?.data?.session?.user?.id;
-        if (!uid) return;
-
-        const channel = supabase
-          .channel('user_wallet_channel')
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'coin_wallets',
-              filter: `user_id=eq.${uid}`,
-            },
-            () => {
-              // refresh balance on any change to my wallet row
-              void fetchWallet(true);
-            },
-          )
-          .subscribe();
-
-        subscription = channel;
-      } catch (e) {
-        // non-fatal
-      }
-    })();
-
-    return () => {
-      try {
-        subscription?.unsubscribe?.();
-      } catch {}
-    };
-  }, [fetchWallet]);
+    if (!autoRefresh) return;
+    const t = window.setInterval(() => {
+      void refreshWallet();
+    }, 30000);
+    return () => window.clearInterval(t);
+  }, [autoRefresh, refreshWallet]);
 
   /**
    * Format balance for display
@@ -193,7 +100,7 @@ const WalletChip: React.FC<WalletChipProps> = ({
           </div>
         ) : (
           <span className='text-yellow-400 font-semibold text-sm whitespace-nowrap'>
-            {formatBalance(wallet?.balance || 0)} coins
+            {formatBalance(balance || 0)} coins
           </span>
         )}
 
@@ -229,11 +136,13 @@ export default WalletChip;
  * Provides wallet state and refresh functions for other components
  */
 export const useWallet = () => {
+  const { user } = useAuth();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [balance, setBalance] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
 
   const refreshWallet = useCallback(async () => {
+    if (!user?.id) return;
     setLoading(true);
     try {
       const walletData = await getMyWallet();
@@ -247,10 +156,12 @@ export const useWallet = () => {
     }
   }, []);
 
-  // Initial fetch
+  // Initial fetch when user available
   useEffect(() => {
-    refreshWallet();
-  }, [refreshWallet]);
+    if (user?.id) {
+      refreshWallet();
+    }
+  }, [user?.id, refreshWallet]);
 
   // Realtime subscriptions: coin_wallets (authoritative) and coin_ledger (optimistic)
   useEffect(() => {
@@ -258,8 +169,7 @@ export const useWallet = () => {
     (async () => {
       try {
         const { supabase } = await import('@/lib/supabase');
-        const session = await supabase.auth.getSession();
-        const uid = session?.data?.session?.user?.id;
+        const uid = user?.id;
         if (!uid) return;
 
         channel = supabase
@@ -305,7 +215,7 @@ export const useWallet = () => {
         channel?.unsubscribe?.();
       } catch {}
     };
-  }, [refreshWallet]);
+  }, [user?.id, refreshWallet]);
 
   return { wallet, balance, loading, refreshWallet };
 };

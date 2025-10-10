@@ -47,15 +47,21 @@ export const useQuests = (gradeFilter?: 'ES' | 'MS' | 'HS'): UseQuestsReturn => 
       let query = supabase
         .from('quests')
         .select(
-          'id, title, description, status, active, reward_coins, qtype, config, attribute_id, created_at, grade_level',
+          'id, title, description, status, active, reward_coins, qtype, config, attribute_id, created_at, grade_level, grade_bands, lat, lng',
         );
 
       query = query.eq('active', true).eq('status', 'approved');
 
-      // If gradeFilter provided, attempt to filter by explicit grade_level column OR config JSON field
+      // If gradeFilter provided:
+      // - include quests explicitly matching grade_level
+      // - include quests where grade_bands (text[]) contains the grade
+      // - include quests with no grade restriction (grade_level IS NULL OR grade_bands IS NULL)
       if (gradeFilter) {
-        // prefer explicit grade_level
-        query = query.or(`grade_level.eq.${gradeFilter},config->>grade_level.eq.${gradeFilter}`);
+        // Single OR expression combining all relevant conditions
+        // Note: PostgREST allows using operators like cs (contains) within or()
+        query = query.or(
+          `grade_level.eq.${gradeFilter},grade_bands.cs.{${gradeFilter}},grade_level.is.null,grade_bands.is.null`,
+        );
       }
 
       query = query.order('created_at', { ascending: false });
@@ -119,16 +125,29 @@ export const useQuests = (gradeFilter?: 'ES' | 'MS' | 'HS'): UseQuestsReturn => 
     // Initial fetch
     fetchMapQuests();
 
-    // Set up real-time subscription for quest changes
+    // Debounce to avoid rapid repeated refreshes
+    let t: number | null = null;
+    const debouncedRefresh = () => {
+      if (t) window.clearTimeout(t);
+      t = window.setTimeout(() => {
+        fetchMapQuests();
+      }, 500) as unknown as number;
+    };
+
+    // Set up real-time subscription for quest changes - only approved/active matter for students
     const subscription = supabase
       .channel('quests_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'quests' }, () => {
-        console.log('Quests updated, refreshing map quests...');
-        fetchMapQuests();
-      })
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'quests', filter: 'status=eq.approved' },
+        () => {
+          debouncedRefresh();
+        },
+      )
       .subscribe();
 
     return () => {
+      if (t) window.clearTimeout(t);
       subscription.unsubscribe();
     };
   }, [fetchMapQuests]);

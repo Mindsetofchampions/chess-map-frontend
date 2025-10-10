@@ -1,12 +1,11 @@
-/* prettier-ignore-start */
 import { motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 
+import { useWallet } from '@/components/wallet/WalletChip';
 import { useAuth } from '@/contexts/AuthContext';
 import useStudentProgress from '@/hooks/useStudentProgress';
 import CHESS_COLORS from '@/lib/chessColors';
 import { getMyWallet } from '@/lib/supabase';
-import { useWallet } from '@/components/wallet/WalletChip';
 
 const categories = [
   { key: 'character', label: 'Character', color: CHESS_COLORS.character },
@@ -101,4 +100,4 @@ const StudentProfileCard: React.FC = () => {
 };
 
 export default StudentProfileCard;
-/* prettier-ignore-end */
+

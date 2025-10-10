@@ -60,9 +60,11 @@ const QuestsList: React.FC = () => {
       const { data, error } = await supabase
         .from('quests')
         .select(
-          'id, title, description, status, active, reward_coins, qtype, config, attribute_id, created_at, seats_total, seats_taken, grade_bands, lat, lng',
+          'id, title, description, status, active, reward_coins, qtype, config, attribute_id, created_at, seats_total, seats_taken, grade_level, grade_bands, lat, lng',
         )
         .eq('qtype', 'mcq') // Only MCQ quests for now
+        .eq('active', true)
+        .eq('status', 'approved')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -161,10 +163,14 @@ const QuestsList: React.FC = () => {
     // Set up real-time subscription for quest updates
     const subscription = supabase
       .channel('quests_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'quests' }, () => {
-        console.log('Quests updated, refreshing...');
-        fetchQuests();
-      })
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'quests', filter: 'status=eq.approved' },
+        () => {
+          console.log('Quests updated, refreshing...');
+          fetchQuests();
+        },
+      )
       .subscribe();
 
     return () => {

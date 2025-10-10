@@ -39,14 +39,15 @@ const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
     | 'HS'
     | null;
   const { mapQuests, loading, error } = useQuests(grade ?? undefined);
-  const [markersAdded, setMarkersAdded] = useState(false);
+  // Track markers created so we can clean up before re-adding
+  const markersRef = React.useRef<any[]>([]);
   const [safeSpaces, setSafeSpaces] = useState<any[]>([]);
 
   /**
    * Add quest markers to map
    */
   useEffect(() => {
-    if (!map || markersAdded) return;
+    if (!map) return;
 
     // fetch approved safe spaces for this grade
     (async () => {
@@ -59,6 +60,12 @@ const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
         console.warn('Failed to load safe spaces', e);
       }
     })();
+
+    // Remove existing quest markers before re-adding
+    try {
+      markersRef.current.forEach((m) => m?.remove?.());
+    } catch {}
+    markersRef.current = [];
 
     // Add quest markers to the map
     mapQuests.forEach((quest) => {
@@ -112,7 +119,8 @@ const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
         });
 
         // Create marker
-        new GL.Marker(markerElement).setLngLat([quest.lng, quest.lat]).addTo(map);
+        const marker = new GL.Marker(markerElement).setLngLat([quest.lng, quest.lat]).addTo(map);
+        markersRef.current.push(marker);
       }
     });
 
@@ -130,8 +138,8 @@ const QuestMapOverlay: React.FC<QuestMapOverlayProps> = ({ map }) => {
       }
     });
 
-    setMarkersAdded(true);
-  }, [map, mapQuests, markersAdded]);
+    // re-run when mapQuests changes to reflect realtime additions
+  }, [map, mapQuests, grade]);
 
   // Show loading or error states if needed
   if (loading) {
