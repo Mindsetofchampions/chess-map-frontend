@@ -14,6 +14,8 @@ The scripts auto-load env from `.env.scripts.local` if present, otherwise fall b
 - `npm run sanity:quests` – Checks quest RPCs and key columns exist.
 - `npm run smoke:quests` – Authenticates as an org account, creates a quest, and optionally approves it as master.
 - `npm run smoke:map` – Authenticates as master, inserts a safe space and an event, verifies presence, and optionally cleans up with `SMOKE_CLEANUP=1`.
+- `npm run consent:pending` – Lists recent PENDING rows from `parent_consents` (requires service role key).
+- `npm run consent:approve` – Approves a PENDING consent via RPC and awards coins, then verifies wallet/ledger.
 
 ### Required env for smoke
 
@@ -43,6 +45,34 @@ SMOKE_CLEANUP=1 MASTER_EMAIL='you@example.com' MASTER_PASSWORD='yourpassword' np
 ```
 
 3. The script will print inserted IDs and verify that they can be read back. If the `attributes` table is empty, the script will proceed without attribute dependencies (safe spaces and events only).
+
+## Parent consent helpers
+
+Quickly inspect and approve parent consents from the command line.
+
+List pending consents (top 10):
+
+```
+npm run -s consent:pending
+```
+
+Approve the most recent pending consent with a 50-coin award and a note:
+
+```
+npm run -s consent:approve -- --coins 50 --notes "approved via script"
+```
+
+Approve a specific consent by ID and award 77 coins:
+
+```
+npm run -s consent:approve -- --id 77498a4f-25ef-464a-b928-df7aaa84995b --coins 77 --notes "QA pass"
+```
+
+Notes:
+
+- These scripts load env from `.env.scripts.local` if present; otherwise they fall back to `.env`.
+- `consent:pending` requires a service role key to read pending rows.
+- `consent:approve` will try MASTER_EMAIL/PASSWORD; if missing, it will create a temporary master admin using the service role key and clean it up (unless `SMOKE_CLEANUP=0`).
 
 ## Notes
 

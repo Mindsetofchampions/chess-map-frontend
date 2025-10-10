@@ -49,7 +49,9 @@
     "db:push": "npx supabase db push --include-all --yes",
     "db:push:remote": "node --loader ts-node/esm scripts/db-push-remote.ts",
     "db:inspect": "node --loader ts-node/esm scripts/db-inspect-functions.ts",
-    "admin:promote:self": "node --loader ts-node/esm scripts/promote-self-master.ts"
+    "admin:promote:self": "node --loader ts-node/esm scripts/promote-self-master.ts",
+    "consent:pending": "node --loader ts-node/esm scripts/list-pending-parent-consents.ts",
+    "consent:approve": "node --loader ts-node/esm scripts/approve-consent-with-coins.ts"
   },
   "bin": {},
   "engines": {
