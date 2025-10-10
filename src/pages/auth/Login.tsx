@@ -14,6 +14,7 @@ import GlassContainer from '@/components/GlassContainer';
 import SEO from '@/components/SEO';
 import { useToast } from '@/components/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase, SUPABASE_ENV_VALID } from '@/lib/supabase';
 import { routeForRole, canAccessPath } from '@/lib/routes';
 
 /**
@@ -55,6 +56,8 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const [pinging, setPinging] = useState(false);
+  const [pingResult, setPingResult] = useState<string | null>(null);
 
   /**
    * Validate form fields
@@ -118,9 +121,37 @@ const Login: React.FC = () => {
         showError('Sign in failed', result.error);
       }
     } catch (error: any) {
-      showError('Sign in failed', error.message || 'An unexpected error occurred');
+      const raw = String(error?.message || '');
+      const hint = raw.includes('Failed to fetch')
+        ? 'Network error: could not reach Supabase. Verify VITE_SUPABASE_URL, and add your dev URL (http://localhost:3000) to Supabase Auth allowed origins/redirects.'
+        : raw;
+      showError('Sign in failed', hint || 'An unexpected error occurred');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const runConnectionCheck = async () => {
+    setPinging(true);
+    setPingResult(null);
+    try {
+      // Lightweight call to confirm connectivity
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        setPingResult(`Auth ping error: ${error.message}`);
+      } else {
+        const who = data?.session?.user?.email || 'no session';
+        setPingResult(`OK: reachable (${who})`);
+      }
+    } catch (e: any) {
+      const msg = String(e?.message || e || 'Unknown error');
+      setPingResult(
+        msg.includes('Failed to fetch')
+          ? 'Failed to reach Supabase from the browser. Check CORS/Allowed Origins in Supabase and your VITE_SUPABASE_URL.'
+          : `Error: ${msg}`,
+      );
+    } finally {
+      setPinging(false);
     }
   };
 
@@ -261,6 +292,28 @@ const Login: React.FC = () => {
                 </Link>
               </div>
             </form>
+            {/* Connection diagnostics (helps when sign-in reports Failed to fetch) */}
+            <div className='mt-6 text-xs text-gray-400'>
+              <div className='flex items-center justify-between gap-2'>
+                <div>
+                  Env: {SUPABASE_ENV_VALID ? 'Supabase configured' : 'Missing Supabase env'}
+                </div>
+                <button
+                  type='button'
+                  onClick={runConnectionCheck}
+                  disabled={pinging}
+                  className='px-2 py-1 rounded bg-glass border-glass hover:bg-glass-dark text-gray-300 hover:text-white disabled:opacity-50'
+                >
+                  {pinging ? 'Checking…' : 'Run connection check'}
+                </button>
+              </div>
+              {pingResult && <div className='mt-2 text-gray-300'>{pingResult}</div>}
+              {import.meta.env?.VITE_SUPABASE_URL && (
+                <div className='mt-1'>
+                  Supabase URL: <span className='text-electric-blue-400'>{String(import.meta.env.VITE_SUPABASE_URL)}</span>
+                </div>
+              )}
+            </div>
           </motion.div>
         </GlassContainer>
       </div>
